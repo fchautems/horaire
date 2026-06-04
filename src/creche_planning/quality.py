@@ -191,6 +191,79 @@ def _soft_group_rule_stats(
     }
 
 
+def _primary_group_report(
+    schedule: dict[str, dict[str, list[dict[str, Any]]]],
+    primary_groups_by_educator: dict[str, str],
+    *,
+    enabled: bool = True,
+    warning_outside_hours: float = 4.0,
+    warning_outside_days: int = 1,
+) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    if not enabled:
+        return {
+            "enabled": False,
+            "warning_outside_hours": warning_outside_hours,
+            "warning_outside_days": warning_outside_days,
+            "items": items,
+            "review_items": [],
+        }
+
+    for educator_name, by_day in schedule.items():
+        primary_group = primary_groups_by_educator.get(educator_name, "")
+        group_minutes: dict[str, int] = {}
+        outside_minutes = 0
+        outside_days: set[str] = set()
+        for day_key, blocks in by_day.items():
+            for block in _normal_child_blocks(blocks):
+                group_name = str(block.get("group", ""))
+                if not group_name:
+                    continue
+                minutes = parse_time(block["end"]) - parse_time(block["start"])
+                group_minutes[group_name] = group_minutes.get(group_name, 0) + minutes
+                if primary_group and group_name != primary_group:
+                    outside_minutes += minutes
+                    outside_days.add(day_key)
+
+        total_minutes = sum(group_minutes.values())
+        if group_minutes:
+            majority_group, majority_minutes = max(group_minutes.items(), key=lambda item: item[1])
+        else:
+            majority_group, majority_minutes = "", 0
+        primary_minutes = group_minutes.get(primary_group, 0)
+        outside_hours = round(outside_minutes / 60.0, 2)
+        outside_day_count = len(outside_days)
+        needs_review = bool(primary_group) and (
+            outside_hours > warning_outside_hours + 1e-6
+            or outside_day_count > warning_outside_days
+            or (majority_group and majority_group != primary_group and majority_minutes > primary_minutes)
+        )
+        items.append(
+            {
+                "educator": educator_name,
+                "primary_group": primary_group,
+                "majority_group": majority_group,
+                "primary_hours": round(primary_minutes / 60.0, 2),
+                "majority_hours": round(majority_minutes / 60.0, 2),
+                "outside_hours": outside_hours,
+                "outside_days": outside_day_count,
+                "total_child_hours": round(total_minutes / 60.0, 2),
+                "suggested_group": majority_group if needs_review and majority_group else "",
+                "needs_review": needs_review,
+            }
+        )
+
+    review_items = [item for item in items if item["needs_review"]]
+    review_items.sort(key=lambda item: (float(item["outside_hours"]), int(item["outside_days"])), reverse=True)
+    return {
+        "enabled": True,
+        "warning_outside_hours": warning_outside_hours,
+        "warning_outside_days": warning_outside_days,
+        "items": items,
+        "review_items": review_items,
+    }
+
+
 def build_quality_summary(
     bundle: Any,
     schedule: dict[str, dict[str, list[dict[str, Any]]]],
@@ -202,6 +275,9 @@ def build_quality_summary(
     max_split_gap_minutes: int | None = 90,
     max_weekly_group_exception_days: int | None = 1,
     primary_groups_by_educator: dict[str, str] | None = None,
+    primary_group_report_enabled: bool = True,
+    primary_group_warning_outside_hours: float = 4.0,
+    primary_group_warning_outside_days: int = 1,
 ) -> dict[str, Any]:
     primary_groups_by_educator = primary_groups_by_educator or {}
     split_days: list[str] = []
@@ -279,6 +355,13 @@ def build_quality_summary(
 
     soft_time = _soft_time_rule_stats(bundle.data, schedule, bundle.horizon)
     soft_group = _soft_group_rule_stats(bundle.data, schedule)
+    primary_report = _primary_group_report(
+        schedule,
+        primary_groups_by_educator,
+        enabled=primary_group_report_enabled,
+        warning_outside_hours=primary_group_warning_outside_hours,
+        warning_outside_days=primary_group_warning_outside_days,
+    )
     max_gap_found = max(split_gaps) if split_gaps else 0
     split_gap_violations = (
         0
@@ -305,6 +388,7 @@ def build_quality_summary(
         "replacement_colloque_hours": round(replacement_minutes / 60.0, 2),
         "overstaffed_slots_count": overstaffed_slots,
         "overstaffing_extra_hours": round(excess_slots * bundle.horizon.step / 60.0, 2),
+        "primary_group_review_count": len(primary_report.get("review_items", [])),
         "soft_time_rules": soft_time,
         "soft_group_rules": soft_group,
     }
@@ -338,9 +422,10 @@ def build_quality_summary(
             "label": "Hors groupe principal",
             "value": (
                 f"{metrics['primary_group_outside_days_count']} jour(s), "
-                f"{metrics['primary_group_outside_hours']}h"
+                f"{metrics['primary_group_outside_hours']}h, "
+                f"{metrics['primary_group_review_count']} personne(s) a revoir"
             ),
-            "ok": metrics["primary_group_outside_days_count"] == 0,
+            "ok": metrics["primary_group_review_count"] == 0,
         },
         {
             "label": "Preferences horaires soft",
@@ -358,7 +443,7 @@ def build_quality_summary(
             "ok": True,
         },
         {
-            "label": "Surplus vs minimum",
+            "label": "Marge de couverture",
             "value": f"{metrics['overstaffing_extra_hours']}h-personne",
             "ok": True,
         },
@@ -372,10 +457,11 @@ def build_quality_summary(
         "group_change_day_details": {
             educator: days[:5] for educator, days in group_change_days.items()
         },
+        "primary_group_report": primary_report,
         "weekly_group_limit_violations": weekly_group_limit_violations,
         "notes": [
             "Les remplacements de colloque sont exclus des changements de groupe.",
-            "Le surplus compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard.",
+            "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard.",
         ],
     }
 
@@ -387,6 +473,22 @@ def format_quality_summary_lines(summary: dict[str, Any] | None) -> list[str]:
     lines = [f"Profil qualite: {profile.get('label', profile.get('name', '?'))}"]
     for item in summary.get("scorecard", []):
         lines.append(f"- {item.get('label', '?')}: {item.get('value', '')}")
+    primary_report = summary.get("primary_group_report", {})
+    review_items = primary_report.get("review_items", []) if isinstance(primary_report, dict) else []
+    if review_items:
+        lines.append("Groupes principaux a revoir:")
+        for item in review_items[:10]:
+            suggestion = (
+                f", suggestion {item.get('suggested_group')}"
+                if item.get("suggested_group")
+                else ""
+            )
+            lines.append(
+                f"- {item.get('educator')}: principal {item.get('primary_group')}, "
+                f"majoritaire {item.get('majority_group')}, "
+                f"{item.get('outside_hours')}h hors principal sur {item.get('outside_days')} jour(s)"
+                f"{suggestion}"
+            )
     for note in summary.get("notes", []):
         lines.append(f"- Note: {note}")
     return lines

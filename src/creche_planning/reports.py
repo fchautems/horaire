@@ -124,6 +124,7 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
 
 
 def write_csv(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle, delimiter=";")
         writer.writerow(["educator", "day", "site", "group", "start", "end", "hours", "activity"])
@@ -153,6 +154,7 @@ def write_csv(path: Path, payload: dict[str, Any]) -> None:
 
 
 def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     palette = [
         "#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c", "#0891b2",
         "#be123c", "#4f46e5", "#0f766e", "#a16207", "#7c3aed", "#15803d",
@@ -291,11 +293,34 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
         )
         notes = "".join(f"<li>{esc(note)}</li>" for note in quality_summary.get("notes", []))
         notes_html = f"<ul>{notes}</ul>" if notes else ""
+        primary_report = quality_summary.get("primary_group_report", {})
+        primary_rows = ""
+        if isinstance(primary_report, dict):
+            primary_rows = "".join(
+                "<tr>"
+                f"<td>{esc(item.get('educator', ''))}</td>"
+                f"<td>{esc(item.get('primary_group', ''))}</td>"
+                f"<td>{esc(item.get('majority_group', ''))}</td>"
+                f"<td>{esc(item.get('outside_hours', 0))}h</td>"
+                f"<td>{esc(item.get('outside_days', 0))}</td>"
+                f"<td>{esc(item.get('suggested_group', ''))}</td>"
+                "</tr>"
+                for item in primary_report.get("review_items", [])
+            )
+        primary_html = (
+            "<h3>Groupes principaux a revoir</h3>"
+            "<table><thead><tr><th>Educateur</th><th>Principal</th><th>Majoritaire</th>"
+            "<th>Heures hors principal</th><th>Jours</th><th>Suggestion</th></tr></thead>"
+            f"<tbody>{primary_rows}</tbody></table>"
+            if primary_rows
+            else ""
+        )
         error_html += (
             "<section class=\"quality-summary\"><h2>Qualite du planning</h2>"
             f"<p>Profil: <strong>{esc(profile.get('label', profile.get('name', '')))}</strong></p>"
             "<table><thead><tr><th>Indicateur</th><th>Valeur</th><th>Lecture</th></tr></thead>"
             f"<tbody>{rows}</tbody></table>"
+            f"{primary_html}"
             f"{notes_html}"
             "</section>"
         )
@@ -380,6 +405,7 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
   .hours-summary th {{ background: #eef2f7; }}
   .quality-summary {{ background: white; border: 1px solid var(--line); padding: 10px; border-radius: 8px; margin-bottom: 12px; }}
   .quality-summary h2 {{ margin-top: 0; color: #334155; }}
+  .quality-summary h3 {{ margin: 10px 0 6px; color: #334155; font-size: 13px; }}
   .quality-summary table {{ width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 8px; }}
   .quality-summary th, .quality-summary td {{ border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; }}
   .quality-summary th {{ background: #eef2f7; }}

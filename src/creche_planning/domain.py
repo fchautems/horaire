@@ -141,6 +141,14 @@ DEFAULT_RUN_CONFIG = {
     "the_regular_is_invisible": True,
     "fix_primary_groups_from_latest": True,
     "weekly_stability": True,
+    "primary_group": {
+        "report_enabled": True,
+        "warning_outside_hours": 4.0,
+        "warning_outside_days": 1,
+        "day_weight": 80.0,
+        "slot_weight": 3.0,
+        "site_day_weight": 100.0,
+    },
     "main_group_day_weight": 80.0,
     "main_group_slot_weight": 3.0,
     "main_site_day_weight": 100.0,
@@ -288,6 +296,7 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def save_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, ensure_ascii=False)
         handle.write("\n")

@@ -2618,6 +2618,9 @@ def verify_solution(
     primary_groups_by_educator: dict[str, str] | None = None,
     quality_profile: str = "equilibre",
     quality_profile_label: str = "Equilibre",
+    primary_group_report_enabled: bool = True,
+    primary_group_warning_outside_hours: float = 4.0,
+    primary_group_warning_outside_days: int = 1,
 ) -> dict[str, Any]:
     data = bundle.data
     primary_groups_by_educator = dict(primary_groups_by_educator or {})
@@ -2997,6 +3000,9 @@ def verify_solution(
         max_split_gap_minutes=max_split_gap_minutes,
         max_weekly_group_exception_days=max_weekly_group_exception_days,
         primary_groups_by_educator=primary_groups_by_educator,
+        primary_group_report_enabled=primary_group_report_enabled,
+        primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+        primary_group_warning_outside_days=primary_group_warning_outside_days,
     )
 
     return {
@@ -4257,6 +4263,9 @@ def make_pattern_mip_payload(
     fixed_primary_groups: dict[int, int] | None = None,
     quality_profile: str = "equilibre",
     quality_profile_label: str = "Equilibre",
+    primary_group_report_enabled: bool = True,
+    primary_group_warning_outside_hours: float = 4.0,
+    primary_group_warning_outside_days: int = 1,
     progress_callback: Callable[[int, str], None] | None = None,
 ) -> tuple[dict[str, Any], Any]:
     aliases = dict(DEFAULT_TYPE_ALIASES)
@@ -5078,6 +5087,9 @@ def make_pattern_mip_payload(
         primary_groups_by_educator=primary_groups_by_educator,
         quality_profile=quality_profile,
         quality_profile_label=quality_profile_label,
+        primary_group_report_enabled=primary_group_report_enabled,
+        primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+        primary_group_warning_outside_days=primary_group_warning_outside_days,
     )
     weekly_errors = []
     for name, actual in checks["hours_by_educator"].items():
@@ -5181,6 +5193,149 @@ def infer_preferred_groups_from_payload(
         for e_i, group_totals in totals.items()
         if group_totals
     }
+
+
+def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
+    candidates: list[Path] = []
+    seen: set[Path] = set()
+    for path in paths:
+        if path is None:
+            continue
+        resolved = path.resolve()
+        if resolved not in seen and resolved.exists():
+            candidates.append(resolved)
+            seen.add(resolved)
+        directory = resolved.parent
+        if directory.exists():
+            for candidate in directory.glob("*.json"):
+                candidate = candidate.resolve()
+                if candidate not in seen:
+                    candidates.append(candidate)
+                    seen.add(candidate)
+
+    candidates.sort(key=lambda item: item.stat().st_mtime if item.exists() else 0.0, reverse=True)
+    for candidate in candidates:
+        try:
+            payload = load_json(candidate)
+        except Exception:
+            continue
+        if payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
+            return payload
+    return None
+
+
+def infer_majority_primary_groups_from_payload(
+    data: dict[str, Any],
+    payload: dict[str, Any] | None,
+) -> dict[int, int]:
+    if not payload or not isinstance(payload.get("schedule"), dict):
+        return {}
+
+    educators = list(data.get("educators", []))
+    groups = list(data.get("groups", []))
+    if not educators or not groups:
+        return {}
+
+    horizon = make_horizon(data)
+    warnings: list[str] = []
+    colloques = parse_colloques(data, horizon, groups, warnings)
+    colloque_by_group = {int(colloque["group_i"]): colloque for colloque in colloques}
+    educator_by_name = {educator["name"]: e_i for e_i, educator in enumerate(educators)}
+    group_by_name = {group["name"]: g_i for g_i, group in enumerate(groups)}
+    allowed_groups: dict[int, set[int]] = {
+        e_i: set(range(len(groups)))
+        for e_i in range(len(educators))
+    }
+    forced_groups: dict[int, int] = {}
+
+    for raw_rule in data.get("rules_group", []):
+        if len(raw_rule) < 4:
+            continue
+        pref_type, strength, educator_name, group_name = raw_rule[:4]
+        if educator_name not in educator_by_name or group_name not in group_by_name:
+            continue
+        if normalize_flag(strength) != "hard":
+            continue
+        e_i = educator_by_name[educator_name]
+        g_i = group_by_name[group_name]
+        is_negative = normalize_flag(pref_type) in {"negatif", "negative", "neg"}
+        if is_negative:
+            allowed_groups[e_i].discard(g_i)
+        else:
+            forced_groups[e_i] = g_i
+
+    for e_i, educator in enumerate(educators):
+        educator_name = educator["name"]
+        for g_i, colloque in colloque_by_group.items():
+            if g_i not in allowed_groups[e_i]:
+                continue
+            for raw_rule in data.get("rules_time", []):
+                if len(raw_rule) < 6:
+                    continue
+                pref_type, strength, rule_educator, rule_day, start, end = raw_rule[:6]
+                if rule_educator != educator_name or normalize_day(rule_day) != str(colloque["day"]):
+                    continue
+                if normalize_flag(strength) != "hard":
+                    continue
+                if normalize_flag(pref_type) not in {"negatif", "negative", "neg"}:
+                    continue
+                rule_slots = set(slot_range_clipped(horizon, str(start), str(end))[0])
+                if rule_slots & set(colloque["slots"]):
+                    allowed_groups[e_i].discard(g_i)
+                    break
+
+    explicit = payload.get("checks", {}).get("primary_groups_by_educator", {})
+    previous_primary: dict[int, int] = {}
+    if isinstance(explicit, dict):
+        previous_primary = {
+            educator_by_name[educator_name]: group_by_name[group_name]
+            for educator_name, group_name in explicit.items()
+            if educator_name in educator_by_name and group_name in group_by_name
+        }
+
+    totals: dict[int, dict[int, int]] = {}
+    for educator_name, by_day in payload.get("schedule", {}).items():
+        if educator_name not in educator_by_name or not isinstance(by_day, dict):
+            continue
+        e_i = educator_by_name[educator_name]
+        for blocks in by_day.values():
+            if not isinstance(blocks, list):
+                continue
+            for block in blocks:
+                if block.get("activity") in {"colloque", "remplacement_colloque"}:
+                    continue
+                group_name = block.get("group")
+                if group_name not in group_by_name:
+                    continue
+                minutes = int(round(float(block.get("hours", 0.0)) * 60))
+                totals.setdefault(e_i, {})
+                g_i = group_by_name[group_name]
+                totals[e_i][g_i] = totals[e_i].get(g_i, 0) + minutes
+
+    result: dict[int, int] = {}
+    for e_i in range(len(educators)):
+        allowed = allowed_groups.get(e_i, set())
+        if e_i in forced_groups and forced_groups[e_i] in allowed:
+            result[e_i] = forced_groups[e_i]
+            continue
+        ranked = sorted(
+            (
+                (minutes, g_i)
+                for g_i, minutes in totals.get(e_i, {}).items()
+                if g_i in allowed
+            ),
+            reverse=True,
+        )
+        if ranked:
+            result[e_i] = ranked[0][1]
+            continue
+        previous = previous_primary.get(e_i)
+        if previous in allowed:
+            result[e_i] = previous
+            continue
+        if allowed:
+            result[e_i] = sorted(allowed)[0]
+    return result
 
 
 def diagnose_basic_conflicts(data: dict[str, Any], horizon: Horizon) -> list[str]:
@@ -5526,9 +5681,27 @@ def main() -> int:
         weekly_stability = True
     if args.no_weekly_stability:
         weekly_stability = False
-    main_group_day_weight = float(pick(args.main_group_day_weight, config, "main_group_day_weight", 80.0))
-    main_group_slot_weight = float(pick(args.main_group_slot_weight, config, "main_group_slot_weight", 3.0))
-    main_site_day_weight = float(pick(args.main_site_day_weight, config, "main_site_day_weight", 100.0))
+    primary_group_config = config.get("primary_group", {})
+    if not isinstance(primary_group_config, dict):
+        primary_group_config = {}
+    primary_group_report_enabled = bool(primary_group_config.get("report_enabled", True))
+    primary_group_warning_outside_hours = float(primary_group_config.get("warning_outside_hours", 4.0))
+    primary_group_warning_outside_days = int(primary_group_config.get("warning_outside_days", 1))
+    main_group_day_weight = float(
+        args.main_group_day_weight
+        if args.main_group_day_weight is not None
+        else primary_group_config.get("day_weight", config.get("main_group_day_weight", 80.0))
+    )
+    main_group_slot_weight = float(
+        args.main_group_slot_weight
+        if args.main_group_slot_weight is not None
+        else primary_group_config.get("slot_weight", config.get("main_group_slot_weight", 3.0))
+    )
+    main_site_day_weight = float(
+        args.main_site_day_weight
+        if args.main_site_day_weight is not None
+        else primary_group_config.get("site_day_weight", config.get("main_site_day_weight", 100.0))
+    )
     if args.main_group_day_weight is None:
         main_group_day_weight = float(profile_weights.get("main_group_day_weight", main_group_day_weight))
     if args.main_group_slot_weight is None:
@@ -5553,12 +5726,7 @@ def main() -> int:
     data = load_json(json_path)
     aliases = config_aliases(config.get("type_aliases"))
     aliases.update(parse_aliases(args.type_alias))
-    latest_payload = None
-    if latest_output_path and latest_output_path.exists():
-        try:
-            latest_payload = load_json(latest_output_path)
-        except Exception:
-            latest_payload = None
+    latest_payload = load_latest_valid_payload(latest_output_path, output_path)
 
     def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
         if profile_warnings:
@@ -5574,11 +5742,12 @@ def main() -> int:
             write_csv(csv_path, payload)
         if html_path:
             write_html(html_path, payload, output_bundle)
-        if latest_output_path:
+        write_latest_valid = payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict)
+        if latest_output_path and write_latest_valid:
             save_json(latest_output_path, payload)
-        if latest_csv_path:
+        if latest_csv_path and write_latest_valid:
             write_csv(latest_csv_path, payload)
-        if latest_html_path:
+        if latest_html_path and write_latest_valid:
             write_html(latest_html_path, payload, output_bundle)
         emit_progress(100, "Termine")
         return 0 if payload["status"] == "ok" else 2
@@ -5586,11 +5755,14 @@ def main() -> int:
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(10, "Calcul par patrons de journee")
-        fixed_primary_groups = (
-            infer_preferred_groups_from_payload(data, latest_payload)
-            if bool(config.get("fix_primary_groups_from_latest", True))
-            else {}
-        )
+        if bool(config.get("fix_primary_groups_from_latest", True)):
+            fixed_primary_groups = infer_preferred_groups_from_payload(data, latest_payload)
+            primary_group_source = "dernier planning valide (groupes principaux)"
+        else:
+            fixed_primary_groups = infer_majority_primary_groups_from_payload(data, latest_payload)
+            primary_group_source = "dernier planning valide (groupes majoritaires)"
+        if fixed_primary_groups:
+            emit_progress(11, f"Groupes principaux guides par le {primary_group_source}")
         payload, output_bundle = make_pattern_mip_payload(
             data,
             time_limit=time_limit,
@@ -5620,6 +5792,9 @@ def main() -> int:
             fixed_primary_groups=fixed_primary_groups,
             quality_profile=quality_profile_name,
             quality_profile_label=quality_profile_label,
+            primary_group_report_enabled=primary_group_report_enabled,
+            primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+            primary_group_warning_outside_days=primary_group_warning_outside_days,
             progress_callback=emit_progress,
         )
         if (
@@ -5665,6 +5840,9 @@ def main() -> int:
                 fixed_primary_groups=fixed_primary_groups,
                 quality_profile=quality_profile_name,
                 quality_profile_label=quality_profile_label,
+                primary_group_report_enabled=primary_group_report_enabled,
+                primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+                primary_group_warning_outside_days=primary_group_warning_outside_days,
                 progress_callback=relaxed_progress,
             )
             if relaxed_payload.get("status") == "ok":

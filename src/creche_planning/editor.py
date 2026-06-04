@@ -852,6 +852,13 @@ def render_planning(payload: dict) -> str:
                 else:
                     text = ", ".join(
                         f"{block.get('start')}-{block.get('end')} {block.get('site')}/{block.get('group')}"
+                        + (
+                            " (colloque)"
+                            if block.get("activity") == "colloque"
+                            else " (remplacement colloque)"
+                            if block.get("activity") == "remplacement_colloque"
+                            else ""
+                        )
                         for block in blocks
                     )
                     lines.append(f"  {day}: {text}")
