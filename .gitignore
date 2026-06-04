@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+_bak/
+
+# Resultats generes par le solveur
+outputs/**
+!outputs/
+!outputs/.gitkeep
+!outputs/debug/
+!outputs/debug/.gitkeep
+
+# Fichiers temporaires locaux
+*.tmp
+*.log
