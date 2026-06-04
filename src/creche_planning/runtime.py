@@ -34,8 +34,8 @@ def resolve_config_path(value: str | Path | None, base_dir: Path) -> Path | None
         return None
     path = Path(value)
     if path.is_absolute():
-        return path
-    return base_dir / path
+        return path.resolve()
+    return (base_dir / path).resolve()
 
 
 def timestamped_path(path: Path | None, timestamp: str | None) -> Path | None:

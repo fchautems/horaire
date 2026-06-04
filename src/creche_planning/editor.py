@@ -12,6 +12,8 @@ from tkinter import filedialog, messagebox
 import tkinter as tk
 from tkinter import ttk
 
+from .quality import format_quality_summary_lines
+
 
 DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"]
 DAY_SHORT_LABELS = {
@@ -809,6 +811,11 @@ def render_planning(payload: dict) -> str:
         lines.append("Avertissements:")
         for warning in payload["warnings"]:
             lines.append(f"- {warning}")
+    quality_lines = format_quality_summary_lines(checks.get("quality_summary"))
+    if quality_lines:
+        lines.append("")
+        lines.append("Qualite du planning:")
+        lines.extend(quality_lines)
     if checks.get("hours_by_educator"):
         lines.append("")
         lines.append("Heures:")
@@ -870,6 +877,7 @@ def load_solver_config(path: Path) -> dict:
 def find_project_root(data_path: Path | None = None) -> Path:
     candidates: list[Path] = []
     if data_path is not None:
+        data_path = data_path.resolve()
         candidates.extend([data_path.parent, *data_path.parent.parents])
     module_root = Path(__file__).resolve().parents[2]
     candidates.extend([module_root, *module_root.parents])
@@ -881,10 +889,9 @@ def find_project_root(data_path: Path | None = None) -> Path:
 
 def find_solver_script(data_path: Path | None = None) -> Path:
     project_root = find_project_root(data_path)
-    candidates = []
+    candidates = [project_root / "solveur_v2.py", project_root / "creche_solver.py"]
     if data_path is not None:
-        candidates.append(data_path.with_name("solveur_v2.py"))
-    candidates.extend([project_root / "solveur_v2.py", project_root / "creche_solver.py"])
+        candidates.append(data_path.resolve().with_name("solveur_v2.py"))
     for candidate in candidates:
         if candidate.exists():
             return candidate
@@ -893,10 +900,9 @@ def find_solver_script(data_path: Path | None = None) -> Path:
 
 def find_solver_config(data_path: Path | None = None) -> Path:
     project_root = find_project_root(data_path)
-    candidates = []
+    candidates = [project_root / "config" / "solveur_config.json", project_root / "solveur_config.json"]
     if data_path is not None:
-        candidates.append(data_path.with_name("solveur_config.json"))
-    candidates.extend([project_root / "config" / "solveur_config.json", project_root / "solveur_config.json"])
+        candidates.append(data_path.resolve().with_name("solveur_config.json"))
     for candidate in candidates:
         if candidate.exists():
             return candidate
@@ -907,8 +913,8 @@ def resolve_local_path(value: object, base_dir: Path, fallback: str) -> Path:
     text = str(value if value not in {None, ""} else fallback)
     path = Path(text)
     if path.is_absolute():
-        return path
-    return base_dir / path
+        return path.resolve()
+    return (base_dir / path).resolve()
 
 
 def find_latest_planning(data_path: Path | None) -> Path | None:
@@ -1361,6 +1367,8 @@ class CrecheEditor(tk.Tk):
             return
         if not self.save_file(show_confirmation=False):
             return
+        self.path = self.path.resolve()
+        project_root = find_project_root(self.path)
         solver = find_solver_script(self.path)
         if not solver.exists():
             messagebox.showerror("Solveur", f"solveur_v2.py introuvable:\n{solver}")
@@ -1388,11 +1396,11 @@ class CrecheEditor(tk.Tk):
         html_output.parent.mkdir(parents=True, exist_ok=True)
         command = [
             sys.executable,
-            str(solver),
-            str(self.path),
+            str(solver.resolve()),
+            str(self.path.resolve()),
         ]
         if config_path.exists():
-            command.extend(["--config", str(config_path)])
+            command.extend(["--config", str(config_path.resolve())])
         else:
             command.extend(["--smooth", "--min-daily-hours", "2", "--time-limit", "60", "--smooth-time-limit", "20"])
         command.extend([
@@ -1407,7 +1415,7 @@ class CrecheEditor(tk.Tk):
         self.set_status("Solveur en cours...")
         dialog = SolverProgressDialog(self, output)
         dialog.update_progress(0, "Lancement du solveur")
-        thread = threading.Thread(target=self._run_solver_thread, args=(command, output, dialog, self.path.parent), daemon=True)
+        thread = threading.Thread(target=self._run_solver_thread, args=(command, output, dialog, project_root), daemon=True)
         thread.start()
 
     def _run_solver_thread(self, command: list[str], output: Path, dialog: SolverProgressDialog, cwd: Path) -> None:

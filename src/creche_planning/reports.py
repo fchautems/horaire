@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .domain import DAYS, SolveBundle, build_demands_by_day, format_time, parse_time
+from .quality import effective_max_split_gap_minutes, format_quality_summary_lines
+
 
 def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str, list[dict[str, str]]]:
     rules_global = data.get("rules_global", {})
@@ -14,7 +16,7 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
     absolute_max = config.get("absolute_max_weekly_hours", weekly_base)
     tolerance_percent = float(config.get("weekly_hours_tolerance_percent", 3.0))
     tolerance_step = config.get("weekly_hours_tolerance_step_minutes", 15)
-    max_gap = config.get("smooth_max_split_gap_minutes", 90)
+    max_gap = effective_max_split_gap_minutes(config)
     max_group_days = config.get("max_weekly_group_exception_days", 1)
     min_daily = config.get("min_daily_hours", 2)
     the_percent = float(config.get("the_percent", 10.0))
@@ -84,7 +86,7 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
         {
             "code": "split_gap_limit",
             "rule": f"Si une journee est coupee, la coupure ne doit pas depasser {max_gap} minutes.",
-            "source": "solveur_config.json / smooth_max_split_gap_minutes",
+            "source": "solveur_config.json / max_pause_between_blocks_minutes",
         },
         {
             "code": "colloques",
@@ -273,9 +275,30 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
     alerts = payload.get("checks", {}).get("alerts", [])
     diagnostics = payload.get("diagnostics", [])
     checks = payload.get("checks", {})
+    quality_summary = checks.get("quality_summary", {})
     status_label = "Planning valide" if payload.get("status") == "ok" else "Planning invalide"
     status_class = "valid" if payload.get("status") == "ok" else "invalid"
     error_html = f'<section class="status {status_class}"><h2>{esc(status_label)}</h2></section>'
+    if quality_summary:
+        profile = quality_summary.get("profile", {})
+        rows = "".join(
+            "<tr>"
+            f"<td>{esc(item.get('label', ''))}</td>"
+            f"<td>{esc(item.get('value', ''))}</td>"
+            f"<td>{'OK' if item.get('ok') else 'A surveiller'}</td>"
+            "</tr>"
+            for item in quality_summary.get("scorecard", [])
+        )
+        notes = "".join(f"<li>{esc(note)}</li>" for note in quality_summary.get("notes", []))
+        notes_html = f"<ul>{notes}</ul>" if notes else ""
+        error_html += (
+            "<section class=\"quality-summary\"><h2>Qualite du planning</h2>"
+            f"<p>Profil: <strong>{esc(profile.get('label', profile.get('name', '')))}</strong></p>"
+            "<table><thead><tr><th>Indicateur</th><th>Valeur</th><th>Lecture</th></tr></thead>"
+            f"<tbody>{rows}</tbody></table>"
+            f"{notes_html}"
+            "</section>"
+        )
     if errors:
         items = "".join(f"<li>{esc(error)}</li>" for error in errors)
         error_html += f"<section class=\"errors\"><h2>Controles hard a corriger</h2><ul>{items}</ul></section>"
@@ -355,6 +378,11 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
   .hours-summary table {{ width: 100%; border-collapse: collapse; font-size: 11px; }}
   .hours-summary th, .hours-summary td {{ border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; }}
   .hours-summary th {{ background: #eef2f7; }}
+  .quality-summary {{ background: white; border: 1px solid var(--line); padding: 10px; border-radius: 8px; margin-bottom: 12px; }}
+  .quality-summary h2 {{ margin-top: 0; color: #334155; }}
+  .quality-summary table {{ width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 8px; }}
+  .quality-summary th, .quality-summary td {{ border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; }}
+  .quality-summary th {{ background: #eef2f7; }}
   .rule-summary {{ background: #f8fafc; border: 1px solid #dbe3ef; padding: 10px; border-radius: 8px; margin-bottom: 12px; }}
   .rule-summary h2 {{ margin-top: 0; color: #334155; }}
   .rule-summary li {{ margin-bottom: 4px; }}
@@ -398,8 +426,14 @@ def print_report(payload: dict[str, Any]) -> None:
         print(f"Objectif: {payload['objective']}")
     else:
         print(f"Objectif: {payload.get('objective', '')}")
-    print("\nHeures par educateur:")
     checks = payload["checks"]
+    quality_lines = format_quality_summary_lines(checks.get("quality_summary"))
+    if quality_lines:
+        print("\nQualite du planning:")
+        for line in quality_lines:
+            print(f"  {line}" if line.startswith("-") else line)
+
+    print("\nHeures par educateur:")
     for name, hours in checks["hours_by_educator"].items():
         target = checks["weekly_targets"][name]
         if checks.get("total_the_hours_by_educator"):

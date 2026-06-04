@@ -38,6 +38,12 @@ from .domain import (
     the_target_slots,
     weekly_tolerance_slots,
 )
+from .quality import (
+    attach_quality_profile,
+    build_quality_summary,
+    effective_max_split_gap_minutes,
+    select_quality_profile,
+)
 from .reports import build_rule_summary, print_report, write_csv, write_html
 from .runtime import (
     config_aliases,
@@ -2610,6 +2616,8 @@ def verify_solution(
     the_percent: float = 10.0,
     the_colloques_count: bool = True,
     primary_groups_by_educator: dict[str, str] | None = None,
+    quality_profile: str = "equilibre",
+    quality_profile_label: str = "Equilibre",
 ) -> dict[str, Any]:
     data = bundle.data
     primary_groups_by_educator = dict(primary_groups_by_educator or {})
@@ -2979,6 +2987,17 @@ def verify_solution(
         + primary_group_errors
         + percentage_errors
     )
+    quality_summary = build_quality_summary(
+        bundle,
+        schedule,
+        profile_name=quality_profile,
+        profile_label=quality_profile_label,
+        hard_error_count=len(all_hard_errors),
+        soft_warning_count=len(soft_warnings),
+        max_split_gap_minutes=max_split_gap_minutes,
+        max_weekly_group_exception_days=max_weekly_group_exception_days,
+        primary_groups_by_educator=primary_groups_by_educator,
+    )
 
     return {
         "hours_by_educator": by_educator,
@@ -3007,6 +3026,8 @@ def verify_solution(
         "hard_rule_errors": hard_rule_errors,
         "group_structure_errors": group_structure_errors,
         "quality_rule_errors": group_structure_errors,
+        "quality_profile": quality_summary["profile"],
+        "quality_summary": quality_summary,
         "soft_warnings": soft_warnings,
         "alerts": soft_warnings,
         "hard_errors": all_hard_errors,
@@ -4227,11 +4248,15 @@ def make_pattern_mip_payload(
     split_gap_weight: float = 4.0,
     group_switch_day_weight: float = 8.0,
     same_group_week_weight: float = 0.4,
+    soft_time_rule_weight: float = 1.0,
+    soft_group_rule_weight: float = 1.0,
     compact_work_days: bool = True,
     compact_work_day_weight: float = 45.0,
     compact_part_time_priority: bool = True,
     hard_max_work_days: bool = True,
     fixed_primary_groups: dict[int, int] | None = None,
+    quality_profile: str = "equilibre",
+    quality_profile_label: str = "Equilibre",
     progress_callback: Callable[[int, str], None] | None = None,
 ) -> tuple[dict[str, Any], Any]:
     aliases = dict(DEFAULT_TYPE_ALIASES)
@@ -4469,9 +4494,9 @@ def make_pattern_mip_payload(
                 if not is_negative and overlap == 0:
                     return None
             elif is_negative:
-                cost += overlap * 45.0
+                cost += overlap * 45.0 * soft_time_rule_weight
             else:
-                cost -= overlap * 35.0
+                cost -= overlap * 35.0 * soft_time_rule_weight
         if len(segments) > 1:
             gap = segments[1][0] - segments[0][1]
             if max_gap_slots is not None and gap > max_gap_slots:
@@ -4495,7 +4520,7 @@ def make_pattern_mip_payload(
                 continue
             if normalize_flag(strength) == "hard":
                 return None
-            cost += slots * 18.0
+            cost += slots * 18.0 * soft_group_rule_weight
         return cost
 
     def add_pattern(
@@ -5051,6 +5076,8 @@ def make_pattern_mip_payload(
         the_percent=the_percent,
         the_colloques_count=the_colloques_count,
         primary_groups_by_educator=primary_groups_by_educator,
+        quality_profile=quality_profile,
+        quality_profile_label=quality_profile_label,
     )
     weekly_errors = []
     for name, actual in checks["hours_by_educator"].items():
@@ -5289,6 +5316,10 @@ def main() -> int:
     parser.add_argument("--mip-gap", type=float, help="Gap MIP relatif.")
     parser.add_argument("--weekly-mode", choices=["exact", "maximum"])
     parser.add_argument(
+        "--quality-profile",
+        help="Profil de qualite a utiliser: equilibre, journees_continues, groupes_stables, preferences_horaires, preferences_groupes.",
+    )
+    parser.add_argument(
         "--fast-feasible",
         action="store_true",
         default=None,
@@ -5401,6 +5432,10 @@ def main() -> int:
     args = parser.parse_args()
 
     config, config_dir = load_run_config(args.config)
+    quality_profile_name, quality_profile_label, profile_weights, profile_warnings = select_quality_profile(
+        config,
+        args.quality_profile,
+    )
     json_path = args.json_path or resolve_config_path(config.get("input_json"), config_dir)
     if json_path is None:
         parser.error("Indiquez un fichier JSON ou un fichier --config avec input_json.")
@@ -5444,17 +5479,28 @@ def main() -> int:
     smooth_time_limit = float(pick(args.smooth_time_limit, config, "smooth_time_limit_seconds", 30.0))
     split_shift_weight = float(pick(args.smooth_split_shift_weight, config, "smooth_split_shift_weight", 120.0))
     split_gap_weight = float(pick(args.smooth_split_gap_weight, config, "smooth_split_gap_weight", 4.0))
-    max_split_gap_minutes = pick(args.smooth_max_split_gap_minutes, config, "smooth_max_split_gap_minutes", 90)
-    if max_split_gap_minutes is not None:
-        max_split_gap_minutes = int(max_split_gap_minutes)
+    if args.smooth_split_shift_weight is None:
+        split_shift_weight = float(profile_weights.get("smooth_split_shift_weight", split_shift_weight))
+    if args.smooth_split_gap_weight is None:
+        split_gap_weight = float(profile_weights.get("smooth_split_gap_weight", split_gap_weight))
+    max_split_gap_minutes = effective_max_split_gap_minutes(config, args.smooth_max_split_gap_minutes)
     group_switch_day_weight = float(
         pick(args.smooth_group_switch_day_weight, config, "smooth_group_switch_day_weight", 8.0)
     )
     same_group_week_weight = float(
         pick(args.smooth_same_group_week_weight, config, "smooth_same_group_week_weight", 0.4)
     )
+    if args.smooth_group_switch_day_weight is None:
+        group_switch_day_weight = float(profile_weights.get("smooth_group_switch_day_weight", group_switch_day_weight))
+    if args.smooth_same_group_week_weight is None:
+        same_group_week_weight = float(profile_weights.get("smooth_same_group_week_weight", same_group_week_weight))
+    soft_time_rule_weight = float(config.get("soft_time_rule_weight", 1.0))
+    soft_group_rule_weight = float(config.get("soft_group_rule_weight", 1.0))
+    soft_time_rule_weight = float(profile_weights.get("soft_time_rule_weight", soft_time_rule_weight))
+    soft_group_rule_weight = float(profile_weights.get("soft_group_rule_weight", soft_group_rule_weight))
     compact_work_days = bool(config.get("compact_work_days", True))
     compact_work_day_weight = float(config.get("compact_work_day_weight", 45.0))
+    compact_work_day_weight = float(profile_weights.get("compact_work_day_weight", compact_work_day_weight))
     compact_part_time_priority = bool(config.get("compact_part_time_priority", True))
     relax_work_days_if_infeasible = bool(config.get("relax_work_days_if_infeasible", True))
     relaxed_work_day_weight = float(
@@ -5483,6 +5529,12 @@ def main() -> int:
     main_group_day_weight = float(pick(args.main_group_day_weight, config, "main_group_day_weight", 80.0))
     main_group_slot_weight = float(pick(args.main_group_slot_weight, config, "main_group_slot_weight", 3.0))
     main_site_day_weight = float(pick(args.main_site_day_weight, config, "main_site_day_weight", 100.0))
+    if args.main_group_day_weight is None:
+        main_group_day_weight = float(profile_weights.get("main_group_day_weight", main_group_day_weight))
+    if args.main_group_slot_weight is None:
+        main_group_slot_weight = float(profile_weights.get("main_group_slot_weight", main_group_slot_weight))
+    if args.main_site_day_weight is None:
+        main_site_day_weight = float(profile_weights.get("main_site_day_weight", main_site_day_weight))
     half_day_split_time = str(pick(args.half_day_split_time, config, "half_day_split_time", "12:30"))
     max_weekly_group_exception_days = pick(
         args.max_weekly_group_exception_days,
@@ -5507,6 +5559,30 @@ def main() -> int:
             latest_payload = load_json(latest_output_path)
         except Exception:
             latest_payload = None
+
+    def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
+        if profile_warnings:
+            warnings = list(payload.get("warnings", []))
+            warnings.extend(profile_warnings)
+            payload["warnings"] = sorted(set(warnings))
+        attach_quality_profile(payload, quality_profile_name, quality_profile_label)
+        payload["rule_summary"] = build_rule_summary(data, config)
+        print_report(payload)
+        if output_path:
+            save_json(output_path, payload)
+        if csv_path:
+            write_csv(csv_path, payload)
+        if html_path:
+            write_html(html_path, payload, output_bundle)
+        if latest_output_path:
+            save_json(latest_output_path, payload)
+        if latest_csv_path:
+            write_csv(latest_csv_path, payload)
+        if latest_html_path:
+            write_html(latest_html_path, payload, output_bundle)
+        emit_progress(100, "Termine")
+        return 0 if payload["status"] == "ok" else 2
+
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(10, "Calcul par patrons de journee")
@@ -5535,11 +5611,15 @@ def main() -> int:
             split_gap_weight=split_gap_weight,
             group_switch_day_weight=group_switch_day_weight,
             same_group_week_weight=same_group_week_weight,
+            soft_time_rule_weight=soft_time_rule_weight,
+            soft_group_rule_weight=soft_group_rule_weight,
             compact_work_days=compact_work_days,
             compact_work_day_weight=compact_work_day_weight,
             compact_part_time_priority=compact_part_time_priority,
             hard_max_work_days=hard_max_work_days,
             fixed_primary_groups=fixed_primary_groups,
+            quality_profile=quality_profile_name,
+            quality_profile_label=quality_profile_label,
             progress_callback=emit_progress,
         )
         if (
@@ -5576,11 +5656,15 @@ def main() -> int:
                 split_gap_weight=split_gap_weight,
                 group_switch_day_weight=group_switch_day_weight,
                 same_group_week_weight=same_group_week_weight,
+                soft_time_rule_weight=soft_time_rule_weight,
+                soft_group_rule_weight=soft_group_rule_weight,
                 compact_work_days=compact_work_days,
                 compact_work_day_weight=max(compact_work_day_weight, relaxed_work_day_weight),
                 compact_part_time_priority=compact_part_time_priority,
                 hard_max_work_days=False,
                 fixed_primary_groups=fixed_primary_groups,
+                quality_profile=quality_profile_name,
+                quality_profile_label=quality_profile_label,
                 progress_callback=relaxed_progress,
             )
             if relaxed_payload.get("status") == "ok":
@@ -5605,22 +5689,7 @@ def main() -> int:
                 payload = relaxed_payload
                 output_bundle = relaxed_bundle
         emit_progress(96, "Verification et ecriture des fichiers")
-        payload["rule_summary"] = build_rule_summary(data, config)
-        print_report(payload)
-        if output_path:
-            save_json(output_path, payload)
-        if csv_path:
-            write_csv(csv_path, payload)
-        if html_path:
-            write_html(html_path, payload, output_bundle)
-        if latest_output_path:
-            save_json(latest_output_path, payload)
-        if latest_csv_path:
-            write_csv(latest_csv_path, payload)
-        if latest_html_path:
-            write_html(latest_html_path, payload, output_bundle)
-        emit_progress(100, "Termine")
-        return 0 if payload["status"] == "ok" else 2
+        return finish_payload(payload, output_bundle)
 
     if solver_engine in {"ortools", "cp-sat", "cpsat"}:
         emit_progress(10, "Calcul OR-Tools CP-SAT")
@@ -5642,22 +5711,7 @@ def main() -> int:
             hint_payload=latest_payload,
         )
         emit_progress(96, "Verification et ecriture des fichiers")
-        payload["rule_summary"] = build_rule_summary(data, config)
-        print_report(payload)
-        if output_path:
-            save_json(output_path, payload)
-        if csv_path:
-            write_csv(csv_path, payload)
-        if html_path:
-            write_html(html_path, payload, output_bundle)
-        if latest_output_path:
-            save_json(latest_output_path, payload)
-        if latest_csv_path:
-            write_csv(latest_csv_path, payload)
-        if latest_html_path:
-            write_html(latest_html_path, payload, output_bundle)
-        emit_progress(100, "Termine")
-        return 0 if payload["status"] == "ok" else 2
+        return finish_payload(payload, output_bundle)
 
     emit_progress(10, "Calcul principal")
     inferred_preferred_groups = infer_preferred_groups_from_payload(data, latest_payload)
@@ -5754,23 +5808,7 @@ def main() -> int:
         else:
             payload["warnings"].append("Variante stabilisee non retenue: elle degrade trop la lisibilite.")
     emit_progress(96, "Verification et ecriture des fichiers")
-    payload["rule_summary"] = build_rule_summary(data, config)
-    print_report(payload)
-
-    if output_path:
-        save_json(output_path, payload)
-    if csv_path:
-        write_csv(csv_path, payload)
-    if html_path:
-        write_html(html_path, payload, bundle)
-    if latest_output_path:
-        save_json(latest_output_path, payload)
-    if latest_csv_path:
-        write_csv(latest_csv_path, payload)
-    if latest_html_path:
-        write_html(latest_html_path, payload, bundle)
-    emit_progress(100, "Termine")
-    return 0 if payload["status"] == "ok" else 2
+    return finish_payload(payload, bundle)
 
 
 if __name__ == "__main__":
