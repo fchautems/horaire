@@ -1,0 +1,601 @@
+{
+    "sites": [
+        {
+            "name": "haut",
+            "open": "06:45",
+            "close": "18:45"
+        },
+        {
+            "name": "bas",
+            "open": "06:45",
+            "close": "18:45"
+        }
+    ],
+    "groups": [
+        {
+            "name": "Nurserie",
+            "site": "bas",
+            "ratio": 1
+        },
+        {
+            "name": "Trotteur",
+            "site": "bas",
+            "ratio": 1
+        },
+        {
+            "name": "Grands",
+            "site": "haut",
+            "ratio": 1
+        }
+    ],
+    "educators": [
+        {
+            "name": "Lucie",
+            "percentage": 75,
+            "type": "EDE"
+        },
+        {
+            "name": "Fanny",
+            "percentage": 100,
+            "type": "EDE"
+        },
+        {
+            "name": "Natacha",
+            "percentage": 60,
+            "type": "APE"
+        },
+        {
+            "name": "Tara",
+            "percentage": 60,
+            "type": "ASE"
+        },
+        {
+            "name": "Gwendoline",
+            "percentage": 25,
+            "type": "EDE"
+        },
+        {
+            "name": "Céline",
+            "percentage": 40,
+            "type": "EDE"
+        },
+        {
+            "name": "Magali",
+            "percentage": 100,
+            "type": "ASE"
+        },
+        {
+            "name": "Léa",
+            "percentage": 80,
+            "type": "ASE"
+        },
+        {
+            "name": "Emilie",
+            "percentage": 80,
+            "type": "EDE"
+        },
+        {
+            "name": "Sarah",
+            "percentage": 50,
+            "type": "EDE"
+        },
+        {
+            "name": "Priscila",
+            "percentage": 100,
+            "type": "ASE"
+        },
+        {
+            "name": "Marine",
+            "percentage": 80,
+            "type": "APE"
+        },
+        {
+            "name": "Laura",
+            "percentage": 65,
+            "type": "ASE"
+        }
+    ],
+    "educator_types": [
+        {
+            "name": "APE",
+            "description": "Autre personnel encadrant"
+        },
+        {
+            "name": "ASE",
+            "description": "Assistant socio-éducatif"
+        },
+        {
+            "name": "EDE",
+            "description": "Éducateur de l'enfance"
+        }
+    ],
+    "rules": [
+        {
+            "id": 1,
+            "type": "time_constraint",
+            "description": "asdf",
+            "params": {
+                "educator_name": "pierre",
+                "day": "Lundi",
+                "start_time": "00:00",
+                "end_time": "00:00",
+                "soft_or_hard": "hard",
+                "positive_or_negative": "negative"
+            }
+        }
+    ],
+    "rules_time": [
+        [
+            "negatif",
+            "soft",
+            "Lucie",
+            "vendredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "positif",
+            "soft",
+            "Céline",
+            "lundi",
+            "11:00",
+            "18:45"
+        ],
+        [
+            "positif",
+            "soft",
+            "Céline",
+            "vendredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Céline",
+            "mercredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Céline",
+            "mardi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Céline",
+            "jeudi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Emilie",
+            "mercredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "positif",
+            "hard",
+            "Gwendoline",
+            "lundi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "positif",
+            "hard",
+            "Gwendoline",
+            "mercredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Gwendoline",
+            "mardi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Gwendoline",
+            "jeudi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Gwendoline",
+            "vendredi",
+            "06:45",
+            "18:45"
+        ]
+    ],
+    "rules_group": [
+        [
+            "positif",
+            "soft",
+            "Natacha",
+            "Grands"
+        ],
+        [
+            "positif",
+            "soft",
+            "Tara",
+            "Grands"
+        ],
+        [
+            "positif",
+            "hard",
+            "Emilie",
+            "Nurserie"
+        ],
+        [
+            "positif",
+            "hard",
+            "Priscila",
+            "Nurserie"
+        ],
+        [
+            "positif",
+            "soft",
+            "Léa",
+            "Trotteur"
+        ]
+    ],
+    "rules_percentage": [
+        [
+            [
+                "EDE"
+            ],
+            "min",
+            40,
+            "haut"
+        ],
+        [
+            [
+                "APE"
+            ],
+            "max",
+            20,
+            "haut"
+        ],
+        [
+            [
+                "EDE",
+                "ASE"
+            ],
+            "min",
+            80,
+            "haut"
+        ],
+        [
+            [
+                "EDE"
+            ],
+            "min",
+            40,
+            "bas"
+        ],
+        [
+            [
+                "APE"
+            ],
+            "max",
+            20,
+            "bas"
+        ],
+        [
+            [
+                "EDE",
+                "ASE"
+            ],
+            "min",
+            80,
+            "bas"
+        ]
+    ],
+    "rules_global": {
+        "max_weekly_hours": 40.0,
+        "max_daily_hours": 8.5
+    },
+    "rules_site_schedule": [
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "06:45",
+                    "end": "07:15",
+                    "group": "Nurserie",
+                    "min_staff": 1
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "07:15",
+                    "end": "08:00",
+                    "group": "Trotteur",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "07:15",
+                    "end": "08:30",
+                    "group": "Nurserie",
+                    "min_staff": 1
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "08:00",
+                    "end": "18:00",
+                    "group": "Trotteur",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "08:30",
+                    "end": "18:00",
+                    "group": "Nurserie",
+                    "min_staff": 2
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "18:00",
+                    "end": "18:45",
+                    "group": "Trotteur",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "18:00",
+                    "end": "18:45",
+                    "group": "Nurserie",
+                    "min_staff": 1
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "06:45",
+                    "end": "08:15",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "08:15",
+                    "end": "18:00",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "18:00",
+                    "end": "18:45",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "lundi",
+                        "mardi",
+                        "jeudi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "11:00",
+                    "end": "12:15",
+                    "group": "Nurserie",
+                    "min_staff": 3
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "11:45",
+                    "end": "12:15",
+                    "group": "Trotteur",
+                    "min_staff": 2,
+                    "days": [
+                        "mercredi",
+                        "vendredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "06:45",
+                    "end": "11:45",
+                    "group": "Trotteur",
+                    "min_staff": 1,
+                    "days": [
+                        "mercredi",
+                        "vendredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "12:15",
+                    "end": "18:45",
+                    "group": "Trotteur",
+                    "min_staff": 1,
+                    "days": [
+                        "mercredi",
+                        "vendredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "06:45",
+                    "end": "11:45",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "mercredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "11:45",
+                    "end": "12:15",
+                    "group": "Grands",
+                    "min_staff": 2,
+                    "days": [
+                        "mercredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "12:15",
+                    "end": "18:45",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "mercredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "06:45",
+                    "end": "14:30",
+                    "group": "Grands",
+                    "min_staff": 2,
+                    "days": [
+                        "vendredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "14:30",
+                    "end": "18:45",
+                    "group": "Grands",
+                    "min_staff": 1,
+                    "days": [
+                        "vendredi"
+                    ]
+                }
+            ]
+        }
+    ],
+    "rules_colloques": [
+        {
+            "group": "Trotteur",
+            "day": "lundi",
+            "start": "13:15",
+            "end": "14:00"
+        },
+        {
+            "group": "Grands",
+            "day": "mardi",
+            "start": "13:15",
+            "end": "14:00"
+        },
+        {
+            "group": "Nurserie",
+            "day": "jeudi",
+            "start": "13:15",
+            "end": "14:00"
+        }
+    ]
+}

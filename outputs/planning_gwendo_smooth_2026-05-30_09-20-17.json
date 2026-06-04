@@ -1,0 +1,806 @@
+{
+  "status": "ok",
+  "objective": -22.4,
+  "solver_message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+  "warnings": [
+    "Affectation globale des groupes introuvable: lissage par jour conserve.",
+    "Variante stabilisee non retenue: elle degrade trop la lisibilite."
+  ],
+  "schedule": {
+    "Lucie": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "10:45",
+          "end": "18:00",
+          "hours": 7.25
+        }
+      ],
+      "mardi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "06:45",
+          "end": "13:45",
+          "hours": 7.0
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:30",
+          "end": "18:45",
+          "hours": 8.25
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "11:15",
+          "end": "18:45",
+          "hours": 7.5
+        }
+      ],
+      "vendredi": []
+    },
+    "Fanny": {
+      "lundi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "08:15",
+          "end": "12:30",
+          "hours": 4.25
+        },
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "13:45",
+          "end": "18:00",
+          "hours": 4.25
+        }
+      ],
+      "mardi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "10:30",
+          "end": "18:15",
+          "hours": 7.75
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:00",
+          "end": "12:30",
+          "hours": 4.5
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "14:00",
+          "end": "18:00",
+          "hours": 4.0
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "11:00",
+          "end": "12:00",
+          "hours": 1.0
+        },
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "12:15",
+          "end": "18:00",
+          "hours": 5.75
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "10:15",
+          "end": "18:00",
+          "hours": 7.75
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "18:00",
+          "end": "18:45",
+          "hours": 0.75
+        }
+      ]
+    },
+    "Natacha": {
+      "lundi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "06:45",
+          "end": "14:15",
+          "hours": 7.5
+        }
+      ],
+      "mardi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "08:15",
+          "end": "12:30",
+          "hours": 4.25
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "07:00",
+          "end": "13:30",
+          "hours": 6.5
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "06:45",
+          "end": "12:30",
+          "hours": 5.75
+        }
+      ],
+      "vendredi": []
+    },
+    "Tara": {
+      "lundi": [],
+      "mardi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "12:45",
+          "end": "18:45",
+          "hours": 6.0
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "08:15",
+          "end": "11:15",
+          "hours": 3.0
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "11:00",
+          "end": "13:15",
+          "hours": 2.25
+        },
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "13:45",
+          "end": "18:45",
+          "hours": 5.0
+        }
+      ]
+    },
+    "Gwendoline": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "06:45",
+          "end": "13:15",
+          "hours": 6.5
+        }
+      ],
+      "mardi": [],
+      "mercredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "14:30",
+          "end": "18:00",
+          "hours": 3.5
+        }
+      ],
+      "jeudi": [],
+      "vendredi": []
+    },
+    "Céline": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:15",
+          "end": "18:45",
+          "hours": 7.5
+        }
+      ],
+      "mardi": [],
+      "mercredi": [],
+      "jeudi": [],
+      "vendredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "08:15",
+          "end": "12:00",
+          "hours": 3.75
+        },
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "13:15",
+          "end": "18:00",
+          "hours": 4.75
+        }
+      ]
+    },
+    "Magali": {
+      "lundi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "10:30",
+          "end": "18:45",
+          "hours": 8.25
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:45",
+          "end": "18:45",
+          "hours": 8.0
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "06:45",
+          "end": "14:30",
+          "hours": 7.75
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:30",
+          "end": "13:15",
+          "hours": 4.75
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "14:15",
+          "end": "15:30",
+          "hours": 1.25
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "15:30",
+          "end": "18:00",
+          "hours": 2.5
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:15",
+          "end": "11:45",
+          "hours": 4.5
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "11:45",
+          "end": "14:45",
+          "hours": 3.0
+        }
+      ]
+    },
+    "Léa": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:15",
+          "end": "11:15",
+          "hours": 4.0
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:45",
+          "end": "14:30",
+          "hours": 6.75
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "06:45",
+          "end": "08:00",
+          "hours": 1.25
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "08:00",
+          "end": "10:30",
+          "hours": 2.5
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:00",
+          "end": "14:15",
+          "hours": 3.25
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:00",
+          "end": "18:00",
+          "hours": 7.0
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:00",
+          "end": "14:15",
+          "hours": 7.25
+        }
+      ]
+    },
+    "Emilie": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:15",
+          "end": "18:45",
+          "hours": 8.5
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "07:00",
+          "end": "13:30",
+          "hours": 6.5
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:15",
+          "end": "18:45",
+          "hours": 8.5
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:15",
+          "end": "11:45",
+          "hours": 3.5
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "13:00",
+          "end": "18:00",
+          "hours": 5.0
+        }
+      ]
+    },
+    "Sarah": {
+      "lundi": [],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:00",
+          "end": "18:15",
+          "hours": 7.25
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "06:45",
+          "end": "08:00",
+          "hours": 1.25
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "08:00",
+          "end": "13:15",
+          "hours": 5.25
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "06:45",
+          "end": "13:00",
+          "hours": 6.25
+        }
+      ]
+    },
+    "Priscila": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "09:45",
+          "end": "18:15",
+          "hours": 8.5
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:30",
+          "end": "11:15",
+          "hours": 2.75
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "12:30",
+          "end": "18:00",
+          "hours": 5.5
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:30",
+          "end": "10:00",
+          "hours": 1.5
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "11:00",
+          "end": "18:00",
+          "hours": 7.0
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:00",
+          "end": "15:30",
+          "hours": 7.5
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:45",
+          "end": "18:00",
+          "hours": 7.25
+        }
+      ]
+    },
+    "Marine": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "08:30",
+          "end": "09:45",
+          "hours": 1.25
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "09:45",
+          "end": "12:15",
+          "hours": 2.5
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "06:45",
+          "end": "07:00",
+          "hours": 0.25
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:00",
+          "end": "11:15",
+          "hours": 4.25
+        },
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "11:15",
+          "end": "12:30",
+          "hours": 1.25
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Nurserie",
+          "start": "10:00",
+          "end": "10:30",
+          "hours": 0.5
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "10:30",
+          "end": "14:00",
+          "hours": 3.5
+        },
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "14:15",
+          "end": "18:45",
+          "hours": 4.5
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:15",
+          "end": "14:15",
+          "hours": 7.0
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:45",
+          "end": "18:45",
+          "hours": 7.0
+        }
+      ]
+    },
+    "Laura": {
+      "lundi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:15",
+          "end": "10:30",
+          "hours": 3.25
+        }
+      ],
+      "mardi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "11:15",
+          "end": "18:45",
+          "hours": 7.5
+        }
+      ],
+      "mercredi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "07:15",
+          "end": "12:00",
+          "hours": 4.75
+        }
+      ],
+      "jeudi": [
+        {
+          "site": "bas",
+          "group": "Trotteur",
+          "start": "15:15",
+          "end": "18:45",
+          "hours": 3.5
+        }
+      ],
+      "vendredi": [
+        {
+          "site": "haut",
+          "group": "Grands",
+          "start": "06:45",
+          "end": "13:45",
+          "hours": 7.0
+        }
+      ]
+    }
+  },
+  "checks": {
+    "hours_by_educator": {
+      "Lucie": 30.0,
+      "Fanny": 40.0,
+      "Natacha": 24.0,
+      "Tara": 24.0,
+      "Gwendoline": 10.0,
+      "Céline": 16.0,
+      "Magali": 40.0,
+      "Léa": 32.0,
+      "Emilie": 32.0,
+      "Sarah": 20.0,
+      "Priscila": 40.0,
+      "Marine": 32.0,
+      "Laura": 26.0
+    },
+    "weekly_targets": {
+      "Lucie": 30.0,
+      "Fanny": 40.0,
+      "Natacha": 24.0,
+      "Tara": 24.0,
+      "Gwendoline": 10.0,
+      "Céline": 16.0,
+      "Magali": 40.0,
+      "Léa": 32.0,
+      "Emilie": 32.0,
+      "Sarah": 20.0,
+      "Priscila": 40.0,
+      "Marine": 32.0,
+      "Laura": 26.0
+    },
+    "hours_by_site": {
+      "haut": 120.5,
+      "bas": 245.5
+    },
+    "hours_by_site_type": {
+      "haut": {
+        "EDE": 49.5,
+        "APE": 24.0,
+        "ASE": 47.0
+      },
+      "bas": {
+        "EDE": 98.5,
+        "ASE": 115.0,
+        "APE": 32.0
+      }
+    },
+    "percentage_rules": [
+      {
+        "site": "haut",
+        "types": [
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 40,
+        "actual_percent": 41.08,
+        "ok": true
+      },
+      {
+        "site": "haut",
+        "types": [
+          "APE"
+        ],
+        "rule": "max",
+        "target_percent": 20,
+        "actual_percent": 19.92,
+        "ok": true
+      },
+      {
+        "site": "haut",
+        "types": [
+          "ASE",
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 80,
+        "actual_percent": 80.08,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 40,
+        "actual_percent": 40.12,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "APE"
+        ],
+        "rule": "max",
+        "target_percent": 20,
+        "actual_percent": 13.03,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "ASE",
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 80,
+        "actual_percent": 86.97,
+        "ok": true
+      }
+    ],
+    "coverage_errors": [],
+    "hard_rule_errors": [],
+    "quality_rule_errors": [
+      "Changement de groupe interdit l'apres-midi: Fanny vendredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Fanny: 2 > 1 (jours: mercredi, vendredi).",
+      "Changement de groupe interdit l'apres-midi: Magali jeudi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Magali vendredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Magali: 2 > 1 (jours: jeudi, vendredi).",
+      "Changement de groupe interdit le matin: Léa mercredi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Sarah jeudi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine lundi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine mardi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine mercredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Marine: 3 > 1 (jours: lundi, mardi, mercredi)."
+    ],
+    "errors": [
+      "Changement de groupe interdit l'apres-midi: Fanny vendredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Fanny: 2 > 1 (jours: mercredi, vendredi).",
+      "Changement de groupe interdit l'apres-midi: Magali jeudi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Magali vendredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Magali: 2 > 1 (jours: jeudi, vendredi).",
+      "Changement de groupe interdit le matin: Léa mercredi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Sarah jeudi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine lundi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine mardi ['Nurserie', 'Trotteur'].",
+      "Changement de groupe interdit le matin: Marine mercredi ['Nurserie', 'Trotteur'].",
+      "Trop de jours avec changement de groupe pour Marine: 3 > 1 (jours: lundi, mardi, mercredi)."
+    ]
+  }
+}

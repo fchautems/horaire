@@ -1,0 +1,97 @@
+{
+  "status": "infeasible_or_not_solved",
+  "solver_message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)",
+  "warnings": [],
+  "diagnostics": [],
+  "rule_summary": {
+    "hard": [
+      {
+        "code": "coverage_minimum",
+        "rule": "Couvrir les besoins minimums par groupe, site et tranche horaire.",
+        "source": "gwendo.json / rules_site_schedule"
+      },
+      {
+        "code": "qualification_percentages",
+        "rule": "Respecter les pourcentages EDE, ASE et APE par site.",
+        "source": "gwendo.json / rules_percentage"
+      },
+      {
+        "code": "time_rules_hard",
+        "rule": "Respecter les obligations et interdictions horaires marquees hard.",
+        "source": "gwendo.json / rules_time"
+      },
+      {
+        "code": "group_rules_hard",
+        "rule": "Respecter les obligations et interdictions de groupe marquees hard.",
+        "source": "gwendo.json / rules_group"
+      },
+      {
+        "code": "max_daily_hours",
+        "rule": "Ne pas depasser 8.5h de travail par jour.",
+        "source": "gwendo.json / rules_global.max_daily_hours"
+      },
+      {
+        "code": "absolute_weekly_cap",
+        "rule": "Ne jamais depasser 40h de travail par semaine.",
+        "source": "solveur_config.json / absolute_max_weekly_hours"
+      },
+      {
+        "code": "weekly_contract_tolerance",
+        "rule": "Rester autour des heures contractuelles avec une tolerance maximale de 3% par paliers de 15 minutes.",
+        "source": "solveur_config.json / weekly_hours_tolerance_percent"
+      },
+      {
+        "code": "the",
+        "rule": "Compter 10% du temps contractuel en THE. Les colloques en font partie; le THE hors colloque est invisible et ne compte pas dans la couverture enfants.",
+        "source": "solveur_config.json / the_percent et gwendo.json / rules_colloques"
+      },
+      {
+        "code": "min_daily_hours",
+        "rule": "Si une personne travaille, eviter les mini-presences: minimum 2h.",
+        "source": "solveur_config.json / min_daily_hours"
+      },
+      {
+        "code": "half_day_group_stability",
+        "rule": "Ne pas changer de groupe dans une meme demi-journee, hors remplacement de colloque.",
+        "source": "solveur_config.json / half_day_split_time"
+      },
+      {
+        "code": "weekly_group_exception_limit",
+        "rule": "Avoir au maximum 1 jour(s) avec changement de groupe par semaine.",
+        "source": "solveur_config.json / max_weekly_group_exception_days"
+      },
+      {
+        "code": "split_gap_limit",
+        "rule": "Si une journee est coupee, la coupure ne doit pas depasser 90 minutes.",
+        "source": "solveur_config.json / smooth_max_split_gap_minutes"
+      },
+      {
+        "code": "colloques",
+        "rule": "Pendant un colloque, le groupe concerne ne compte plus en couverture; une personne de chaque autre groupe remplace; les remplacements comptent dans les pourcentages du site.",
+        "source": "gwendo.json / rules_colloques"
+      }
+    ],
+    "soft": [
+      {
+        "code": "compact_work_days",
+        "rule": "Regrouper les temps partiels sur le moins de jours possible.",
+        "source": "solveur_config.json / compact_work_days"
+      },
+      {
+        "code": "avoid_split_days",
+        "rule": "Eviter les horaires coupes quand une journee continue est possible.",
+        "source": "solveur_config.json / smooth_split_shift_weight"
+      },
+      {
+        "code": "same_group_week",
+        "rule": "Garder autant que possible une personne dans le meme groupe sur la semaine.",
+        "source": "solveur_config.json / smooth_same_group_week_weight"
+      },
+      {
+        "code": "soft_preferences",
+        "rule": "Respecter autant que possible les preferences horaires et de groupe marquees soft.",
+        "source": "gwendo.json / rules_time et rules_group"
+      }
+    ]
+  }
+}
