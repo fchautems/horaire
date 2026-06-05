@@ -2691,14 +2691,19 @@ def verify_solution(
         colloque_the_hours_by_educator[name] = round(colloque_the_total, 2)
         worked_days_by_educator[name] = worked_days
 
-    weekly_targets = {
-        educator["name"]: round(float(educator["percentage"]) / 100.0 * weekly_base, 2)
+    step_hours = bundle.horizon.step / 60.0
+    weekly_target_slots = {
+        educator["name"]: int(round((float(educator["percentage"]) / 100.0 * weekly_base) / step_hours))
         for educator in bundle.educators
+    }
+    weekly_targets = {
+        name: round(target_slots * step_hours, 2)
+        for name, target_slots in weekly_target_slots.items()
     }
     weekly_the_targets: dict[str, float] = {}
     for educator in bundle.educators:
         name = educator["name"]
-        target_slots = int(round(weekly_targets[name] / (bundle.horizon.step / 60.0)))
+        target_slots = weekly_target_slots[name]
         the_slots = the_target_slots(target_slots, the_percent, enabled=the_enabled)
         the_target = the_slots * bundle.horizon.step / 60.0
         visible_the = colloque_the_hours_by_educator.get(name, 0.0)

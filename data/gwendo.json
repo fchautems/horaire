@@ -30,8 +30,8 @@
     ],
     "educators": [
         {
-            "name": "Lucie",
-            "percentage": 75,
+            "name": "A repourvoir",
+            "percentage": 73,
             "type": "EDE"
         },
         {
@@ -41,12 +41,12 @@
         },
         {
             "name": "Natacha",
-            "percentage": 60,
+            "percentage": 55,
             "type": "APE"
         },
         {
             "name": "Tara",
-            "percentage": 60,
+            "percentage": 65,
             "type": "ASE"
         },
         {
@@ -75,8 +75,8 @@
             "type": "EDE"
         },
         {
-            "name": "Sarah",
-            "percentage": 50,
+            "name": "Anaïs",
+            "percentage": 60,
             "type": "EDE"
         },
         {
@@ -85,13 +85,13 @@
             "type": "ASE"
         },
         {
-            "name": "Marine",
-            "percentage": 80,
+            "name": "Valérie",
+            "percentage": 50,
             "type": "APE"
         },
         {
-            "name": "Laura",
-            "percentage": 65,
+            "name": "X",
+            "percentage": 35,
             "type": "ASE"
         }
     ],
@@ -127,30 +127,6 @@
     "rules_time": [
         [
             "negatif",
-            "soft",
-            "Lucie",
-            "vendredi",
-            "06:45",
-            "18:45"
-        ],
-        [
-            "positif",
-            "soft",
-            "Céline",
-            "lundi",
-            "11:00",
-            "18:45"
-        ],
-        [
-            "positif",
-            "soft",
-            "Céline",
-            "vendredi",
-            "06:45",
-            "18:45"
-        ],
-        [
-            "negatif",
             "hard",
             "Céline",
             "mercredi",
@@ -166,7 +142,7 @@
             "18:45"
         ],
         [
-            "negatif",
+            "positif",
             "hard",
             "Céline",
             "jeudi",
@@ -220,6 +196,46 @@
             "vendredi",
             "06:45",
             "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Valérie",
+            "lundi",
+            "14:00",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Valérie",
+            "mercredi",
+            "14:00",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Tara",
+            "mercredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Tara",
+            "vendredi",
+            "06:45",
+            "18:45"
+        ],
+        [
+            "negatif",
+            "hard",
+            "Léa",
+            "vendredi",
+            "06:45",
+            "18:45"
         ]
     ],
     "rules_group": [
@@ -227,7 +243,7 @@
             "positif",
             "soft",
             "Natacha",
-            "Grands"
+            "Trotteur"
         ],
         [
             "positif",
@@ -315,17 +331,6 @@
             "site": "bas",
             "time_intervals": [
                 {
-                    "start": "06:45",
-                    "end": "07:15",
-                    "group": "Nurserie",
-                    "min_staff": 1
-                }
-            ]
-        },
-        {
-            "site": "bas",
-            "time_intervals": [
-                {
                     "start": "07:15",
                     "end": "08:00",
                     "group": "Trotteur",
@@ -342,7 +347,7 @@
             "site": "bas",
             "time_intervals": [
                 {
-                    "start": "07:15",
+                    "start": "06:45",
                     "end": "08:30",
                     "group": "Nurserie",
                     "min_staff": 1
@@ -356,7 +361,7 @@
                     "start": "08:00",
                     "end": "18:00",
                     "group": "Trotteur",
-                    "min_staff": 1,
+                    "min_staff": 2,
                     "days": [
                         "lundi",
                         "mardi",
@@ -370,6 +375,17 @@
             "time_intervals": [
                 {
                     "start": "08:30",
+                    "end": "11:00",
+                    "group": "Nurserie",
+                    "min_staff": 2
+                }
+            ]
+        },
+        {
+            "site": "bas",
+            "time_intervals": [
+                {
+                    "start": "12:15",
                     "end": "18:00",
                     "group": "Nurserie",
                     "min_staff": 2
@@ -413,7 +429,6 @@
                     "min_staff": 1,
                     "days": [
                         "lundi",
-                        "mardi",
                         "jeudi"
                     ]
                 }
@@ -426,10 +441,9 @@
                     "start": "08:15",
                     "end": "18:00",
                     "group": "Grands",
-                    "min_staff": 1,
+                    "min_staff": 2,
                     "days": [
                         "lundi",
-                        "mardi",
                         "jeudi"
                     ]
                 }
@@ -445,7 +459,6 @@
                     "min_staff": 1,
                     "days": [
                         "lundi",
-                        "mardi",
                         "jeudi"
                     ]
                 }
@@ -481,7 +494,7 @@
             "site": "bas",
             "time_intervals": [
                 {
-                    "start": "06:45",
+                    "start": "07:15",
                     "end": "11:45",
                     "group": "Trotteur",
                     "min_staff": 1,
@@ -554,10 +567,11 @@
             "time_intervals": [
                 {
                     "start": "06:45",
-                    "end": "14:30",
+                    "end": "08:15",
                     "group": "Grands",
-                    "min_staff": 2,
+                    "min_staff": 1,
                     "days": [
+                        "mardi",
                         "vendredi"
                     ]
                 }
@@ -572,6 +586,22 @@
                     "group": "Grands",
                     "min_staff": 1,
                     "days": [
+                        "mardi",
+                        "vendredi"
+                    ]
+                }
+            ]
+        },
+        {
+            "site": "haut",
+            "time_intervals": [
+                {
+                    "start": "08:15",
+                    "end": "14:30",
+                    "group": "Grands",
+                    "min_staff": 2,
+                    "days": [
+                        "mardi",
                         "vendredi"
                     ]
                 }

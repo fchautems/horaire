@@ -12,6 +12,15 @@ from tkinter import filedialog, messagebox
 import tkinter as tk
 from tkinter import ttk
 
+from .domain import (
+    DAYS as DOMAIN_DAYS,
+    build_demands_by_day,
+    make_horizon,
+    max_work_days_for_educator,
+    parse_colloques,
+    the_target_slots,
+    weekly_tolerance_slots,
+)
 from .quality import format_quality_summary_lines
 
 
@@ -490,6 +499,11 @@ def time_minutes(value: str) -> int:
     return int(hour) * 60 + int(minute)
 
 
+def format_minutes(value: int) -> str:
+    hour, minute = divmod(value, 60)
+    return f"{hour:02d}:{minute:02d}"
+
+
 class RowDialog(tk.Toplevel):
     def __init__(self, parent: "CrecheEditor", title: str, fields: tuple[FieldSpec, ...], values: dict[str, str] | None):
         super().__init__(parent)
@@ -647,6 +661,373 @@ class TablePage(ttk.Frame):
                 return "1"
             if field.key == "min_staff":
                 return "1"
+            return ""
+        choices = self.parent.choices_for(field)
+        if choices:
+            return choices[0]
+        return ""
+
+
+class StaffingPage(ttk.Frame):
+    def __init__(self, parent: "CrecheEditor", spec: TableSpec):
+        super().__init__(parent.notebook)
+        self.parent = parent
+        self.spec = spec
+        self.rows: list[dict[str, str]] = []
+        self.site_filter = tk.StringVar(value="Tous")
+        self.group_filter = tk.StringVar(value="Tous")
+        self.summary = tk.StringVar()
+
+        toolbar = ttk.Frame(self, padding=(8, 8, 8, 4))
+        toolbar.pack(fill="x")
+        ttk.Button(toolbar, text="Ajouter", command=self.add_row).pack(side="left")
+        ttk.Button(toolbar, text="Modifier", command=self.edit_selected).pack(side="left", padx=(6, 0))
+        ttk.Button(toolbar, text="Dupliquer", command=self.duplicate_selected).pack(side="left", padx=(6, 0))
+        ttk.Button(toolbar, text="Supprimer", command=self.delete_selected).pack(side="left", padx=(6, 0))
+
+        filters = ttk.Frame(self, padding=(8, 0, 8, 6))
+        filters.pack(fill="x")
+        ttk.Label(filters, text="Site").pack(side="left")
+        self.site_combo = ttk.Combobox(filters, textvariable=self.site_filter, state="readonly", width=16)
+        self.site_combo.pack(side="left", padx=(6, 14))
+        ttk.Label(filters, text="Groupe").pack(side="left")
+        self.group_combo = ttk.Combobox(filters, textvariable=self.group_filter, state="readonly", width=18)
+        self.group_combo.pack(side="left", padx=(6, 14))
+        ttk.Button(filters, text="Tous", command=self.clear_filters).pack(side="left")
+        ttk.Label(filters, textvariable=self.summary).pack(side="right")
+        self.site_combo.bind("<<ComboboxSelected>>", lambda _event: self.refresh())
+        self.group_combo.bind("<<ComboboxSelected>>", lambda _event: self.refresh())
+
+        columns = (
+            "site",
+            "group",
+            "days",
+            "start",
+            "end",
+            "lundi",
+            "mardi",
+            "mercredi",
+            "jeudi",
+            "vendredi",
+            "max_staff",
+        )
+        headings = {
+            "site": "Site",
+            "group": "Groupe",
+            "days": "Jours",
+            "start": "Debut",
+            "end": "Fin",
+            "lundi": "Lun",
+            "mardi": "Mar",
+            "mercredi": "Mer",
+            "jeudi": "Jeu",
+            "vendredi": "Ven",
+            "max_staff": "Max",
+        }
+        self.tree = ttk.Treeview(self, columns=columns, show="headings", selectmode="browse")
+        for column in columns:
+            self.tree.heading(column, text=headings[column])
+            width = 70 if column in DAYS else 95
+            if column in {"site", "start", "end", "max_staff"}:
+                width = 80
+            if column == "days":
+                width = 140
+            if column == "group":
+                width = 135
+            self.tree.column(column, width=width, minwidth=55, stretch=column in {"site", "group"})
+        self.tree.pack(side="left", fill="both", expand=True, padx=(8, 0), pady=(0, 8))
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y", pady=(0, 8), padx=(0, 8))
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        self.tree.bind("<Double-1>", lambda _event: self.edit_selected())
+        self.tree.bind("<Delete>", lambda _event: self.delete_selected())
+        self.tree.bind("<<TreeviewSelect>>", lambda _event: self.refresh_continuity())
+
+        checks_frame = ttk.LabelFrame(self, text="Continuite des plages", padding=(8, 4))
+        checks_frame.pack(fill="x", padx=8, pady=(0, 8))
+        self.continuity_text = tk.Text(checks_frame, height=7, wrap="word")
+        self.continuity_text.pack(fill="x", expand=True)
+        self.continuity_text.configure(state="disabled")
+
+    def load_from_data(self, data: dict) -> None:
+        self.rows = rows_from_data(data, self.spec.name)
+        self.refresh()
+
+    def write_to_data(self, data: dict) -> None:
+        rows_to_data(data, self.spec.name, self.rows)
+
+    def refresh_filters(self) -> None:
+        site_values = ["Tous"] + self.parent.names_for("sites")
+        group_values = ["Tous"] + self.parent.names_for("groups")
+        self.site_combo.configure(values=site_values)
+        self.group_combo.configure(values=group_values)
+        if self.site_filter.get() not in site_values:
+            self.site_filter.set("Tous")
+        if self.group_filter.get() not in group_values:
+            self.group_filter.set("Tous")
+
+    def refresh(self) -> None:
+        self.refresh_filters()
+        self.tree.delete(*self.tree.get_children())
+        displayed_rows: list[dict[str, str]] = []
+        indexed_rows = sorted(enumerate(self.rows), key=lambda item: self.sort_key(item[1], item[0]))
+        for index, row in indexed_rows:
+            if not self.row_matches_filters(row):
+                continue
+            displayed_rows.append(row)
+            self.tree.insert("", "end", iid=str(index), values=self.display_values(row))
+        self.update_summary(displayed_rows)
+        self.refresh_continuity(displayed_rows)
+
+    def sort_key(self, row: dict[str, str], index: int) -> tuple[str, str, tuple[int, ...], int, int, int]:
+        try:
+            start = time_minutes(row.get("start", ""))
+        except Exception:
+            start = 9999
+        try:
+            end = time_minutes(row.get("end", ""))
+        except Exception:
+            end = 9999
+        selected_days = days_from_value(row.get("days", ""))
+        active_days = DAYS if not selected_days else selected_days
+        day_key = tuple(DAYS.index(day) for day in active_days if day in DAYS)
+        return (
+            row.get("site", ""),
+            row.get("group", ""),
+            day_key,
+            start,
+            end,
+            index,
+        )
+
+    def row_matches_filters(self, row: dict[str, str]) -> bool:
+        site = self.site_filter.get()
+        group = self.group_filter.get()
+        if site != "Tous" and row.get("site", "") != site:
+            return False
+        if group != "Tous" and row.get("group", "") != group:
+            return False
+        return True
+
+    def display_values(self, row: dict[str, str]) -> tuple[str, ...]:
+        selected_days = set(days_from_value(row.get("days", "")))
+        active_days = set(DAYS) if not selected_days else selected_days
+        min_staff = row.get("min_staff", "")
+        max_staff = row.get("max_staff", "")
+        return (
+            row.get("site", ""),
+            row.get("group", ""),
+            format_days(row.get("days", "")),
+            row.get("start", ""),
+            row.get("end", ""),
+            *(min_staff if day in active_days else "" for day in DAYS),
+            max_staff,
+        )
+
+    def update_summary(self, rows: list[dict[str, str]]) -> None:
+        total_hours = 0.0
+        for row in rows:
+            try:
+                duration = max(0, time_minutes(row.get("end", "")) - time_minutes(row.get("start", ""))) / 60.0
+            except Exception:
+                duration = 0.0
+            days = days_from_value(row.get("days", ""))
+            day_count = len(days) if days else len(DAYS)
+            total_hours += duration * day_count * parse_int(row.get("min_staff"), 0)
+        weekly_base = parse_float(self.parent.data.get("rules_global", {}).get("max_weekly_hours"), 40.0)
+        educator_hours = sum(
+            parse_float(educator.get("percentage"), 0.0) * weekly_base / 100.0
+            for educator in self.parent.data.get("educators", [])
+        )
+        self.summary.set(
+            f"{len(rows)} plage(s), {total_hours:.2f} h minimum affichees, "
+            f"{educator_hours:.2f} h educatrices/semaine"
+        )
+
+    def focused_continuity_rows(self, displayed_rows: list[dict[str, str]] | None = None) -> list[dict[str, str]]:
+        index = self.selected_index()
+        if index is not None and 0 <= index < len(self.rows):
+            selected = self.rows[index]
+            site = selected.get("site", "")
+            group = selected.get("group", "")
+            return [
+                row
+                for row in self.rows
+                if row.get("site", "") == site and row.get("group", "") == group
+            ]
+        if self.group_filter.get() != "Tous":
+            source = displayed_rows if displayed_rows is not None else self.rows
+            return [row for row in source if self.row_matches_filters(row)]
+        return []
+
+    def refresh_continuity(self, displayed_rows: list[dict[str, str]] | None = None) -> None:
+        self.update_continuity(self.focused_continuity_rows(displayed_rows))
+
+    def update_continuity(self, rows: list[dict[str, str]]) -> None:
+        if not rows:
+            self.set_continuity_text(
+                "Selectionne une ligne, ou filtre un groupe, pour voir la continuite jour par jour."
+            )
+            return
+
+        warnings: list[str] = []
+        lines: list[str] = []
+        by_key: dict[tuple[str, str, str], list[tuple[int, int, int]]] = {}
+        for row in rows:
+            try:
+                start = time_minutes(row.get("start", ""))
+                end = time_minutes(row.get("end", ""))
+            except Exception:
+                continue
+            if end <= start:
+                warnings.append(
+                    f"{row.get('site', '')}/{row.get('group', '')}: plage invalide "
+                    f"{row.get('start', '')}-{row.get('end', '')}."
+                )
+                continue
+            selected_days = days_from_value(row.get("days", ""))
+            active_days = DAYS if not selected_days else selected_days
+            staff = parse_int(row.get("min_staff"), 0)
+            for day in active_days:
+                by_key.setdefault((row.get("site", ""), row.get("group", ""), day), []).append((start, end, staff))
+
+        current_header: tuple[str, str] | None = None
+        for (site, group, day), intervals in sorted(
+            by_key.items(),
+            key=lambda item: (item[0][0], item[0][1], DAYS.index(item[0][2])),
+        ):
+            header = (site, group)
+            if header != current_header:
+                if current_header is not None:
+                    lines.append("")
+                lines.append(f"{site}/{group}")
+                current_header = header
+            timeline, day_issues = self.effective_day_timeline(intervals)
+            warnings.extend(f"{site}/{group} {DAY_SHORT_LABELS[day]}: {issue}" for issue in day_issues)
+            lines.append(f"- {DAY_SHORT_LABELS[day]}: {timeline}")
+
+        text = "\n".join(lines)
+        if warnings:
+            text += "\n\nWarnings:\n" + "\n".join(f"- {warning}" for warning in warnings[:10])
+            if len(warnings) > 10:
+                text += f"\n- ... {len(warnings) - 10} autre(s) warning(s)."
+        else:
+            text += "\n\nWarnings: aucun trou ni chevauchement detecte."
+        self.set_continuity_text(text)
+
+    def effective_day_timeline(self, intervals: list[tuple[int, int, int]]) -> tuple[str, list[str]]:
+        intervals = sorted(intervals, key=lambda item: (item[0], item[1]))
+        points = sorted({value for start, end, _staff in intervals for value in (start, end)})
+        if len(points) < 2:
+            return "aucune plage", ["aucune plage"]
+
+        raw_segments: list[tuple[int, int, int, int]] = []
+        issues: list[str] = []
+        for start, end in zip(points, points[1:]):
+            if end <= start:
+                continue
+            active = [staff for row_start, row_end, staff in intervals if row_start <= start and row_end >= end]
+            staff = max(active) if active else 0
+            raw_segments.append((start, end, staff, len(active)))
+            if staff == 0:
+                issues.append(f"TROU {format_minutes(start)}-{format_minutes(end)}")
+            elif len(active) > 1:
+                issue_detail = ", ".join(str(value) for value in sorted(active))
+                issues.append(
+                    f"CHEVAUCHEMENT {format_minutes(start)}-{format_minutes(end)} "
+                    f"({len(active)} plages: {issue_detail}; besoin retenu {staff})"
+                )
+
+        merged: list[tuple[int, int, int, int]] = []
+        for start, end, staff, active_count in raw_segments:
+            if (
+                not merged
+                or merged[-1][2] != staff
+                or merged[-1][3] != active_count
+                or merged[-1][1] != start
+            ):
+                merged.append((start, end, staff, active_count))
+            else:
+                previous_start, _previous_end, previous_staff, previous_count = merged[-1]
+                merged[-1] = (previous_start, end, previous_staff, previous_count)
+
+        visible_parts = [
+            f"{format_minutes(start)}-{format_minutes(end)}: {staff}"
+            if staff
+            else f"{format_minutes(start)}-{format_minutes(end)}: TROU"
+            for start, end, staff, _active_count in merged
+        ]
+        return " | ".join(visible_parts), issues
+
+    def set_continuity_text(self, text: str) -> None:
+        self.continuity_text.configure(state="normal")
+        self.continuity_text.delete("1.0", "end")
+        self.continuity_text.insert("1.0", text)
+        self.continuity_text.configure(state="disabled")
+
+    def selected_index(self) -> int | None:
+        selection = self.tree.selection()
+        if not selection:
+            return None
+        return int(selection[0])
+
+    def clear_filters(self) -> None:
+        self.site_filter.set("Tous")
+        self.group_filter.set("Tous")
+        self.refresh()
+
+    def add_row(self) -> None:
+        values = {field.key: self.default_for(field) for field in self.spec.fields}
+        dialog = RowDialog(self.parent, f"Ajouter - {self.spec.title}", self.spec.fields, values)
+        self.parent.wait_window(dialog)
+        if dialog.result is not None:
+            self.rows.append(dialog.result)
+            self.refresh()
+            self.parent.mark_dirty()
+
+    def edit_selected(self) -> None:
+        index = self.selected_index()
+        if index is None:
+            messagebox.showinfo("Selection", "Selectionne une plage a modifier.")
+            return
+        dialog = RowDialog(self.parent, f"Modifier - {self.spec.title}", self.spec.fields, self.rows[index])
+        self.parent.wait_window(dialog)
+        if dialog.result is not None:
+            self.rows[index] = dialog.result
+            self.refresh()
+            self.parent.mark_dirty()
+
+    def duplicate_selected(self) -> None:
+        index = self.selected_index()
+        if index is None:
+            messagebox.showinfo("Selection", "Selectionne une plage a dupliquer.")
+            return
+        self.rows.insert(index + 1, dict(self.rows[index]))
+        self.refresh()
+        self.parent.mark_dirty()
+
+    def delete_selected(self) -> None:
+        index = self.selected_index()
+        if index is None:
+            messagebox.showinfo("Selection", "Selectionne une plage a supprimer.")
+            return
+        if messagebox.askyesno("Supprimer", "Supprimer la plage selectionnee ?"):
+            del self.rows[index]
+            self.refresh()
+            self.parent.mark_dirty()
+
+    def default_for(self, field: FieldSpec) -> str:
+        if field.key == "site" and self.site_filter.get() != "Tous":
+            return self.site_filter.get()
+        if field.key == "group" and self.group_filter.get() != "Tous":
+            return self.group_filter.get()
+        if field.field_type == "days":
+            return "tous"
+        if field.field_type == "time":
+            return "06:45" if field.key == "start" else "18:45"
+        if field.key == "min_staff":
+            return "1"
+        if field.key == "max_staff":
             return ""
         choices = self.parent.choices_for(field)
         if choices:
@@ -1051,7 +1432,7 @@ class CrecheEditor(tk.Tk):
         self.path = path
         self.data = load_json(path) if path and path.exists() else new_data()
         self.dirty = False
-        self.pages: dict[str, TablePage] = {}
+        self.pages: dict[str, TablePage | StaffingPage] = {}
 
         self.create_menu()
         self.create_toolbar()
@@ -1063,7 +1444,7 @@ class CrecheEditor(tk.Tk):
         self.notebook.add(self.summary, text="Resume")
 
         for spec in TABLE_SPECS:
-            page = TablePage(self, spec)
+            page = StaffingPage(self, spec) if spec.name == "rules_site_schedule" else TablePage(self, spec)
             self.pages[spec.name] = page
             self.notebook.add(page, text=spec.title)
 
@@ -1192,6 +1573,17 @@ class CrecheEditor(tk.Tk):
             self.load_pages()
         else:
             self.collect_from_pages()
+        validation_warnings, validation_errors = self.validate_data()
+        if validation_errors:
+            message = (
+                f"Le fichier contient {len(validation_errors)} erreur(s) de validation.\n"
+                "Voir l'onglet Resume pour le detail."
+            )
+            if not show_confirmation:
+                messagebox.showerror("Validation", message)
+                return False
+            if not messagebox.askyesno("Validation", f"{message}\n\nEnregistrer quand meme ?"):
+                return False
         try:
             save_json(self.path, self.data)
         except Exception as exc:
@@ -1202,7 +1594,12 @@ class CrecheEditor(tk.Tk):
         self.update_summary()
         self.set_status(f"JSON enregistre: {self.path}")
         if show_confirmation:
-            messagebox.showinfo("Enregistrement", f"JSON enregistre:\n{self.path}")
+            warning_text = (
+                f"\n\nAttention: {len(validation_warnings)} avertissement(s) dans l'onglet Resume."
+                if validation_warnings
+                else ""
+            )
+            messagebox.showinfo("Enregistrement", f"JSON enregistre:\n{self.path}{warning_text}")
         return True
 
     def save_as(self) -> bool:
@@ -1327,6 +1724,108 @@ class CrecheEditor(tk.Tk):
             if not is_time(start) or not is_time(end):
                 errors.append(f"Colloque {group}: heures invalides.")
 
+        if not errors:
+            coherence_warnings, coherence_errors = self.validate_constraint_coherence()
+            warnings.extend(coherence_warnings)
+            errors.extend(coherence_errors)
+
+        return warnings, errors
+
+    def validate_constraint_coherence(self) -> tuple[list[str], list[str]]:
+        warnings: list[str] = []
+        errors: list[str] = []
+        groups = list(self.data.get("groups", []))
+        educators = list(self.data.get("educators", []))
+        if not groups or not educators:
+            return warnings, errors
+        try:
+            horizon = make_horizon(self.data)
+            group_demand, site_demand = build_demands_by_day(self.data, groups, horizon)
+            config_path = find_solver_config(self.path)
+            config = load_solver_config(config_path)
+            weekly_base = float(self.data.get("rules_global", {}).get("max_weekly_hours", 40.0))
+            step_hours = horizon.step / 60.0
+            absolute_max = config.get("absolute_max_weekly_hours", 40.0)
+            absolute_max_slots = None if absolute_max is None else int(float(absolute_max) / step_hours)
+            tolerance_percent = float(config.get("weekly_hours_tolerance_percent", 3.0))
+            tolerance_minutes = config.get("weekly_hours_tolerance_minutes")
+            tolerance_step = config.get("weekly_hours_tolerance_step_minutes", 15)
+            the_enabled = bool(config.get("the_enabled", True))
+            the_percent = float(config.get("the_percent", 10.0))
+
+            demand_slots = 0
+            group_by_site = {
+                site: [g_i for g_i, group in enumerate(groups) if group.get("site") == site]
+                for site in {str(group.get("site", "")) for group in groups}
+            }
+            for d_i in range(len(DOMAIN_DAYS)):
+                for g_i in range(len(groups)):
+                    for slot in range(horizon.slots):
+                        demand_slots += group_demand[(d_i, g_i, slot)]
+                for (site_d_i, site, slot), site_minimum in site_demand.items():
+                    if site_d_i != d_i:
+                        continue
+                    group_total = sum(
+                        group_demand[(d_i, g_i, slot)]
+                        for g_i in group_by_site.get(site, [])
+                    )
+                    demand_slots += max(0, int(site_minimum) - group_total)
+
+            capacity_slots = 0
+            for educator in educators:
+                target_hours = parse_float(educator.get("percentage"), 0.0) / 100.0 * weekly_base
+                target_slots = int(round(target_hours / step_hours))
+                tolerance_slots = weekly_tolerance_slots(
+                    target_hours,
+                    horizon,
+                    percent=tolerance_percent,
+                    minutes=None if tolerance_minutes is None else int(tolerance_minutes),
+                    step_minutes=None if tolerance_step is None else int(tolerance_step),
+                )
+                upper_slots = target_slots + tolerance_slots
+                if absolute_max_slots is not None:
+                    upper_slots = min(upper_slots, absolute_max_slots)
+                the_slots = the_target_slots(target_slots, the_percent, enabled=the_enabled)
+                capacity_slots += max(0, upper_slots - the_slots)
+
+            margin_slots = capacity_slots - demand_slots
+            demand_hours = demand_slots * step_hours
+            capacity_hours = capacity_slots * step_hours
+            margin_hours = margin_slots * step_hours
+            if margin_slots < 0:
+                errors.append(
+                    "Capacite enfants insuffisante: "
+                    f"besoin minimum {demand_hours:.2f}h, capacite max estimee {capacity_hours:.2f}h."
+                )
+            elif demand_slots and margin_slots < max(40, int(demand_slots * 0.05)):
+                warnings.append(
+                    "Marge de couverture tres faible: "
+                    f"{margin_hours:.2f}h au-dessus du minimum. "
+                    "Si une ligne de staffing est trop haute, le solveur peut devenir impossible."
+                )
+
+            colloque_parse_warnings: list[str] = []
+            colloques = parse_colloques(self.data, horizon, groups, colloque_parse_warnings)
+            warnings.extend(colloque_parse_warnings)
+            for colloque in colloques:
+                target_g = int(colloque["group_i"])
+                d_i = int(colloque["day_i"])
+                for slot in colloque["slots"]:
+                    for source_g in range(len(groups)):
+                        if source_g == target_g:
+                            continue
+                        source_demand = group_demand[(d_i, source_g, int(slot))]
+                        needed_with_replacement = source_demand + 1
+                        solver_group_cap = max(3, source_demand)
+                        if needed_with_replacement > solver_group_cap:
+                            errors.append(
+                                "Colloque impossible: "
+                                f"{groups[target_g]['name']} demande un remplacement depuis "
+                                f"{groups[source_g]['name']}, mais ce groupe a deja besoin de "
+                                f"{source_demand} personne(s) au meme moment."
+                            )
+        except Exception as exc:
+            warnings.append(f"Controle de coherence non calcule: {exc}")
         return warnings, errors
 
     def update_summary(self) -> None:
