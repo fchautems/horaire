@@ -119,6 +119,7 @@ DEFAULT_RUN_CONFIG = {
     "smooth_split_shift_weight": 120.0,
     "smooth_split_gap_weight": 4.0,
     "max_pause_between_blocks_minutes": 90,
+    "enforce_max_pause_between_blocks": False,
     "smooth_max_split_gap_minutes": 90,
     "smooth_group_switch_day_weight": 8.0,
     "smooth_same_group_week_weight": 0.4,
@@ -139,7 +140,7 @@ DEFAULT_RUN_CONFIG = {
     "the_percent": 10.0,
     "the_colloques_count": True,
     "the_regular_is_invisible": True,
-    "fix_primary_groups_from_latest": True,
+    "fix_primary_groups_from_latest": False,
     "weekly_stability": True,
     "primary_group": {
         "report_enabled": True,
@@ -154,9 +155,13 @@ DEFAULT_RUN_CONFIG = {
     "main_site_day_weight": 100.0,
     "half_day_split_time": "12:30",
     "max_weekly_group_exception_days": 1,
+    "restricted_patterns": False,
+    "restricted_pattern_mode": "continuous_halfday_groups",
     "structured": False,
     "max_blocks_per_day": 2,
     "min_daily_hours": 2.0,
+    "enforce_min_daily_hours": False,
+    "short_day_penalty_weight": 30.0,
     "type_aliases": {},
 }
 

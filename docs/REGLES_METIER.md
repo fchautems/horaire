@@ -38,27 +38,21 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
    Chaque educateur a `the_percent` de son temps contractuel en THE, actuellement `10%`. Les colloques font partie du THE. Le THE hors colloque est invisible dans le planning et ne compte pas dans la couverture enfants.
 
-9. Minimum de journee
-
-   Si une personne travaille un jour, elle doit faire au moins `min_daily_hours`, pour eviter les mini-presences.
-
-10. Stabilite par demi-journee
+9. Stabilite par demi-journee
 
    Une personne ne doit pas changer de groupe dans une meme demi-journee. Les remplacements de colloque sont l'exception.
 
-11. Changements de groupe dans la semaine
+10. Changements de groupe dans la semaine
 
    Une personne ne peut avoir qu'un nombre limite de jours avec changement de groupe, configure par `max_weekly_group_exception_days`.
+   Les personnes marquees comme ne participant pas aux colloques peuvent etre utilisees plus souplement.
 
-12. Coupures
-
-   Si une journee est coupee, la coupure ne doit pas depasser `smooth_max_split_gap_minutes`, actuellement `90 minutes`.
-
-13. Groupes principaux et colloques
+11. Groupes principaux et colloques
 
    Chaque educateur a un groupe principal. Le jour du colloque de ce groupe, il doit travailler dans ce groupe et participer au colloque complet. Le colloque compte comme THE et ne compte pas comme couverture enfants.
+   Une personne peut etre marquee comme ne participant pas aux colloques; dans ce cas elle garde son THE, mais n'a pas de colloque visible obligatoire.
 
-14. Remplacements de colloque
+12. Remplacements de colloque
 
    Pendant un colloque, les personnes du groupe concerne ne couvrent plus les enfants. Une personne de chaque autre groupe vient remplacer. Ces remplacements ne comptent pas comme changements de groupe, mais comptent bien pour la couverture et les pourcentages du site.
 
@@ -67,8 +61,10 @@ Un planning marque `OK` doit respecter toutes ces regles.
 Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire pour respecter les regles hard.
 
 1. Eviter les horaires coupes.
-2. Garder les personnes dans le meme groupe sur la semaine.
-3. Regrouper les temps partiels sur le moins de jours possible.
-4. Respecter les preferences horaires et de groupe marquees `soft`.
-5. Eviter les changements de site.
-6. Eviter de faire venir une personne uniquement pour un colloque de 45 minutes.
+2. Si une coupure est necessaire, la garder aussi courte que possible; `max_pause_between_blocks_minutes` sert de seuil de reference.
+3. Eviter les journees de moins de `min_daily_hours`, actuellement `2 heures`, sans les interdire.
+4. Garder les personnes dans le meme groupe sur la semaine.
+5. Regrouper les temps partiels sur le moins de jours possible.
+6. Respecter les preferences horaires et de groupe marquees `soft`.
+7. Eviter les changements de site.
+8. Eviter de faire venir une personne uniquement pour un colloque de 45 minutes.

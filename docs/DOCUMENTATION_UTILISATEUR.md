@@ -171,7 +171,7 @@ Le jour du colloque du groupe principal, l'educateur doit travailler dans ce gro
 
 Les remplacements de colloque restent separes : pendant un colloque, une personne de chaque autre groupe vient couvrir le groupe concerne. Ces remplacements comptent dans la couverture enfants et dans les pourcentages du site.
 
-Avec le parametre actuel `min_daily_hours: 2`, une personne forcee a travailler un jour ne recevra pas une mini-presence de 15 minutes : si elle travaille, elle doit faire au moins 2 heures ce jour-la.
+Avec le parametre actuel `min_daily_hours: 2`, les journees plus courtes que 2 heures sont fortement penalisees, mais restent possibles pour un remplacement exceptionnel.
 
 ## 3. Point verifie : types d'educateurs
 
@@ -446,10 +446,10 @@ Tolerance acceptee au controle final sur les heures hebdomadaires.
 Valeur actuelle :
 
 ```json
-"weekly_hours_tolerance_percent": 3.0
+"weekly_hours_tolerance_percent": 5.0
 ```
 
-Exemple : pour un contrat a 30 h, `3.0` donne une tolerance theorique de 54 minutes. Avec le palier actuel de 15 minutes, le programme retient 45 minutes afin de ne pas depasser la limite de 3%.
+Exemple : pour un contrat a 30 h, `5.0` donne une tolerance theorique de 1h30. Avec le palier actuel de 15 minutes, le programme retient 1h30.
 
 Le solveur continue a chercher un planning proche du taux contractuel. La tolerance sert a laisser de la souplesse quand les contraintes de couverture, de groupe et de colloque l'exigent.
 
@@ -527,15 +527,17 @@ Ce parametre documente le choix metier actuel : le planning visuel montre les pr
 
 ### `fix_primary_groups_from_latest`
 
-Utilise le dernier planning calcule pour proposer les groupes principaux de depart.
+Utilise le dernier planning calcule pour fixer les groupes principaux de depart.
 
 Valeur actuelle :
 
 ```json
-"fix_primary_groups_from_latest": true
+"fix_primary_groups_from_latest": false
 ```
 
-Ce reglage rend le calcul beaucoup plus rapide. Le programme garde ces groupes quand ils sont compatibles avec les regles hard et les jours de colloque. Si un groupe suggere est impossible, par exemple parce que la personne est indisponible le jour du colloque, il l'ignore et choisit un groupe compatible.
+Avec la valeur actuelle, le solveur ne se base pas sur un ancien planning. Les groupes principaux sont choisis dans le calcul courant, a partir des regles hard, des regles soft et du cout global.
+
+Mettre ce parametre a `true` peut accelerer un recalcul, mais cela fige davantage le resultat et peut cacher une meilleure solution.
 
 ### `enforce_absolute_max_weekly_hours`
 
@@ -595,17 +597,31 @@ Valeur actuelle :
 
 Ce parametre sert surtout quand un horaire coupe est inevitable. Le solveur essaie alors de faire la coupure la plus courte possible.
 
-### `smooth_max_split_gap_minutes`
+### `max_pause_between_blocks_minutes`
 
-Duree maximale autorisee pour une coupure.
+Seuil de reference pour une coupure longue.
 
 Valeur actuelle :
 
 ```json
-"smooth_max_split_gap_minutes": 90
+"max_pause_between_blocks_minutes": 120
 ```
 
-Avec cette valeur, si une journee doit etre coupee, la coupure ne doit pas depasser 1h30. Le controle final signale aussi toute coupure plus longue qui resterait dans le planning.
+Avec la configuration actuelle, une coupure de plus de 2h reste possible, mais elle est fortement penalisee. Le solveur ne doit l'utiliser que si elle aide a respecter les contraintes hard et le nombre maximal de jours.
+
+L'ancien nom `smooth_max_split_gap_minutes` est encore accepte, mais `max_pause_between_blocks_minutes` est le reglage prioritaire quand il est present.
+
+### `enforce_max_pause_between_blocks`
+
+Transforme le seuil precedent en interdiction stricte.
+
+Valeur actuelle :
+
+```json
+"enforce_max_pause_between_blocks": false
+```
+
+Avec `false`, les coupures longues sont autorisees mais couteuses. Avec `true`, toute coupure depassant `max_pause_between_blocks_minutes` rend le planning invalide.
 
 ### `smooth_group_switch_day_weight`
 
@@ -629,7 +645,7 @@ Valeur actuelle :
 "smooth_same_group_week_weight": 0.4
 ```
 
-Le programme choisit d'abord un groupe principal pour chaque educateur. Il utilise les regles de groupe positives s'il y en a, sinon il regarde le groupe dans lequel l'educateur travaille le plus dans la premiere solution. Ensuite, pendant le lissage, il penalise les affectations dans les autres groupes.
+Le programme choisit un groupe principal pour chaque educateur dans le calcul. Il utilise les regles de groupe positives s'il y en a, puis cherche la combinaison qui respecte les contraintes hard avec le meilleur cout global. Les affectations dans les autres groupes sont penalisees, sauf pour les remplacements de colloque.
 
 Si une personne doit exceptionnellement changer de groupe dans la semaine, le parametre precedent (`smooth_group_switch_day_weight`) aide a eviter que ce changement arrive sous forme de melange dans une meme journee.
 
@@ -661,7 +677,7 @@ Quand ce parametre vaut `true`, un 60% ne peut pas etre etale sur 5 jours par ha
 
 ### `relax_work_days_if_infeasible`
 
-Autorise une relance automatique si le maximum de jours rend le planning impossible.
+Autorise un calcul de diagnostic si le maximum de jours rend le planning impossible.
 
 Valeur actuelle :
 
@@ -669,9 +685,9 @@ Valeur actuelle :
 "relax_work_days_if_infeasible": true
 ```
 
-Le solveur essaie d'abord de respecter strictement `hard_max_work_days`. Si aucune solution n'existe, il relance en gardant toutes les autres regles strictes, mais en transformant le maximum de jours en preference tres forte. Le resultat affiche alors un avertissement avec les personnes qui depassent leur maximum souhaite.
+Le solveur commence toujours par appliquer strictement `hard_max_work_days`. Si aucune solution n'existe, il relance le calcul en penalisant tres fortement les jours supplementaires afin de montrer la cause du blocage.
 
-Ce comportement est utile quand une regle obligatoire, par exemple un colloque, rend le planning strictement impossible sans ajouter un jour a quelqu'un.
+Ce second planning est marque `invalid` et `diagnostic_only`. Il ne remplace jamais le dernier planning valide. Les personnes qui depassent leur maximum sont affichees dans les erreurs.
 
 ### `relaxed_work_day_weight`
 
@@ -683,7 +699,7 @@ Valeur actuelle :
 "relaxed_work_day_weight": 500
 ```
 
-Plus cette valeur est haute, plus le solveur evite les jours supplementaires. Il ne les utilise que si c'est necessaire pour garder un planning valide.
+Plus cette valeur est haute, plus le diagnostic cherche a limiter les jours supplementaires.
 
 ### `compact_work_day_weight`
 
@@ -783,7 +799,7 @@ Si les donnees rendent cette regle impossible, le controle final le signale expl
 
 ### `min_daily_hours`
 
-Si une personne travaille un jour, elle doit travailler au moins ce nombre d'heures.
+Seuil souhaite pour la duree d'une journee de travail.
 
 Valeur actuelle :
 
@@ -791,7 +807,29 @@ Valeur actuelle :
 "min_daily_hours": 2
 ```
 
-Cela evite les journees absurdes de 15 ou 30 minutes.
+Avec la configuration actuelle, une journee de moins de 2 heures reste possible mais coute cher dans l'optimisation. Cela permet par exemple une presence de 45 minutes pour `X` sans encourager les mini-journees.
+
+### `enforce_min_daily_hours`
+
+Transforme le seuil precedent en contrainte stricte.
+
+Valeur actuelle :
+
+```json
+"enforce_min_daily_hours": false
+```
+
+Avec `false`, les journees courtes sont seulement penalisees. Avec `true`, elles sont interdites.
+
+### `short_day_penalty_weight`
+
+Poids de la penalite appliquee sous le seuil `min_daily_hours`.
+
+Valeur actuelle :
+
+```json
+"short_day_penalty_weight": 30
+```
 
 ### `fast_feasible`
 
@@ -804,6 +842,30 @@ Valeur actuelle :
 ```
 
 Il vaut mieux garder `false` avec `smooth: true`.
+
+### `restricted_patterns`
+
+Mode de diagnostic qui simplifie fortement les formes de journees autorisees.
+
+Valeur actuelle :
+
+```json
+"restricted_patterns": false
+```
+
+En exploitation, il faut garder `false`. Quand ce parametre vaut `true`, le solveur va plus vite mais il peut passer a cote d'une solution acceptable, par exemple une solution avec une coupure ou un changement exceptionnel.
+
+### `restricted_pattern_mode`
+
+Precise quel type de simplification utiliser quand `restricted_patterns` vaut `true`.
+
+Valeur actuelle :
+
+```json
+"restricted_pattern_mode": "continuous_halfday_groups"
+```
+
+Ce parametre n'a pas d'effet tant que `restricted_patterns` vaut `false`.
 
 ### `structured`
 

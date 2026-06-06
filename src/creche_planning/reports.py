@@ -17,9 +17,12 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
     tolerance_percent = float(config.get("weekly_hours_tolerance_percent", 3.0))
     tolerance_step = config.get("weekly_hours_tolerance_step_minutes", 15)
     max_gap = effective_max_split_gap_minutes(config)
+    enforce_max_gap = bool(config.get("enforce_max_pause_between_blocks", False))
     max_group_days = config.get("max_weekly_group_exception_days", 1)
     min_daily = config.get("min_daily_hours", 2)
+    enforce_min_daily = bool(config.get("enforce_min_daily_hours", False))
     the_percent = float(config.get("the_percent", 10.0))
+    hard_max_work_days = bool(config.get("hard_max_work_days", True))
 
     hard = [
         {
@@ -69,11 +72,6 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             "source": "solveur_config.json / the_percent et gwendo.json / rules_colloques",
         },
         {
-            "code": "min_daily_hours",
-            "rule": f"Si une personne travaille, eviter les mini-presences: minimum {float(min_daily):g}h.",
-            "source": "solveur_config.json / min_daily_hours",
-        },
-        {
             "code": "half_day_group_stability",
             "rule": "Ne pas changer de groupe dans une meme demi-journee, hors remplacement de colloque.",
             "source": "solveur_config.json / half_day_split_time",
@@ -84,14 +82,10 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             "source": "solveur_config.json / max_weekly_group_exception_days",
         },
         {
-            "code": "split_gap_limit",
-            "rule": f"Si une journee est coupee, la coupure ne doit pas depasser {max_gap} minutes.",
-            "source": "solveur_config.json / max_pause_between_blocks_minutes",
-        },
-        {
             "code": "colloques",
             "rule": (
-                "Chaque educateur participe au colloque complet de son groupe principal. "
+                "Chaque educateur participe au colloque complet de son groupe principal, "
+                "sauf si sa fiche indique qu'il ne participe pas aux colloques. "
                 "Pendant ce colloque, il ne compte plus en couverture; une personne de chaque "
                 "autre groupe remplace; les remplacements comptent dans les pourcentages du site."
             ),
@@ -110,6 +104,23 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             "source": "solveur_config.json / smooth_split_shift_weight",
         },
         {
+            "code": "avoid_short_days",
+            "rule": (
+                f"Eviter les journees de moins de {float(min_daily):g}h, "
+                "sans les interdire lorsqu'elles sont necessaires."
+            ),
+            "source": "solveur_config.json / min_daily_hours et short_day_penalty_weight",
+        },
+        {
+            "code": "avoid_long_split_gaps",
+            "rule": (
+                f"Eviter les coupures longues; le seuil de reference est {max_gap} minutes."
+                if max_gap is not None
+                else "Eviter les coupures longues."
+            ),
+            "source": "solveur_config.json / max_pause_between_blocks_minutes",
+        },
+        {
             "code": "same_group_week",
             "rule": "Garder autant que possible une personne dans le meme groupe sur la semaine.",
             "source": "solveur_config.json / smooth_same_group_week_weight",
@@ -120,6 +131,38 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             "source": "gwendo.json / rules_time et rules_group",
         },
     ]
+    if hard_max_work_days:
+        hard.insert(
+            9,
+            {
+                "code": "max_work_days",
+                "rule": (
+                    "Respecter le nombre maximal de jours travaille calcule d'apres le taux, "
+                    "sauf exception max_work_days explicite sur la personne."
+                ),
+                "source": "solveur_config.json / hard_max_work_days et gwendo.json / educators",
+            },
+        )
+    if enforce_min_daily:
+        hard.insert(
+            8,
+            {
+                "code": "min_daily_hours",
+                "rule": f"Si une personne travaille, imposer au moins {float(min_daily):g}h.",
+                "source": "solveur_config.json / min_daily_hours",
+            },
+        )
+        soft = [item for item in soft if item["code"] != "avoid_short_days"]
+    if enforce_max_gap:
+        hard.insert(
+            -1,
+            {
+                "code": "split_gap_limit",
+                "rule": f"Si une journee est coupee, la coupure ne doit pas depasser {max_gap} minutes.",
+                "source": "solveur_config.json / max_pause_between_blocks_minutes",
+            },
+        )
+        soft = [item for item in soft if item["code"] != "avoid_long_split_gaps"]
     return {"hard": hard, "soft": soft}
 
 

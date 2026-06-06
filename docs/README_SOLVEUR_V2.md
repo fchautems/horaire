@@ -42,7 +42,7 @@ Le decoupage technique actuel est decrit dans `docs\ARCHITECTURE.md`.
 
 - couverture minimale par groupe et tranche de 15 minutes ;
 - maximum de 3 personnes par groupe/tranche, sauf si une regle demande plus ;
-- heures hebdomadaires selon les pourcentages, avec une tolerance de 3% arrondie par paliers de 15 minutes ;
+- heures hebdomadaires selon les pourcentages, avec la tolerance configuree arrondie par paliers de 15 minutes ;
 - THE : 10% du contrat, colloques inclus, THE ordinaire invisible dans le planning et exclu de la couverture enfants ;
 - maximum hebdomadaire absolu de 40h ;
 - nombre maximal de jours travailles selon le taux, sauf exception `max_work_days` explicite ;
@@ -53,13 +53,13 @@ Le decoupage technique actuel est decrit dans `docs\ARCHITECTURE.md`.
 - regles de pourcentage par site ;
 - preferences horaires et de groupe en penalites soft.
 - regles `hard` horaires/groupes controlees apres calcul ;
-- changements de groupe intra demi-journee, coupures de plus de 1h30 et nombre de jours avec changement de groupe ;
+- changements de groupe intra demi-journee, coupures trop longues et nombre de jours avec changement de groupe ;
 - si un controle hard echoue, le statut devient `invalid` au lieu de `ok`.
 
 ## Ce que le moteur essaie d'ameliorer
 
 - eviter les horaires coupes ;
-- si une coupure est inevitable, reduire sa duree et la limiter a 1h30 par defaut ;
+- si une coupure est inevitable, reduire sa duree et respecter la duree maximale configuree ;
 - condenser les temps partiels sur le minimum de jours possible, par exemple environ 3 jours pour un 55% ;
 - garder un educateur le plus possible dans le meme groupe sur la semaine ;
 - eviter qu'un changement de groupe exceptionnel se fasse dans la meme journee.
@@ -68,7 +68,7 @@ Le moteur `pattern_mip` construit directement des blocs de presence et choisit l
 
 Ces points restent des preferences : la couverture des groupes, les colloques et les regles `hard` passent avant.
 
-Si le maximum de jours travailles rend le probleme impossible, la configuration actuelle autorise une relance automatique avec cette limite assouplie mais tres fortement penalisee. Le planning reste alors `ok` seulement si toutes les autres regles strictes sont respectees, et les personnes au-dessus du maximum souhaite sont listees en avertissement.
+La configuration actuelle garde le maximum de jours travailles comme une vraie contrainte. Si cette limite rend le planning impossible, le solveur peut produire ensuite un planning de diagnostic marque `invalid`, qui indique quelles personnes auraient besoin de jours supplementaires. Ce diagnostic ne remplace jamais le dernier planning valide.
 
 ## Notes sur les donnees
 
