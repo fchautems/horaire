@@ -32,67 +32,80 @@
         {
             "name": "A repourvoir",
             "percentage": 73,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": true
         },
         {
             "name": "Fanny",
             "percentage": 100,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": true
         },
         {
             "name": "Natacha",
             "percentage": 55,
-            "type": "APE"
+            "type": "APE",
+            "attends_colloque": true
         },
         {
             "name": "Tara",
             "percentage": 65,
-            "type": "ASE"
+            "type": "ASE",
+            "attends_colloque": true
         },
         {
             "name": "Gwendoline",
             "percentage": 25,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": false
         },
         {
             "name": "Céline",
             "percentage": 40,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": true
         },
         {
             "name": "Magali",
             "percentage": 100,
-            "type": "ASE"
+            "type": "ASE",
+            "attends_colloque": true
         },
         {
             "name": "Léa",
             "percentage": 80,
-            "type": "ASE"
+            "type": "ASE",
+            "attends_colloque": true
         },
         {
             "name": "Emilie",
             "percentage": 80,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": true
         },
         {
             "name": "Anaïs",
             "percentage": 60,
-            "type": "EDE"
+            "type": "EDE",
+            "attends_colloque": true
         },
         {
             "name": "Priscila",
             "percentage": 100,
-            "type": "ASE"
+            "type": "ASE",
+            "attends_colloque": true
         },
         {
             "name": "Valérie",
             "percentage": 50,
-            "type": "APE"
+            "type": "APE",
+            "attends_colloque": true
         },
         {
             "name": "X",
             "percentage": 35,
-            "type": "ASE"
+            "type": "ASE",
+            "attends_colloque": false
         }
     ],
     "educator_types": [

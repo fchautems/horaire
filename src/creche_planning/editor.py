@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import queue
 import subprocess
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -52,6 +54,7 @@ DAY_ALIASES = {
 POS_NEG = ["positif", "negatif"]
 HARD_SOFT = ["hard", "soft"]
 MIN_MAX = ["min", "max"]
+YES_NO = ["oui", "non"]
 DEFAULT_DATA = {
     "sites": [],
     "groups": [],
@@ -123,6 +126,7 @@ TABLE_SPECS = [
             FieldSpec("percentage", "Pourcentage", "int"),
             FieldSpec("type", "Type", "choice", "educator_types"),
             FieldSpec("max_work_days", "Max jours", "int_optional"),
+            FieldSpec("attends_colloque", "Participe colloque", "choice_static", "yes_no"),
         ),
     ),
     TableSpec(
@@ -272,10 +276,24 @@ def format_days(value: object) -> str:
 
 
 def rows_from_data(data: dict, spec_name: str) -> list[dict[str, str]]:
-    if spec_name in {"sites", "groups", "educator_types", "educators"}:
+    if spec_name in {"sites", "groups", "educator_types"}:
         rows = []
         for item in data.get(spec_name, []):
             rows.append({key: str(item.get(key, "")) for key in item.keys()})
+        return rows
+
+    if spec_name == "educators":
+        rows = []
+        for educator in data.get("educators", []):
+            rows.append(
+                {
+                    "name": str(educator.get("name", "")),
+                    "percentage": str(educator.get("percentage", "")),
+                    "type": str(educator.get("type", "")),
+                    "max_work_days": str(educator.get("max_work_days", "")),
+                    "attends_colloque": format_yes_no(educator.get("attends_colloque", True)),
+                }
+            )
         return rows
 
     if spec_name == "rules_time":
@@ -393,6 +411,7 @@ def rows_to_data(data: dict, spec_name: str, rows: list[dict[str, str]]) -> None
                 "name": row.get("name", ""),
                 "percentage": parse_int(row.get("percentage"), 100),
                 "type": row.get("type", ""),
+                "attends_colloque": parse_yes_no(row.get("attends_colloque"), True),
             }
             if str(row.get("max_work_days", "")).strip():
                 educator["max_work_days"] = parse_int(row.get("max_work_days"), 0)
@@ -480,6 +499,23 @@ def parse_float(value: object, fallback: float) -> float:
         return float(str(value).replace(",", "."))
     except ValueError:
         return fallback
+
+
+def parse_yes_no(value: object, fallback: bool = True) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return fallback
+    text = str(value).strip().lower()
+    if text in {"oui", "yes", "y", "true", "vrai", "1"}:
+        return True
+    if text in {"non", "no", "n", "false", "faux", "0"}:
+        return False
+    return fallback
+
+
+def format_yes_no(value: object) -> str:
+    return "oui" if parse_yes_no(value, True) else "non"
 
 
 def is_time(value: str) -> bool:
@@ -1346,7 +1382,7 @@ def timestamped_path(path: Path, timestamp: str | None) -> Path:
 
 
 class SolverProgressDialog(tk.Toplevel):
-    def __init__(self, parent: tk.Tk, output: Path):
+    def __init__(self, parent: tk.Tk, output: Path, time_limit_seconds: float | None = None):
         super().__init__(parent)
         self.title("Resolution du planning")
         self.geometry("560x360")
@@ -1354,6 +1390,12 @@ class SolverProgressDialog(tk.Toplevel):
         self.transient(parent)
         self.running = True
         self.started_at = datetime.now()
+        self.started_monotonic = time.monotonic()
+        self.phase_started_monotonic = self.started_monotonic
+        self.phase_start_percent = 0.0
+        self.target_percent = 0.0
+        self.last_progress_message = ""
+        self.time_limit_seconds = time_limit_seconds
         self.percent = tk.DoubleVar(value=0)
         self.message = tk.StringVar(value="Demarrage du solveur...")
         self.elapsed = tk.StringVar(value="Temps ecoule: 0 s")
@@ -1388,9 +1430,33 @@ class SolverProgressDialog(tk.Toplevel):
 
     def tick(self) -> None:
         if self.running:
-            elapsed = int((datetime.now() - self.started_at).total_seconds())
-            self.elapsed.set(f"Temps ecoule: {elapsed} s")
+            elapsed = int(time.monotonic() - self.started_monotonic)
+            if self.time_limit_seconds:
+                limit = int(self.time_limit_seconds)
+                self.elapsed.set(f"Temps ecoule: {elapsed} s / limite {limit} s")
+            else:
+                self.elapsed.set(f"Temps ecoule: {elapsed} s")
+            self.smooth_progress()
             self.after(500, self.tick)
+
+    def smooth_progress(self) -> None:
+        target = self.target_percent
+        message = self.last_progress_message.lower()
+        if self.time_limit_seconds and "resolution" in message:
+            phase_elapsed = max(0.0, time.monotonic() - self.phase_started_monotonic)
+            remaining_budget = max(
+                1.0,
+                self.time_limit_seconds - (self.phase_started_monotonic - self.started_monotonic),
+            )
+            time_ratio = min(1.0, phase_elapsed / remaining_budget)
+            target = max(target, self.phase_start_percent + (92.0 - self.phase_start_percent) * time_ratio)
+
+        current = float(self.percent.get())
+        if target > current:
+            step = max(0.25, (target - current) * 0.12)
+            current = min(target, current + step)
+            self.percent.set(current)
+            self.percent_label.config(text=f"{int(round(current))} %")
 
     def close_requested(self) -> None:
         if self.running:
@@ -1399,8 +1465,12 @@ class SolverProgressDialog(tk.Toplevel):
         self.destroy()
 
     def update_progress(self, percent: int, message: str) -> None:
-        self.percent.set(percent)
-        self.percent_label.config(text=f"{percent} %")
+        percent = max(0, min(100, int(percent)))
+        if message != self.last_progress_message:
+            self.phase_started_monotonic = time.monotonic()
+            self.phase_start_percent = max(float(self.percent.get()), float(percent))
+            self.last_progress_message = message
+        self.target_percent = max(self.target_percent, float(percent))
         self.message.set(message)
         self.append_log(message)
 
@@ -1415,9 +1485,12 @@ class SolverProgressDialog(tk.Toplevel):
 
     def finish(self, success: bool, message: str) -> None:
         self.running = False
-        self.percent.set(100 if success else self.percent.get())
         if success:
+            self.percent.set(100)
+            self.target_percent = 100
             self.percent_label.config(text="100 %")
+        else:
+            self.percent_label.config(text=f"{int(round(float(self.percent.get())))} %")
         self.message.set(message)
         self.append_log(message)
         self.close_button.configure(state="normal")
@@ -1510,6 +1583,8 @@ class CrecheEditor(tk.Tk):
                 return DAYS
             if field.choices_name == "min_max":
                 return MIN_MAX
+            if field.choices_name == "yes_no":
+                return YES_NO
         if field.field_type in {"choice", "choice_plus_all"}:
             names = self.names_for(field.choices_name or "")
             if field.field_type == "choice_plus_all":
@@ -1882,6 +1957,7 @@ class CrecheEditor(tk.Tk):
         config_path = find_solver_config(self.path)
         config_dir = config_path.parent if config_path.exists() else self.path.parent
         config = load_solver_config(config_path)
+        time_limit_seconds = parse_float(config.get("time_limit_seconds"), 60.0 if not config_path.exists() else 300.0)
         timestamp_enabled = bool(config.get("timestamp_outputs", True))
         timestamp_format = str(config.get("timestamp_format", "%Y-%m-%d_%H-%M-%S"))
         timestamp = datetime.now().strftime(timestamp_format) if timestamp_enabled else None
@@ -1919,12 +1995,23 @@ class CrecheEditor(tk.Tk):
             "--no-timestamp-outputs",
         ])
         self.set_status("Solveur en cours...")
-        dialog = SolverProgressDialog(self, output)
+        dialog = SolverProgressDialog(self, output, time_limit_seconds)
         dialog.update_progress(0, "Lancement du solveur")
-        thread = threading.Thread(target=self._run_solver_thread, args=(command, output, dialog, project_root), daemon=True)
+        thread = threading.Thread(
+            target=self._run_solver_thread,
+            args=(command, output, dialog, project_root, time_limit_seconds),
+            daemon=True,
+        )
         thread.start()
 
-    def _run_solver_thread(self, command: list[str], output: Path, dialog: SolverProgressDialog, cwd: Path) -> None:
+    def _run_solver_thread(
+        self,
+        command: list[str],
+        output: Path,
+        dialog: SolverProgressDialog,
+        cwd: Path,
+        time_limit_seconds: float,
+    ) -> None:
         lines: list[str] = []
         try:
             process = subprocess.Popen(
@@ -1936,22 +2023,55 @@ class CrecheEditor(tk.Tk):
                 bufsize=1,
             )
             assert process.stdout is not None
-            for raw_line in process.stdout:
-                line = raw_line.rstrip()
-                if line.startswith("PROGRESS|"):
-                    parts = line.split("|", 2)
-                    if len(parts) == 3:
-                        try:
-                            percent = int(parts[1])
-                        except ValueError:
-                            percent = 0
-                        message = parts[2]
-                        self.after(0, lambda p=percent, m=message: dialog.update_progress(p, m))
+            line_queue: queue.Queue[str | None] = queue.Queue()
+
+            def read_output() -> None:
+                assert process.stdout is not None
+                try:
+                    for reader_line in process.stdout:
+                        line_queue.put(reader_line)
+                finally:
+                    line_queue.put(None)
+
+            reader = threading.Thread(target=read_output, daemon=True)
+            reader.start()
+            deadline = time.monotonic() + max(1.0, time_limit_seconds) + 30.0
+            output_done = False
+            while True:
+                try:
+                    raw_line = line_queue.get(timeout=0.2)
+                except queue.Empty:
+                    raw_line = ""
+                if raw_line is None:
+                    output_done = True
+                    raw_line = ""
+                if raw_line:
+                    line = raw_line.rstrip()
+                    if line.startswith("PROGRESS|"):
+                        parts = line.split("|", 2)
+                        if len(parts) == 3:
+                            try:
+                                percent = int(parts[1])
+                            except ValueError:
+                                percent = 0
+                            message = parts[2]
+                            self.after(0, lambda p=percent, m=message: dialog.update_progress(p, m))
+                        continue
+                    lines.append(line)
+                    if line.startswith("Status:") or line.startswith("Verification:") or line.startswith("Erreurs"):
+                        self.after(0, lambda m=line: dialog.append_log(m))
                     continue
-                lines.append(line)
-                if line.startswith("Status:") or line.startswith("Verification:") or line.startswith("Erreurs"):
-                    self.after(0, lambda m=line: dialog.append_log(m))
-            returncode = process.wait(timeout=5)
+                returncode = process.poll()
+                if returncode is not None and output_done:
+                    break
+                if time.monotonic() > deadline:
+                    process.kill()
+                    returncode = process.wait(timeout=5)
+                    lines.append(
+                        f"Temps limite depasse: processus arrete apres environ {int(time_limit_seconds)} s."
+                    )
+                    break
+                time.sleep(0.2)
         except Exception as exc:
             self.after(0, lambda: dialog.finish(False, f"Erreur: {exc}"))
             self.after(0, lambda: messagebox.showerror("Solveur", str(exc)))
@@ -1961,24 +2081,38 @@ class CrecheEditor(tk.Tk):
         def done() -> None:
             self.set_status()
             if output.exists():
+                payload: dict[str, object] = {}
                 status = "?"
                 try:
-                    status = str(load_json_any(output).get("status", "?"))
+                    raw_payload = load_json_any(output)
+                    if isinstance(raw_payload, dict):
+                        payload = raw_payload
+                    status = str(payload.get("status", "?"))
                 except Exception:
                     pass
                 self.planning_page.load_planning(output)
                 self.notebook.select(self.planning_page)
-                if returncode == 0:
+                if returncode == 0 and status == "ok":
                     dialog.finish(True, f"Planning genere: {output.name}")
                     messagebox.showinfo("Solveur", f"Planning genere:\n{output}")
                     return
-                dialog.finish(False, f"Planning genere avec statut {status}: {output.name}")
-                messagebox.showwarning(
-                    "Solveur",
-                    "Le solveur a produit un planning, mais il n'est pas valide.\n"
-                    "Consulte l'onglet Planning pour voir les erreurs.\n\n"
-                    f"Fichier:\n{output}",
-                )
+                has_schedule = isinstance(payload.get("schedule"), dict) and bool(payload.get("schedule"))
+                if has_schedule:
+                    dialog.finish(False, f"Planning genere avec statut {status}: {output.name}")
+                    messagebox.showwarning(
+                        "Solveur",
+                        "Le solveur a produit un planning, mais il n'est pas valide.\n"
+                        "Consulte l'onglet Planning pour voir les erreurs.\n\n"
+                        f"Fichier:\n{output}",
+                    )
+                else:
+                    dialog.finish(False, f"Aucun planning valide trouve: {output.name}")
+                    messagebox.showerror(
+                        "Solveur",
+                        "Le solveur n'a pas trouve de planning valide.\n"
+                        "Consulte l'onglet Planning pour voir le detail technique.\n\n"
+                        f"Fichier:\n{output}",
+                    )
             elif returncode == 0:
                 dialog.finish(True, f"Planning genere: {output.name}")
                 messagebox.showinfo("Solveur", f"Planning genere:\n{output}")

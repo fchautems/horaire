@@ -3,6 +3,7 @@
 import argparse
 import math
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -54,6 +55,55 @@ from .runtime import (
     resolve_config_path,
     timestamped_path,
 )
+
+
+def educator_attends_colloque(educator: dict[str, Any]) -> bool:
+    value = educator.get("attends_colloque", True)
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return True
+    text = str(value).strip().lower()
+    if text in {"non", "no", "n", "false", "faux", "0"}:
+        return False
+    if text in {"oui", "yes", "y", "true", "vrai", "1"}:
+        return True
+    return True
+
+
+def mark_work_day_diagnostic(payload: dict[str, Any]) -> dict[str, Any]:
+    relaxation_warning = (
+        "Aucune solution stricte avec le maximum de jours travailles. "
+        "Le planning affiche est uniquement un diagnostic et ne doit pas etre utilise tel quel."
+    )
+    warnings = list(payload.get("warnings", []))
+    warnings.append(relaxation_warning)
+    checks = payload.setdefault("checks", {})
+    alert_list = list(checks.get("alerts", []))
+    soft_warning_list = list(checks.get("soft_warnings", []))
+    hard_error_list = list(checks.get("errors", []))
+    hard_error_list.append(
+        "Aucune solution ne respecte simultanement toutes les contraintes et le maximum de jours travailles."
+    )
+    alert_list.append(relaxation_warning)
+    soft_warning_list.append(relaxation_warning)
+    for warning in checks.get("work_day_warnings", []):
+        warnings.append(warning)
+        alert_list.append(warning)
+        soft_warning_list.append(warning)
+        hard_error_list.append(f"Limite de jours depassee: {warning}")
+    checks["alerts"] = sorted(set(alert_list))
+    checks["soft_warnings"] = sorted(set(soft_warning_list))
+    checks["errors"] = sorted(set(hard_error_list))
+    checks["hard_errors"] = checks["errors"]
+    payload["warnings"] = sorted(set(warnings))
+    payload["status"] = "invalid"
+    payload["diagnostic_only"] = True
+    payload["solver_message"] = (
+        "Planning diagnostic calcule apres echec du modele strict. "
+        + str(payload.get("solver_message", ""))
+    )
+    return payload
 
 
 def build_indexes(
@@ -2826,6 +2876,10 @@ def verify_solution(
     primary_group_errors: list[str] = []
     split_slot = split_slot_for_horizon(bundle.horizon, half_day_split_time)
     split_min = bundle.horizon.start + split_slot * bundle.horizon.step
+    attends_colloque_by_name = {
+        educator["name"]: educator_attends_colloque(educator)
+        for educator in bundle.educators
+    }
 
     for raw_rule in data.get("rules_time", []):
         if len(raw_rule) < 6:
@@ -2917,7 +2971,7 @@ def verify_solution(
                     f"Changement de groupe interdit l'apres-midi: {educator_name} {day_key} {sorted(afternoon_groups)}."
                 )
 
-        if max_weekly_group_exception_days is not None:
+        if max_weekly_group_exception_days is not None and attends_colloque_by_name.get(educator_name, True):
             exception_days = [
                 day_key
                 for day_key, blocks in by_day.items()
@@ -2946,6 +3000,8 @@ def verify_solution(
         soft_warnings.extend(colloque_warnings)
         for educator in bundle.educators:
             educator_name = educator["name"]
+            if not educator_attends_colloque(educator):
+                continue
             primary_group_name = primary_groups_by_educator.get(educator_name)
             if not primary_group_name:
                 primary_group_errors.append(f"{educator_name}: aucun groupe principal choisi.")
@@ -2995,6 +3051,11 @@ def verify_solution(
         + primary_group_errors
         + percentage_errors
     )
+    report_primary_groups_by_educator = {
+        educator_name: group_name
+        for educator_name, group_name in primary_groups_by_educator.items()
+        if attends_colloque_by_name.get(educator_name, True)
+    }
     quality_summary = build_quality_summary(
         bundle,
         schedule,
@@ -3004,7 +3065,7 @@ def verify_solution(
         soft_warning_count=len(soft_warnings),
         max_split_gap_minutes=max_split_gap_minutes,
         max_weekly_group_exception_days=max_weekly_group_exception_days,
-        primary_groups_by_educator=primary_groups_by_educator,
+        primary_groups_by_educator=report_primary_groups_by_educator,
         primary_group_report_enabled=primary_group_report_enabled,
         primary_group_warning_outside_hours=primary_group_warning_outside_hours,
         primary_group_warning_outside_days=primary_group_warning_outside_days,
@@ -3227,6 +3288,7 @@ def make_ortools_payload(
     )
     split_slot = split_slot_for_horizon(horizon, half_day_split_time)
     max_gap_slots = None if max_split_gap_minutes is None else int(round(max_split_gap_minutes / horizon.step))
+    generation_max_gap_slots = max_gap_slots if max_gap_slots is not None else horizon.slots
     min_segment_slots = 4
 
     group_by_name = {group["name"]: i for i, group in enumerate(groups)}
@@ -3879,7 +3941,15 @@ def make_ortools_slot_payload(
     final_states = [0, 1, overflow_state, second_state, final_done_state] + [1 + gap for gap in range(1, max_gap + 1)]
 
     for e_i, educator in enumerate(educators):
-        target = int(round((float(educator["percentage"]) / 100.0) * weekly_base / (horizon.step / 60.0)))
+        target_hours = float(educator["percentage"]) / 100.0 * weekly_base
+        target = int(round(target_hours / (horizon.step / 60.0)))
+        tolerance_slots = weekly_tolerance_slots(
+            target_hours,
+            horizon,
+            percent=weekly_hours_tolerance_percent,
+            minutes=weekly_hours_tolerance_minutes,
+            step_minutes=weekly_hours_tolerance_step_minutes,
+        )
         weekly_terms = []
         for d_i in range(len(DAYS)):
             day_work_terms = []
@@ -4244,7 +4314,10 @@ def make_pattern_mip_payload(
     time_limit: float = 300.0,
     type_aliases: dict[str, str] | None = None,
     min_daily_hours: float = 2.0,
+    enforce_min_daily_hours: bool = False,
+    short_day_penalty_weight: float = 30.0,
     max_split_gap_minutes: int | None = 90,
+    generation_max_split_gap_minutes: int | None = None,
     weekly_hours_tolerance_minutes: int | None = None,
     weekly_hours_tolerance_percent: float = 3.0,
     weekly_hours_tolerance_step_minutes: int | None = 15,
@@ -4265,6 +4338,9 @@ def make_pattern_mip_payload(
     compact_work_day_weight: float = 45.0,
     compact_part_time_priority: bool = True,
     hard_max_work_days: bool = True,
+    feasible_only: bool = False,
+    restricted_patterns: bool = False,
+    restricted_pattern_mode: str = "primary_only",
     fixed_primary_groups: dict[int, int] | None = None,
     quality_profile: str = "equilibre",
     quality_profile_label: str = "Equilibre",
@@ -4273,6 +4349,25 @@ def make_pattern_mip_payload(
     primary_group_warning_outside_days: int = 1,
     progress_callback: Callable[[int, str], None] | None = None,
 ) -> tuple[dict[str, Any], Any]:
+    started_at = time.monotonic()
+
+    def elapsed_seconds() -> float:
+        return time.monotonic() - started_at
+
+    def remaining_seconds() -> float:
+        return max(0.0, float(time_limit) - elapsed_seconds())
+
+    def time_limit_payload(stage: str) -> dict[str, Any]:
+        return {
+            "status": "infeasible_or_not_solved",
+            "solver_message": (
+                f"Temps limite atteint pendant {stage} "
+                f"({elapsed_seconds():.1f}s / {float(time_limit):.1f}s)."
+            ),
+            "warnings": sorted(set(warnings)),
+            "diagnostics": [],
+        }
+
     aliases = dict(DEFAULT_TYPE_ALIASES)
     if type_aliases:
         aliases.update(type_aliases)
@@ -4280,6 +4375,7 @@ def make_pattern_mip_payload(
     horizon = make_horizon(data)
     groups = list(data.get("groups", []))
     educators = list(data.get("educators", []))
+    attends_colloque_by_educator = [educator_attends_colloque(educator) for educator in educators]
     sites = [site["name"] for site in data.get("sites", [])]
     warnings: list[str] = []
     bundle = type(
@@ -4287,6 +4383,25 @@ def make_pattern_mip_payload(
         (),
         {"data": data, "horizon": horizon, "groups": groups, "educators": educators, "sites": sites},
     )()
+    restricted_mode = normalize_flag(restricted_pattern_mode)
+    restricted_primary_only = restricted_patterns and restricted_mode in {
+        "primary_only",
+        "principal",
+        "groupe_principal",
+        "main_group",
+        "strict",
+    }
+    restricted_one_group_per_day = restricted_patterns and restricted_mode in {
+        "primary_only",
+        "principal",
+        "groupe_principal",
+        "main_group",
+        "strict",
+        "continuous_any_group",
+        "any_group",
+        "single_group",
+        "one_group",
+    }
     if not groups or not educators or not sites:
         return (
             {
@@ -4321,7 +4436,18 @@ def make_pattern_mip_payload(
         )
 
     if progress_callback:
-        progress_callback(12, "Generation des patrons de journee")
+        if restricted_patterns and not restricted_one_group_per_day:
+            message = "Generation des patrons simples demi-journees"
+        elif restricted_patterns and not restricted_primary_only:
+            message = "Generation des patrons simples elargis"
+        elif restricted_patterns:
+            message = "Generation des patrons simples"
+        else:
+            message = "Generation des patrons de journee"
+        progress_callback(
+            12,
+            message,
+        )
 
     group_demand, site_demand = build_demands_by_day(data, groups, horizon)
     group_by_site = {
@@ -4336,6 +4462,7 @@ def make_pattern_mip_payload(
     max_daily_hours = float(data.get("rules_global", {}).get("max_daily_hours", 8.5))
     max_daily_slots = int(round(max_daily_hours / (horizon.step / 60.0)))
     min_daily_slots = int(round(float(min_daily_hours) / (horizon.step / 60.0)))
+    generated_min_daily_slots = min_daily_slots if enforce_min_daily_hours else 1
     absolute_max_slots = absolute_weekly_max_slots(
         horizon,
         absolute_max_weekly_hours if enforce_absolute_max_weekly_hours else None,
@@ -4345,7 +4472,17 @@ def make_pattern_mip_payload(
         for e_i, educator in enumerate(educators)
     }
     split_slot = split_slot_for_horizon(horizon, half_day_split_time)
-    max_gap_slots = None if max_split_gap_minutes is None else int(round(max_split_gap_minutes / horizon.step))
+    generated_gap_minutes = (
+        generation_max_split_gap_minutes
+        if generation_max_split_gap_minutes is not None
+        else max_split_gap_minutes
+    )
+    max_gap_slots = (
+        None
+        if generated_gap_minutes is None
+        else int(round(generated_gap_minutes / horizon.step))
+    )
+    generation_max_gap_slots = max_gap_slots if max_gap_slots is not None else horizon.slots
     min_segment_slots = 4
     scale = 100.0
     colloques = parse_colloques(data, horizon, groups, warnings)
@@ -4402,6 +4539,8 @@ def make_pattern_mip_payload(
     for e_i, g_i in hard_primary_groups.items():
         allowed_primary_groups[e_i] = {g_i} if g_i in allowed_primary_groups[e_i] else set()
     for e_i, educator in enumerate(educators):
+        if not attends_colloque_by_educator[e_i]:
+            continue
         educator_name = educator["name"]
         for g_i, colloque in colloque_by_group.items():
             if g_i not in allowed_primary_groups[e_i]:
@@ -4432,6 +4571,17 @@ def make_pattern_mip_payload(
                     f"Groupe principal suggere ignore pour {educators[e_i]['name']}: "
                     f"{groups[g_i]['name'] if 0 <= g_i < len(groups) else g_i}."
                 )
+
+    for e_i, allowed in list(allowed_primary_groups.items()):
+        if attends_colloque_by_educator[e_i] or not allowed:
+            continue
+        forced = hard_primary_groups.get(e_i)
+        selected = forced if forced in allowed else min(
+            allowed,
+            key=lambda g_i: (primary_group_costs.get((e_i, g_i), 0.0), g_i),
+        )
+        allowed_primary_groups[e_i] = {selected}
+
     for e_i, allowed in allowed_primary_groups.items():
         if not allowed:
             return (
@@ -4444,9 +4594,8 @@ def make_pattern_mip_payload(
                 bundle,
             )
 
-    start_candidates: set[int] = {slot for slot in range(0, horizon.slots, 2)}
-    end_candidates: set[int] = {slot for slot in range(2, horizon.slots + 1, 2)}
-    end_candidates.add(horizon.slots)
+    start_candidates: set[int] = set(range(0, horizon.slots))
+    end_candidates: set[int] = set(range(1, horizon.slots + 1))
     for rule in data.get("rules_site_schedule", []):
         for interval in rule.get("time_intervals", []):
             for value in (interval.get("start"), interval.get("end")):
@@ -4487,6 +4636,14 @@ def make_pattern_mip_payload(
     site_terms: dict[tuple[int, str, int], list[int]] = {}
     percentage_terms: dict[str, list[tuple[int, int, int]]] = {site: [] for site in sites}
     replacement_terms: dict[tuple[int, int], list[int]] = {}
+    pattern_stats = {
+        "off": 0,
+        "continuous": 0,
+        "split": 0,
+        "mixed_group": 0,
+        "replacement": 0,
+        "colloque": 0,
+    }
 
     def work_cost_or_none(e_i: int, day_key: str, segments: tuple[tuple[int, int], ...]) -> float | None:
         educator_name = educators[e_i]["name"]
@@ -4522,7 +4679,7 @@ def make_pattern_mip_payload(
         educator_name = educators[e_i]["name"]
         group_name = groups[g_i]["name"]
         cost = 0.0
-        if primary_g != g_i:
+        if attends_colloque_by_educator[e_i] and primary_g != g_i:
             cost += slots * same_group_week_weight * scale
         for raw_rule in data.get("rules_group", []):
             if len(raw_rule) < 4 or raw_rule[2] != educator_name:
@@ -4570,19 +4727,20 @@ def make_pattern_mip_payload(
         display_overrides: dict[int, int] = {}
         activities: dict[int, str] = {}
         invalid_pattern = False
+        attends_colloque = attends_colloque_by_educator[e_i]
         for colloque in colloques_by_day.get(d_i, []):
             target_g = int(colloque["group_i"])
             overlap = worked & colloque["slots"]
-            if primary_g == target_g and overlap and not colloque["slots"].issubset(worked):
+            if attends_colloque and primary_g == target_g and overlap and not colloque["slots"].issubset(worked):
                 invalid_pattern = True
                 break
             for slot in overlap:
                 base_g = half_groups[0 if slot < split_slot else 1]
-                if primary_g == target_g and base_g == target_g:
+                if attends_colloque and primary_g == target_g and base_g == target_g:
                     coverage_overrides[slot] = -1
                     display_overrides[slot] = target_g
                     activities[slot] = "colloque"
-                elif base_g == target_g:
+                elif base_g == target_g and not (primary_g == target_g and not attends_colloque):
                     invalid_pattern = True
                     break
             if invalid_pattern:
@@ -4601,6 +4759,9 @@ def make_pattern_mip_payload(
             for slot in range(start, end)
         }
         mixed = 1 if len({item for item in used_groups if item >= 0}) > 1 else 0
+        if 0 < duration < min_daily_slots:
+            missing_slots = min_daily_slots - duration
+            cost += missing_slots * short_day_penalty_weight * scale
         if compact_work_days and duration > 0:
             compact_multiplier = 1.0
             if compact_part_time_priority:
@@ -4630,6 +4791,18 @@ def make_pattern_mip_payload(
         pattern_child_duration.append(child_duration)
         pattern_colloque_the_duration.append(colloque_the_duration)
         pattern_mixed.append(mixed)
+        if duration == 0:
+            pattern_stats["off"] += 1
+        elif len(segments) > 1:
+            pattern_stats["split"] += 1
+        else:
+            pattern_stats["continuous"] += 1
+        if mixed:
+            pattern_stats["mixed_group"] += 1
+        if replacement:
+            pattern_stats["replacement"] += 1
+        if colloque_the_duration:
+            pattern_stats["colloque"] += 1
         by_educator_day.setdefault((e_i, d_i), []).append(pattern_id)
         by_educator_day_primary.setdefault((e_i, d_i, primary_g), []).append(pattern_id)
         by_educator.setdefault(e_i, []).append(pattern_id)
@@ -4671,12 +4844,17 @@ def make_pattern_mip_payload(
     end_candidates = {slot for slot in end_candidates if 0 < slot <= horizon.slots}
 
     for e_i in range(len(educators)):
+        attends_colloque = attends_colloque_by_educator[e_i]
         for primary_g in sorted(allowed_primary_groups[e_i]):
             primary_group = groups[primary_g]
             primary_site = primary_group["site"]
             primary_colloque = colloque_by_group.get(primary_g)
             for d_i, (day_key, _) in enumerate(DAYS):
-                requires_colloque = primary_colloque is not None and int(primary_colloque["day_i"]) == d_i
+                requires_colloque = (
+                    attends_colloque
+                    and primary_colloque is not None
+                    and int(primary_colloque["day_i"]) == d_i
+                )
                 off_cost = work_cost_or_none(e_i, day_key, ())
                 if off_cost is not None and not requires_colloque:
                     add_pattern(e_i, d_i, primary_g, None, (), {0: -1, 1: -1}, 0, off_cost)
@@ -4700,7 +4878,10 @@ def make_pattern_mip_payload(
                             base_cost + 900.0 * scale,
                         )
 
-                    for duration in range(max(min_daily_slots, colloque_duration), max_daily_slots + 1):
+                    for duration in range(
+                        max(generated_min_daily_slots, colloque_duration),
+                        max_daily_slots + 1,
+                    ):
                         for start in sorted(start_candidates):
                             end = start + duration
                             if end > horizon.slots or end not in end_candidates:
@@ -4727,11 +4908,11 @@ def make_pattern_mip_payload(
                                 base_cost + group_cost,
                             )
 
-                        if duration < 2 * min_segment_slots + colloque_duration:
+                        if restricted_patterns or duration < 2 * min_segment_slots + colloque_duration:
                             continue
                         for first_len in range(min_segment_slots, duration - min_segment_slots + 1):
                             second_len = duration - first_len
-                            for gap in range(1, (max_gap_slots or 6) + 1):
+                            for gap in range(1, generation_max_gap_slots + 1):
                                 first_end = split_slot
                                 first_start = first_end - first_len
                                 second_start = first_end + gap
@@ -4766,8 +4947,10 @@ def make_pattern_mip_payload(
                     continue
 
                 for site in sites:
+                    if restricted_primary_only and site != primary_site:
+                        continue
                     local_groups = group_by_site[site]
-                    for duration in range(max(1, min_daily_slots), max_daily_slots + 1, 2):
+                    for duration in range(max(1, generated_min_daily_slots), max_daily_slots + 1):
                         for start in sorted(start_candidates):
                             end = start + duration
                             if end > horizon.slots or end not in end_candidates:
@@ -4778,6 +4961,23 @@ def make_pattern_mip_payload(
                                 continue
                             worked_slots = list(range(start, end))
                             worked_halves = {0 if slot < split_slot else 1 for slot in worked_slots}
+                            if restricted_one_group_per_day:
+                                candidate_groups = [primary_g] if restricted_primary_only else local_groups
+                                for g_i in candidate_groups:
+                                    group_cost = group_cost_or_none(e_i, primary_g, g_i, duration)
+                                    if group_cost is None:
+                                        continue
+                                    add_pattern(
+                                        e_i,
+                                        d_i,
+                                        primary_g,
+                                        site,
+                                        segments,
+                                        {0: g_i, 1: g_i},
+                                        duration,
+                                        base_cost + group_cost,
+                                    )
+                                continue
                             if worked_halves == {0, 1}:
                                 morning_slots = sum(1 for slot in worked_slots if slot < split_slot)
                                 afternoon_slots = duration - morning_slots
@@ -4821,11 +5021,11 @@ def make_pattern_mip_payload(
                                         base_cost + group_cost,
                                     )
 
-                        if duration < 2 * min_segment_slots:
+                        if restricted_patterns or duration < 2 * min_segment_slots:
                             continue
-                        for first_len in range(min_segment_slots, duration - min_segment_slots + 1, 2):
+                        for first_len in range(min_segment_slots, duration - min_segment_slots + 1):
                             second_len = duration - first_len
-                            for gap in range(2, (max_gap_slots or 6) + 1, 2):
+                            for gap in range(1, generation_max_gap_slots + 1):
                                 first_end = split_slot
                                 first_start = first_end - first_len
                                 second_start = first_end + gap
@@ -4860,8 +5060,27 @@ def make_pattern_mip_payload(
                                             base_cost + morning_cost + afternoon_cost,
                                         )
 
+    bundle.pattern_stats = dict(pattern_stats)
+    bundle.pattern_count = len(costs)
+    pattern_statistics = {
+        "total": len(costs),
+        **pattern_stats,
+    }
     if progress_callback:
-        progress_callback(25, f"Patrons generes: {len(costs)}")
+        progress_callback(
+            25,
+            (
+                f"Patrons generes: {len(costs)} "
+                f"(continus {pattern_stats['continuous']}, "
+                f"coupes {pattern_stats['split']}, "
+                f"mixtes {pattern_stats['mixed_group']}, "
+                f"remplacements {pattern_stats['replacement']})"
+            ),
+        )
+    if remaining_seconds() <= 1.0:
+        payload = time_limit_payload("la generation des patrons")
+        payload["pattern_statistics"] = pattern_statistics
+        return payload, bundle
 
     rows: list[int] = []
     cols: list[int] = []
@@ -4962,6 +5181,8 @@ def make_pattern_mip_payload(
 
     if max_weekly_group_exception_days is not None:
         for e_i in range(len(educators)):
+            if not attends_colloque_by_educator[e_i]:
+                continue
             terms = [
                 (p_i, float(pattern_mixed[p_i]))
                 for p_i in by_educator.get(e_i, [])
@@ -4994,15 +5215,22 @@ def make_pattern_mip_payload(
             add_row(rows, cols, vals, lower, upper, terms, -math.inf, 0.0)
 
     matrix = coo_matrix((vals, (rows, cols)), shape=(len(lower), len(costs))).tocsr()
+    if remaining_seconds() <= 1.0:
+        payload = time_limit_payload("la construction du modele")
+        payload["pattern_statistics"] = pattern_statistics
+        return payload, bundle
     if progress_callback:
-        progress_callback(45, "Resolution des patrons")
+        progress_callback(45, "Resolution rapide des patrons" if feasible_only else "Resolution des patrons")
+    objective_costs = np.zeros(len(costs), dtype=float) if feasible_only else np.array(costs)
     result = milp(
-        c=np.array(costs),
+        c=objective_costs,
         integrality=np.ones(len(costs), dtype=np.int8),
         bounds=Bounds(np.zeros(len(costs)), np.ones(len(costs))),
         constraints=LinearConstraint(matrix, np.array(lower), np.array(upper)),
-        options={"time_limit": time_limit, "mip_rel_gap": 0.03},
+        options={"time_limit": max(1.0, remaining_seconds()), "mip_rel_gap": 0.03},
     )
+    if progress_callback:
+        progress_callback(82, "Preparation du resultat")
     if result.x is None:
         diagnostics = diagnose_basic_conflicts(data, horizon) + diagnose_the_capacity(
             data,
@@ -5021,6 +5249,8 @@ def make_pattern_mip_payload(
                 "solver_message": result.message,
                 "warnings": sorted(set(warnings)),
                 "diagnostics": diagnostics,
+                "solve_status": str(result.message),
+                "pattern_statistics": pattern_statistics,
             },
             bundle,
         )
@@ -5110,14 +5340,41 @@ def make_pattern_mip_payload(
     ] + weekly_errors
     checks["hard_errors"] = checks["errors"]
     status_text = "ok" if not checks["errors"] else "invalid"
+    if feasible_only and status_text == "ok":
+        warnings.append("Solution valide rapide: toutes les regles hard sont respectees, qualite non optimisee.")
+    if restricted_patterns and status_text == "ok":
+        if restricted_patterns and not restricted_one_group_per_day:
+            warnings.append(
+                "Patrons simples demi-journees utilises: journees continues avec groupe matin/apres-midi possible."
+            )
+        elif restricted_primary_only:
+            warnings.append(
+                "Patrons simples utilises: journees continues et groupe principal uniquement, hors remplacements colloque."
+            )
+        else:
+            warnings.append(
+                "Patrons simples elargis utilises: journees continues avec un seul groupe par jour, hors remplacements colloque."
+            )
     return (
         {
             "status": status_text,
             "objective": round(float(result.fun) if result.fun is not None else 0.0, 4),
             "solver_message": result.message,
             "warnings": sorted(set(warnings)),
+            "solve_mode": (
+                "solution_valide_rapide_patrons_simples"
+                if feasible_only and restricted_patterns and restricted_primary_only
+                else "solution_valide_rapide_patrons_demi_journees"
+                if feasible_only and restricted_patterns and not restricted_one_group_per_day
+                else "solution_valide_rapide_patrons_simples_elargis"
+                if feasible_only and restricted_patterns
+                else "solution_valide_rapide"
+                if feasible_only
+                else "qualite"
+            ),
             "schedule": schedule,
             "checks": checks,
+            "pattern_statistics": pattern_statistics,
         },
         bundle,
     )
@@ -5270,6 +5527,8 @@ def infer_majority_primary_groups_from_payload(
             forced_groups[e_i] = g_i
 
     for e_i, educator in enumerate(educators):
+        if not educator_attends_colloque(educator):
+            continue
         educator_name = educator["name"]
         for g_i, colloque in colloque_by_group.items():
             if g_i not in allowed_groups[e_i]:
@@ -5631,6 +5890,11 @@ def main() -> int:
         csv_path = timestamped_path(csv_path, timestamp)
         html_path = timestamped_path(html_path, timestamp)
     time_limit = float(pick(args.time_limit, config, "time_limit_seconds", 300.0))
+    run_started_at = time.monotonic()
+
+    def remaining_time_limit() -> float:
+        return max(0.0, time_limit - (time.monotonic() - run_started_at))
+
     mip_gap = float(pick(args.mip_gap, config, "quality_gap", 0.01))
     weekly_mode = pick(args.weekly_mode, config, "weekly_mode", "exact")
     fast_feasible = bool(pick(args.fast_feasible, config, "fast_feasible", False))
@@ -5644,6 +5908,8 @@ def main() -> int:
     if args.smooth_split_gap_weight is None:
         split_gap_weight = float(profile_weights.get("smooth_split_gap_weight", split_gap_weight))
     max_split_gap_minutes = effective_max_split_gap_minutes(config, args.smooth_max_split_gap_minutes)
+    enforce_max_split_gap = bool(config.get("enforce_max_pause_between_blocks", False))
+    hard_max_split_gap_minutes = max_split_gap_minutes if enforce_max_split_gap else None
     group_switch_day_weight = float(
         pick(args.smooth_group_switch_day_weight, config, "smooth_group_switch_day_weight", 8.0)
     )
@@ -5662,10 +5928,12 @@ def main() -> int:
     compact_work_day_weight = float(config.get("compact_work_day_weight", 45.0))
     compact_work_day_weight = float(profile_weights.get("compact_work_day_weight", compact_work_day_weight))
     compact_part_time_priority = bool(config.get("compact_part_time_priority", True))
-    relax_work_days_if_infeasible = bool(config.get("relax_work_days_if_infeasible", True))
+    relax_work_days_if_infeasible = bool(config.get("relax_work_days_if_infeasible", False))
     relaxed_work_day_weight = float(
         config.get("relaxed_work_day_weight", max(500.0, compact_work_day_weight))
     )
+    restricted_patterns = bool(config.get("restricted_patterns", False))
+    restricted_pattern_mode = str(config.get("restricted_pattern_mode", "primary_only"))
     hard_max_work_days = bool(config.get("hard_max_work_days", True))
     enforce_absolute_max_weekly_hours = bool(config.get("enforce_absolute_max_weekly_hours", True))
     absolute_max_weekly_hours = config.get("absolute_max_weekly_hours", 40.0)
@@ -5723,6 +5991,8 @@ def main() -> int:
     if max_weekly_group_exception_days is not None:
         max_weekly_group_exception_days = int(max_weekly_group_exception_days)
     min_daily_hours = float(pick(args.min_daily_hours, config, "min_daily_hours", 0.0))
+    enforce_min_daily_hours = bool(config.get("enforce_min_daily_hours", False))
+    short_day_penalty_weight = float(config.get("short_day_penalty_weight", 30.0))
     max_blocks_per_day = pick(args.max_blocks_per_day, config, "max_blocks_per_day", None)
     if max_blocks_per_day is not None:
         max_blocks_per_day = int(max_blocks_per_day)
@@ -5760,20 +6030,15 @@ def main() -> int:
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(10, "Calcul par patrons de journee")
-        if bool(config.get("fix_primary_groups_from_latest", True)):
-            fixed_primary_groups = infer_preferred_groups_from_payload(data, latest_payload)
-            primary_group_source = "dernier planning valide (groupes principaux)"
-        else:
-            fixed_primary_groups = infer_majority_primary_groups_from_payload(data, latest_payload)
-            primary_group_source = "dernier planning valide (groupes majoritaires)"
-        if fixed_primary_groups:
-            emit_progress(11, f"Groupes principaux guides par le {primary_group_source}")
         payload, output_bundle = make_pattern_mip_payload(
             data,
             time_limit=time_limit,
             type_aliases=aliases,
             min_daily_hours=min_daily_hours,
-            max_split_gap_minutes=max_split_gap_minutes,
+            enforce_min_daily_hours=enforce_min_daily_hours,
+            short_day_penalty_weight=short_day_penalty_weight,
+            max_split_gap_minutes=hard_max_split_gap_minutes,
+            generation_max_split_gap_minutes=max_split_gap_minutes,
             weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
             weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
             weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
@@ -5794,7 +6059,10 @@ def main() -> int:
             compact_work_day_weight=compact_work_day_weight,
             compact_part_time_priority=compact_part_time_priority,
             hard_max_work_days=hard_max_work_days,
-            fixed_primary_groups=fixed_primary_groups,
+            feasible_only=fast_feasible,
+            restricted_patterns=restricted_patterns,
+            restricted_pattern_mode=restricted_pattern_mode,
+            fixed_primary_groups=None,
             quality_profile=quality_profile_name,
             quality_profile_label=quality_profile_label,
             primary_group_report_enabled=primary_group_report_enabled,
@@ -5806,71 +6074,72 @@ def main() -> int:
             payload.get("status") == "infeasible_or_not_solved"
             and hard_max_work_days
             and relax_work_days_if_infeasible
+            and "infeasible" in str(payload.get("solver_message", "")).lower()
             and not any(
                 str(item).startswith("Capacite enfants insuffisante")
                 for item in payload.get("diagnostics", [])
             )
         ):
-            emit_progress(50, "Essai avec limite de jours assouplie")
-
-            def relaxed_progress(percent: int, message: str) -> None:
-                emit_progress(50 + min(45, int(percent * 0.45)), message)
-
-            relaxed_payload, relaxed_bundle = make_pattern_mip_payload(
-                data,
-                time_limit=time_limit,
-                type_aliases=aliases,
-                min_daily_hours=min_daily_hours,
-                max_split_gap_minutes=max_split_gap_minutes,
-                weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
-                weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
-                weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
-                enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
-                absolute_max_weekly_hours=absolute_max_weekly_hours,
-                the_enabled=the_enabled,
-                the_percent=the_percent,
-                the_colloques_count=the_colloques_count,
-                half_day_split_time=half_day_split_time,
-                max_weekly_group_exception_days=max_weekly_group_exception_days,
-                split_shift_weight=split_shift_weight,
-                split_gap_weight=split_gap_weight,
-                group_switch_day_weight=group_switch_day_weight,
-                same_group_week_weight=same_group_week_weight,
-                soft_time_rule_weight=soft_time_rule_weight,
-                soft_group_rule_weight=soft_group_rule_weight,
-                compact_work_days=compact_work_days,
-                compact_work_day_weight=max(compact_work_day_weight, relaxed_work_day_weight),
-                compact_part_time_priority=compact_part_time_priority,
-                hard_max_work_days=False,
-                fixed_primary_groups=fixed_primary_groups,
-                quality_profile=quality_profile_name,
-                quality_profile_label=quality_profile_label,
-                primary_group_report_enabled=primary_group_report_enabled,
-                primary_group_warning_outside_hours=primary_group_warning_outside_hours,
-                primary_group_warning_outside_days=primary_group_warning_outside_days,
-                progress_callback=relaxed_progress,
-            )
-            if relaxed_payload.get("status") == "ok":
-                warnings = list(relaxed_payload.get("warnings", []))
-                relaxation_warning = (
-                    "Aucune solution stricte avec le maximum de jours travailles; "
-                    "la limite a ete assouplie et fortement penalisee."
+            relaxed_time_limit = remaining_time_limit()
+            timed_out = "time limit" in str(payload.get("solver_message", "")).lower() or "temps limite" in str(
+                payload.get("solver_message", "")
+            ).lower()
+            if timed_out or relaxed_time_limit < 30.0:
+                warnings = list(payload.get("warnings", []))
+                warnings.append(
+                    "Essai avec limite de jours assouplie non lance: temps limite global atteint."
                 )
-                warnings.append(relaxation_warning)
-                checks = relaxed_payload.setdefault("checks", {})
-                alert_list = list(checks.get("alerts", []))
-                soft_warning_list = list(checks.get("soft_warnings", []))
-                alert_list.append(relaxation_warning)
-                soft_warning_list.append(relaxation_warning)
-                for warning in checks.get("work_day_warnings", []):
-                    warnings.append(warning)
-                    alert_list.append(warning)
-                    soft_warning_list.append(warning)
-                checks["alerts"] = sorted(set(alert_list))
-                checks["soft_warnings"] = sorted(set(soft_warning_list))
-                relaxed_payload["warnings"] = sorted(set(warnings))
-                payload = relaxed_payload
-                output_bundle = relaxed_bundle
+                payload["warnings"] = sorted(set(warnings))
+                emit_progress(95, "Temps limite atteint")
+            else:
+                emit_progress(50, "Diagnostic avec limite de jours assouplie")
+
+                def relaxed_progress(percent: int, message: str) -> None:
+                    emit_progress(50 + min(45, int(percent * 0.45)), message)
+
+                relaxed_payload, relaxed_bundle = make_pattern_mip_payload(
+                    data,
+                    time_limit=relaxed_time_limit,
+                    type_aliases=aliases,
+                    min_daily_hours=min_daily_hours,
+                    enforce_min_daily_hours=enforce_min_daily_hours,
+                    short_day_penalty_weight=short_day_penalty_weight,
+                    max_split_gap_minutes=hard_max_split_gap_minutes,
+                    generation_max_split_gap_minutes=max_split_gap_minutes,
+                    weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+                    weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+                    weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+                    enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+                    absolute_max_weekly_hours=absolute_max_weekly_hours,
+                    the_enabled=the_enabled,
+                    the_percent=the_percent,
+                    the_colloques_count=the_colloques_count,
+                    half_day_split_time=half_day_split_time,
+                    max_weekly_group_exception_days=max_weekly_group_exception_days,
+                    split_shift_weight=split_shift_weight,
+                    split_gap_weight=split_gap_weight,
+                    group_switch_day_weight=group_switch_day_weight,
+                    same_group_week_weight=same_group_week_weight,
+                    soft_time_rule_weight=soft_time_rule_weight,
+                    soft_group_rule_weight=soft_group_rule_weight,
+                    compact_work_days=compact_work_days,
+                    compact_work_day_weight=max(compact_work_day_weight, relaxed_work_day_weight),
+                    compact_part_time_priority=compact_part_time_priority,
+                    hard_max_work_days=False,
+                    feasible_only=fast_feasible,
+                    restricted_patterns=restricted_patterns,
+                    restricted_pattern_mode=restricted_pattern_mode,
+                    fixed_primary_groups=None,
+                    quality_profile=quality_profile_name,
+                    quality_profile_label=quality_profile_label,
+                    primary_group_report_enabled=primary_group_report_enabled,
+                    primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+                    primary_group_warning_outside_days=primary_group_warning_outside_days,
+                    progress_callback=relaxed_progress,
+                )
+                if relaxed_payload.get("status") == "ok":
+                    payload = mark_work_day_diagnostic(relaxed_payload)
+                    output_bundle = relaxed_bundle
         emit_progress(96, "Verification et ecriture des fichiers")
         return finish_payload(payload, output_bundle)
 
@@ -5881,7 +6150,7 @@ def main() -> int:
             time_limit=time_limit,
             type_aliases=aliases,
             min_daily_hours=min_daily_hours,
-            max_split_gap_minutes=max_split_gap_minutes,
+            max_split_gap_minutes=hard_max_split_gap_minutes,
             weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
             half_day_split_time=half_day_split_time,
             max_weekly_group_exception_days=max_weekly_group_exception_days,
@@ -5957,7 +6226,7 @@ def main() -> int:
         smooth_time_limit=smooth_time_limit,
         split_shift_weight=split_shift_weight,
         split_gap_weight=split_gap_weight,
-        max_split_gap_minutes=max_split_gap_minutes,
+        max_split_gap_minutes=hard_max_split_gap_minutes,
         group_switch_day_weight=group_switch_day_weight,
         same_group_week_weight=same_group_week_weight,
         half_day_split_time=half_day_split_time,
@@ -5975,7 +6244,7 @@ def main() -> int:
             smooth_time_limit=smooth_time_limit,
             split_shift_weight=split_shift_weight,
             split_gap_weight=split_gap_weight,
-            max_split_gap_minutes=max_split_gap_minutes,
+            max_split_gap_minutes=hard_max_split_gap_minutes,
             group_switch_day_weight=group_switch_day_weight,
             same_group_week_weight=same_group_week_weight,
             half_day_split_time=half_day_split_time,
