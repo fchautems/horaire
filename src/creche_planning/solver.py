@@ -3941,7 +3941,15 @@ def make_ortools_slot_payload(
     final_states = [0, 1, overflow_state, second_state, final_done_state] + [1 + gap for gap in range(1, max_gap + 1)]
 
     for e_i, educator in enumerate(educators):
-        target = int(round((float(educator["percentage"]) / 100.0) * weekly_base / (horizon.step / 60.0)))
+        target_hours = float(educator["percentage"]) / 100.0 * weekly_base
+        target = int(round(target_hours / (horizon.step / 60.0)))
+        tolerance_slots = weekly_tolerance_slots(
+            target_hours,
+            horizon,
+            percent=weekly_hours_tolerance_percent,
+            minutes=weekly_hours_tolerance_minutes,
+            step_minutes=weekly_hours_tolerance_step_minutes,
+        )
         weekly_terms = []
         for d_i in range(len(DAYS)):
             day_work_terms = []
@@ -4628,6 +4636,14 @@ def make_pattern_mip_payload(
     site_terms: dict[tuple[int, str, int], list[int]] = {}
     percentage_terms: dict[str, list[tuple[int, int, int]]] = {site: [] for site in sites}
     replacement_terms: dict[tuple[int, int], list[int]] = {}
+    pattern_stats = {
+        "off": 0,
+        "continuous": 0,
+        "split": 0,
+        "mixed_group": 0,
+        "replacement": 0,
+        "colloque": 0,
+    }
 
     def work_cost_or_none(e_i: int, day_key: str, segments: tuple[tuple[int, int], ...]) -> float | None:
         educator_name = educators[e_i]["name"]
@@ -4775,6 +4791,18 @@ def make_pattern_mip_payload(
         pattern_child_duration.append(child_duration)
         pattern_colloque_the_duration.append(colloque_the_duration)
         pattern_mixed.append(mixed)
+        if duration == 0:
+            pattern_stats["off"] += 1
+        elif len(segments) > 1:
+            pattern_stats["split"] += 1
+        else:
+            pattern_stats["continuous"] += 1
+        if mixed:
+            pattern_stats["mixed_group"] += 1
+        if replacement:
+            pattern_stats["replacement"] += 1
+        if colloque_the_duration:
+            pattern_stats["colloque"] += 1
         by_educator_day.setdefault((e_i, d_i), []).append(pattern_id)
         by_educator_day_primary.setdefault((e_i, d_i, primary_g), []).append(pattern_id)
         by_educator.setdefault(e_i, []).append(pattern_id)
@@ -5032,10 +5060,27 @@ def make_pattern_mip_payload(
                                             base_cost + morning_cost + afternoon_cost,
                                         )
 
+    bundle.pattern_stats = dict(pattern_stats)
+    bundle.pattern_count = len(costs)
+    pattern_statistics = {
+        "total": len(costs),
+        **pattern_stats,
+    }
     if progress_callback:
-        progress_callback(25, f"Patrons generes: {len(costs)}")
+        progress_callback(
+            25,
+            (
+                f"Patrons generes: {len(costs)} "
+                f"(continus {pattern_stats['continuous']}, "
+                f"coupes {pattern_stats['split']}, "
+                f"mixtes {pattern_stats['mixed_group']}, "
+                f"remplacements {pattern_stats['replacement']})"
+            ),
+        )
     if remaining_seconds() <= 1.0:
-        return time_limit_payload("la generation des patrons"), bundle
+        payload = time_limit_payload("la generation des patrons")
+        payload["pattern_statistics"] = pattern_statistics
+        return payload, bundle
 
     rows: list[int] = []
     cols: list[int] = []
@@ -5171,7 +5216,9 @@ def make_pattern_mip_payload(
 
     matrix = coo_matrix((vals, (rows, cols)), shape=(len(lower), len(costs))).tocsr()
     if remaining_seconds() <= 1.0:
-        return time_limit_payload("la construction du modele"), bundle
+        payload = time_limit_payload("la construction du modele")
+        payload["pattern_statistics"] = pattern_statistics
+        return payload, bundle
     if progress_callback:
         progress_callback(45, "Resolution rapide des patrons" if feasible_only else "Resolution des patrons")
     objective_costs = np.zeros(len(costs), dtype=float) if feasible_only else np.array(costs)
@@ -5203,6 +5250,7 @@ def make_pattern_mip_payload(
                 "warnings": sorted(set(warnings)),
                 "diagnostics": diagnostics,
                 "solve_status": str(result.message),
+                "pattern_statistics": pattern_statistics,
             },
             bundle,
         )
@@ -5326,6 +5374,7 @@ def make_pattern_mip_payload(
             ),
             "schedule": schedule,
             "checks": checks,
+            "pattern_statistics": pattern_statistics,
         },
         bundle,
     )

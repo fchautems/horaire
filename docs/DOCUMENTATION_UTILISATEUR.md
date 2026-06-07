@@ -399,12 +399,23 @@ Temps maximum donne au solveur principal.
 Valeur actuelle :
 
 ```json
-"time_limit_seconds": 300
+"time_limit_seconds": 1000
 ```
 
-Augmenter cette valeur peut aider si le solveur ne trouve pas de solution ou si les donnees deviennent plus grosses. Ici la valeur a ete montee a 300 secondes parce que le planning est plutot calcule ponctuellement.
+Augmenter cette valeur peut aider si le solveur ne trouve pas de solution ou si les donnees deviennent plus grosses. Le planning etant calcule ponctuellement, une recherche de plusieurs minutes est acceptable.
 
 Le moteur actuel respecte cette limite pour la resolution principale. Il peut y avoir un petit temps en plus pour preparer les patrons de journee et ecrire les fichiers.
+
+Le nombre de patrons ne depend pas du temps limite. Un patron est une possibilite de journee pour une personne : horaires continus ou coupes, groupe, groupe principal et eventuel remplacement de colloque. Le solveur combine ensuite ces patrons pour construire la semaine complete.
+
+Le journal et le resultat indiquent maintenant le detail :
+
+- patrons continus ;
+- patrons coupes ;
+- patrons avec changement de groupe ;
+- variantes de remplacement de colloque.
+
+Un message `Time limit reached` signifie que la recherche n'est pas terminee. Il ne prouve pas que le planning est impossible. Seul le statut `Infeasible` constitue une preuve d'impossibilite pour le modele calcule.
 
 ### `quality_gap`
 

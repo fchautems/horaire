@@ -488,6 +488,16 @@ def print_report(payload: dict[str, Any]) -> None:
         print(f"Attention: {warning}")
     for diagnostic in payload.get("diagnostics", []):
         print(f"Diagnostic: {diagnostic}")
+    pattern_statistics = payload.get("pattern_statistics", {})
+    if pattern_statistics:
+        print(
+            "Patrons: "
+            f"{pattern_statistics.get('total', 0)} au total, "
+            f"{pattern_statistics.get('continuous', 0)} continus, "
+            f"{pattern_statistics.get('split', 0)} coupes, "
+            f"{pattern_statistics.get('mixed_group', 0)} avec changement de groupe, "
+            f"{pattern_statistics.get('replacement', 0)} variantes de remplacement."
+        )
     if "schedule" not in payload:
         return
 
