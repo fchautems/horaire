@@ -543,10 +543,14 @@ Utilise le dernier planning calcule pour fixer les groupes principaux de depart.
 Valeur actuelle :
 
 ```json
-"fix_primary_groups_from_latest": false
+"fix_primary_groups_from_latest": true
 ```
 
-Avec la valeur actuelle, le solveur ne se base pas sur un ancien planning. Les groupes principaux sont choisis dans le calcul courant, a partir des regles hard, des regles soft et du cout global.
+Avec la valeur actuelle, le solveur reprend le groupe principal du dernier planning valide. Il ne recopie donc pas chaque journee possible pour chacun des trois groupes principaux, ce qui reduit fortement la memoire et le temps de preparation.
+
+Cela ne fige pas l'horaire quotidien : les jours travailles, heures, coupures, groupes effectivement couverts et remplacements de colloque restent calcules. Une regle groupe `hard` reste prioritaire sur le dernier planning.
+
+Mettre `false` force le moteur a recalculer simultanement les groupes principaux. Cette recherche est plus generale, mais elle peut demander plusieurs gigaoctets de memoire avec le jeu de donnees actuel.
 
 Mettre ce parametre a `true` peut accelerer un recalcul, mais cela fige davantage le resultat et peut cacher une meilleure solution.
 

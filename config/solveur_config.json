@@ -11,7 +11,7 @@
     "solver_engine": "pattern_mip",
     "timestamp_outputs": true,
     "timestamp_format": "%Y-%m-%d_%H-%M-%S",
-    "time_limit_seconds": 1000,
+    "time_limit_seconds": 4000,
     "quality_gap": 0.05,
     "weekly_mode": "exact",
     "quality_profile": "equilibre",
@@ -118,7 +118,7 @@
     "the_percent": 10.0,
     "the_colloques_count": true,
     "the_regular_is_invisible": true,
-    "fix_primary_groups_from_latest": false,
+    "fix_primary_groups_from_latest": true,
     "weekly_stability": true,
     "primary_group": {
         "report_enabled": true,

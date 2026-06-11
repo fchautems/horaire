@@ -4,13 +4,14 @@ import argparse
 import math
 import os
 import time
+from array import array
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 
 from .domain import (
     DAYS,
@@ -4808,6 +4809,7 @@ def make_pattern_mip_payload(
         by_educator.setdefault(e_i, []).append(pattern_id)
         if replacement:
             replacement_terms.setdefault(replacement, []).append(pattern_id)
+        site_durations: dict[str, int] = {}
         for start, end in segments:
             for slot in range(start, end):
                 half_i = 0 if slot < split_slot else 1
@@ -4816,8 +4818,11 @@ def make_pattern_mip_payload(
                     continue
                 coverage_terms.setdefault((d_i, g_i, slot), []).append(pattern_id)
                 slot_site = groups[g_i]["site"]
-                site_terms.setdefault((d_i, slot_site, slot), []).append(pattern_id)
-                percentage_terms[slot_site].append((pattern_id, e_i, 1))
+                if (d_i, slot_site, slot) in site_demand:
+                    site_terms.setdefault((d_i, slot_site, slot), []).append(pattern_id)
+                site_durations[slot_site] = site_durations.get(slot_site, 0) + 1
+        for slot_site, site_duration in site_durations.items():
+            percentage_terms[slot_site].append((pattern_id, e_i, site_duration))
 
     def replacement_options(
         d_i: int,
@@ -5082,11 +5087,29 @@ def make_pattern_mip_payload(
         payload["pattern_statistics"] = pattern_statistics
         return payload, bundle
 
-    rows: list[int] = []
-    cols: list[int] = []
-    vals: list[float] = []
-    lower: list[float] = []
-    upper: list[float] = []
+    # The pattern model contains tens of millions of non-zero coefficients.
+    # Building it with Python lists of row/column integers can consume several
+    # gigabytes before SciPy even starts. Rows are appended in order, so build
+    # the CSR arrays directly with compact typed buffers.
+    cols = array("i")
+    vals = array("d")
+    indptr = array("q", [0])
+    lower = array("d")
+    upper = array("d")
+
+    def add_model_row(
+        terms: list[tuple[int, float]],
+        lb: float,
+        ub: float,
+    ) -> None:
+        for col, val in terms:
+            if val:
+                cols.append(int(col))
+                vals.append(float(val))
+        lower.append(float(lb))
+        upper.append(float(ub))
+        indptr.append(len(cols))
+
     primary_vars: dict[tuple[int, int], int] = {}
     for e_i in range(len(educators)):
         terms: list[tuple[int, float]] = []
@@ -5095,7 +5118,7 @@ def make_pattern_mip_payload(
             primary_vars[(e_i, g_i)] = var_id
             costs.append(primary_group_costs.get((e_i, g_i), 0.0))
             terms.append((var_id, 1.0))
-        add_row(rows, cols, vals, lower, upper, terms, 1.0, 1.0)
+        add_model_row(terms, 1.0, 1.0)
 
     for e_i in range(len(educators)):
         for d_i in range(len(DAYS)):
@@ -5113,7 +5136,7 @@ def make_pattern_mip_payload(
                 primary_var = primary_vars[(e_i, g_i)]
                 terms = [(p_i, 1.0) for p_i in by_educator_day_primary.get((e_i, d_i, g_i), [])]
                 terms.append((primary_var, -1.0))
-                add_row(rows, cols, vals, lower, upper, terms, 0.0, 0.0)
+                add_model_row(terms, 0.0, 0.0)
 
     for e_i, educator in enumerate(educators):
         target_hours = float(educator["percentage"]) / 100.0 * weekly_base
@@ -5131,29 +5154,19 @@ def make_pattern_mip_payload(
             upper_target = min(upper_target, absolute_max_slots)
         child_terms = [(p_i, float(pattern_child_duration[p_i])) for p_i in by_educator.get(e_i, [])]
         visible_terms = [(p_i, float(pattern_duration[p_i])) for p_i in by_educator.get(e_i, [])]
-        add_row(
-            rows,
-            cols,
-            vals,
-            lower,
-            upper,
+        add_model_row(
             child_terms,
             max(0, target - tolerance_slots - the_slots),
             max(0, upper_target - the_slots),
         )
-        add_row(rows, cols, vals, lower, upper, visible_terms, 0.0, upper_target)
+        add_model_row(visible_terms, 0.0, upper_target)
         if hard_max_work_days:
             day_terms = [
                 (p_i, 1.0)
                 for p_i in by_educator.get(e_i, [])
                 if pattern_duration[p_i] > 0
             ]
-            add_row(
-                rows,
-                cols,
-                vals,
-                lower,
-                upper,
+            add_model_row(
                 day_terms,
                 0.0,
                 float(max_work_days_by_educator[e_i]),
@@ -5164,12 +5177,12 @@ def make_pattern_mip_payload(
             for slot in range(horizon.slots):
                 terms = [(p_i, 1.0) for p_i in coverage_terms.get((d_i, g_i, slot), [])]
                 demand = group_demand[(d_i, g_i, slot)]
-                add_row(rows, cols, vals, lower, upper, terms, demand, max(3, demand))
+                add_model_row(terms, demand, max(3, demand))
         for (demand_d_i, site, slot), demand in site_demand.items():
             if demand_d_i != d_i:
                 continue
             terms = [(p_i, 1.0) for p_i in site_terms.get((d_i, site, slot), [])]
-            add_row(rows, cols, vals, lower, upper, terms, demand, math.inf)
+            add_model_row(terms, demand, math.inf)
 
     for colloque in colloques:
         target_g = int(colloque["group_i"])
@@ -5177,7 +5190,7 @@ def make_pattern_mip_payload(
             if source_g == target_g:
                 continue
             terms = [(p_i, 1.0) for p_i in replacement_terms.get((int(colloque["id"]), source_g), [])]
-            add_row(rows, cols, vals, lower, upper, terms, 1.0, 1.0)
+            add_model_row(terms, 1.0, 1.0)
 
     if max_weekly_group_exception_days is not None:
         for e_i in range(len(educators)):
@@ -5189,7 +5202,7 @@ def make_pattern_mip_payload(
                 if pattern_mixed[p_i]
             ]
             if terms:
-                add_row(rows, cols, vals, lower, upper, terms, 0.0, float(max_weekly_group_exception_days))
+                add_model_row(terms, 0.0, float(max_weekly_group_exception_days))
 
     for raw_rule in data.get("rules_percentage", []):
         if len(raw_rule) < 4:
@@ -5210,11 +5223,18 @@ def make_pattern_mip_payload(
             if coeff:
                 terms.append((p_i, coeff))
         if normalize_flag(minmax) == "min":
-            add_row(rows, cols, vals, lower, upper, terms, 0.0, math.inf)
+            add_model_row(terms, 0.0, math.inf)
         else:
-            add_row(rows, cols, vals, lower, upper, terms, -math.inf, 0.0)
+            add_model_row(terms, -math.inf, 0.0)
 
-    matrix = coo_matrix((vals, (rows, cols)), shape=(len(lower), len(costs))).tocsr()
+    matrix = csr_matrix(
+        (
+            np.frombuffer(vals, dtype=np.float64),
+            np.frombuffer(cols, dtype=np.int32),
+            np.frombuffer(indptr, dtype=np.int64),
+        ),
+        shape=(len(lower), len(costs)),
+    )
     if remaining_seconds() <= 1.0:
         payload = time_limit_payload("la construction du modele")
         payload["pattern_statistics"] = pattern_statistics
@@ -5226,7 +5246,11 @@ def make_pattern_mip_payload(
         c=objective_costs,
         integrality=np.ones(len(costs), dtype=np.int8),
         bounds=Bounds(np.zeros(len(costs)), np.ones(len(costs))),
-        constraints=LinearConstraint(matrix, np.array(lower), np.array(upper)),
+        constraints=LinearConstraint(
+            matrix,
+            np.frombuffer(lower, dtype=np.float64),
+            np.frombuffer(upper, dtype=np.float64),
+        ),
         options={"time_limit": max(1.0, remaining_seconds()), "mip_rel_gap": 0.03},
     )
     if progress_callback:
@@ -5932,6 +5956,7 @@ def main() -> int:
     relaxed_work_day_weight = float(
         config.get("relaxed_work_day_weight", max(500.0, compact_work_day_weight))
     )
+    fix_primary_groups_from_latest = bool(config.get("fix_primary_groups_from_latest", False))
     restricted_patterns = bool(config.get("restricted_patterns", False))
     restricted_pattern_mode = str(config.get("restricted_pattern_mode", "primary_only"))
     hard_max_work_days = bool(config.get("hard_max_work_days", True))
@@ -6002,6 +6027,11 @@ def main() -> int:
     aliases = config_aliases(config.get("type_aliases"))
     aliases.update(parse_aliases(args.type_alias))
     latest_payload = load_latest_valid_payload(latest_output_path, output_path)
+    fixed_primary_groups = (
+        infer_majority_primary_groups_from_payload(data, latest_payload)
+        if fix_primary_groups_from_latest
+        else None
+    )
 
     def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
         if profile_warnings:
@@ -6030,46 +6060,76 @@ def main() -> int:
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(10, "Calcul par patrons de journee")
-        payload, output_bundle = make_pattern_mip_payload(
-            data,
-            time_limit=time_limit,
-            type_aliases=aliases,
-            min_daily_hours=min_daily_hours,
-            enforce_min_daily_hours=enforce_min_daily_hours,
-            short_day_penalty_weight=short_day_penalty_weight,
-            max_split_gap_minutes=hard_max_split_gap_minutes,
-            generation_max_split_gap_minutes=max_split_gap_minutes,
-            weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
-            weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
-            weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
-            enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
-            absolute_max_weekly_hours=absolute_max_weekly_hours,
-            the_enabled=the_enabled,
-            the_percent=the_percent,
-            the_colloques_count=the_colloques_count,
-            half_day_split_time=half_day_split_time,
-            max_weekly_group_exception_days=max_weekly_group_exception_days,
-            split_shift_weight=split_shift_weight,
-            split_gap_weight=split_gap_weight,
-            group_switch_day_weight=group_switch_day_weight,
-            same_group_week_weight=same_group_week_weight,
-            soft_time_rule_weight=soft_time_rule_weight,
-            soft_group_rule_weight=soft_group_rule_weight,
-            compact_work_days=compact_work_days,
-            compact_work_day_weight=compact_work_day_weight,
-            compact_part_time_priority=compact_part_time_priority,
-            hard_max_work_days=hard_max_work_days,
-            feasible_only=fast_feasible,
-            restricted_patterns=restricted_patterns,
-            restricted_pattern_mode=restricted_pattern_mode,
-            fixed_primary_groups=None,
-            quality_profile=quality_profile_name,
-            quality_profile_label=quality_profile_label,
-            primary_group_report_enabled=primary_group_report_enabled,
-            primary_group_warning_outside_hours=primary_group_warning_outside_hours,
-            primary_group_warning_outside_days=primary_group_warning_outside_days,
-            progress_callback=emit_progress,
-        )
+        try:
+            payload, output_bundle = make_pattern_mip_payload(
+                data,
+                time_limit=time_limit,
+                type_aliases=aliases,
+                min_daily_hours=min_daily_hours,
+                enforce_min_daily_hours=enforce_min_daily_hours,
+                short_day_penalty_weight=short_day_penalty_weight,
+                max_split_gap_minutes=hard_max_split_gap_minutes,
+                generation_max_split_gap_minutes=max_split_gap_minutes,
+                weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+                weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+                weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+                enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+                absolute_max_weekly_hours=absolute_max_weekly_hours,
+                the_enabled=the_enabled,
+                the_percent=the_percent,
+                the_colloques_count=the_colloques_count,
+                half_day_split_time=half_day_split_time,
+                max_weekly_group_exception_days=max_weekly_group_exception_days,
+                split_shift_weight=split_shift_weight,
+                split_gap_weight=split_gap_weight,
+                group_switch_day_weight=group_switch_day_weight,
+                same_group_week_weight=same_group_week_weight,
+                soft_time_rule_weight=soft_time_rule_weight,
+                soft_group_rule_weight=soft_group_rule_weight,
+                compact_work_days=compact_work_days,
+                compact_work_day_weight=compact_work_day_weight,
+                compact_part_time_priority=compact_part_time_priority,
+                hard_max_work_days=hard_max_work_days,
+                feasible_only=fast_feasible,
+                restricted_patterns=restricted_patterns,
+                restricted_pattern_mode=restricted_pattern_mode,
+                fixed_primary_groups=fixed_primary_groups,
+                quality_profile=quality_profile_name,
+                quality_profile_label=quality_profile_label,
+                primary_group_report_enabled=primary_group_report_enabled,
+                primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+                primary_group_warning_outside_days=primary_group_warning_outside_days,
+                progress_callback=emit_progress,
+            )
+        except MemoryError:
+            horizon = make_horizon(data)
+            output_bundle = type(
+                "PatternMipBundle",
+                (),
+                {
+                    "data": data,
+                    "horizon": horizon,
+                    "groups": list(data.get("groups", [])),
+                    "educators": list(data.get("educators", [])),
+                    "sites": [site["name"] for site in data.get("sites", [])],
+                },
+            )()
+            payload = {
+                "status": "infeasible_or_not_solved",
+                "solver_message": "Memoire insuffisante pendant la construction du modele de patrons.",
+                "warnings": [],
+                "diagnostics": [
+                    "Le calcul a ete arrete proprement avant saturation de l'application.",
+                    "Activez la reutilisation des groupes principaux du dernier planning ou reduisez les patrons.",
+                ],
+            }
+        if fixed_primary_groups:
+            warnings = list(payload.get("warnings", []))
+            warnings.append(
+                "Groupes principaux repris du dernier planning pour eviter les patrons dupliques; "
+                "les affectations quotidiennes restent optimisees."
+            )
+            payload["warnings"] = sorted(set(warnings))
         if (
             payload.get("status") == "infeasible_or_not_solved"
             and hard_max_work_days
@@ -6097,46 +6157,55 @@ def main() -> int:
                 def relaxed_progress(percent: int, message: str) -> None:
                     emit_progress(50 + min(45, int(percent * 0.45)), message)
 
-                relaxed_payload, relaxed_bundle = make_pattern_mip_payload(
-                    data,
-                    time_limit=relaxed_time_limit,
-                    type_aliases=aliases,
-                    min_daily_hours=min_daily_hours,
-                    enforce_min_daily_hours=enforce_min_daily_hours,
-                    short_day_penalty_weight=short_day_penalty_weight,
-                    max_split_gap_minutes=hard_max_split_gap_minutes,
-                    generation_max_split_gap_minutes=max_split_gap_minutes,
-                    weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
-                    weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
-                    weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
-                    enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
-                    absolute_max_weekly_hours=absolute_max_weekly_hours,
-                    the_enabled=the_enabled,
-                    the_percent=the_percent,
-                    the_colloques_count=the_colloques_count,
-                    half_day_split_time=half_day_split_time,
-                    max_weekly_group_exception_days=max_weekly_group_exception_days,
-                    split_shift_weight=split_shift_weight,
-                    split_gap_weight=split_gap_weight,
-                    group_switch_day_weight=group_switch_day_weight,
-                    same_group_week_weight=same_group_week_weight,
-                    soft_time_rule_weight=soft_time_rule_weight,
-                    soft_group_rule_weight=soft_group_rule_weight,
-                    compact_work_days=compact_work_days,
-                    compact_work_day_weight=max(compact_work_day_weight, relaxed_work_day_weight),
-                    compact_part_time_priority=compact_part_time_priority,
-                    hard_max_work_days=False,
-                    feasible_only=fast_feasible,
-                    restricted_patterns=restricted_patterns,
-                    restricted_pattern_mode=restricted_pattern_mode,
-                    fixed_primary_groups=None,
-                    quality_profile=quality_profile_name,
-                    quality_profile_label=quality_profile_label,
-                    primary_group_report_enabled=primary_group_report_enabled,
-                    primary_group_warning_outside_hours=primary_group_warning_outside_hours,
-                    primary_group_warning_outside_days=primary_group_warning_outside_days,
-                    progress_callback=relaxed_progress,
-                )
+                try:
+                    relaxed_payload, relaxed_bundle = make_pattern_mip_payload(
+                        data,
+                        time_limit=relaxed_time_limit,
+                        type_aliases=aliases,
+                        min_daily_hours=min_daily_hours,
+                        enforce_min_daily_hours=enforce_min_daily_hours,
+                        short_day_penalty_weight=short_day_penalty_weight,
+                        max_split_gap_minutes=hard_max_split_gap_minutes,
+                        generation_max_split_gap_minutes=max_split_gap_minutes,
+                        weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+                        weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+                        weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+                        enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+                        absolute_max_weekly_hours=absolute_max_weekly_hours,
+                        the_enabled=the_enabled,
+                        the_percent=the_percent,
+                        the_colloques_count=the_colloques_count,
+                        half_day_split_time=half_day_split_time,
+                        max_weekly_group_exception_days=max_weekly_group_exception_days,
+                        split_shift_weight=split_shift_weight,
+                        split_gap_weight=split_gap_weight,
+                        group_switch_day_weight=group_switch_day_weight,
+                        same_group_week_weight=same_group_week_weight,
+                        soft_time_rule_weight=soft_time_rule_weight,
+                        soft_group_rule_weight=soft_group_rule_weight,
+                        compact_work_days=compact_work_days,
+                        compact_work_day_weight=max(compact_work_day_weight, relaxed_work_day_weight),
+                        compact_part_time_priority=compact_part_time_priority,
+                        hard_max_work_days=False,
+                        feasible_only=fast_feasible,
+                        restricted_patterns=restricted_patterns,
+                        restricted_pattern_mode=restricted_pattern_mode,
+                        fixed_primary_groups=fixed_primary_groups,
+                        quality_profile=quality_profile_name,
+                        quality_profile_label=quality_profile_label,
+                        primary_group_report_enabled=primary_group_report_enabled,
+                        primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+                        primary_group_warning_outside_days=primary_group_warning_outside_days,
+                        progress_callback=relaxed_progress,
+                    )
+                except MemoryError:
+                    relaxed_payload = {
+                        "status": "infeasible_or_not_solved",
+                        "solver_message": "Memoire insuffisante pendant le diagnostic assoupli.",
+                        "warnings": [],
+                        "diagnostics": [],
+                    }
+                    relaxed_bundle = output_bundle
                 if relaxed_payload.get("status") == "ok":
                     payload = mark_work_day_diagnostic(relaxed_payload)
                     output_bundle = relaxed_bundle

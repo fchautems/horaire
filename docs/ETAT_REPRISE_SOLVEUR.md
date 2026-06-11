@@ -51,3 +51,24 @@ Ne pas repartir de zero et ne pas modifier les contraintes metier en premier.
 5. Une fois une solution hard valide obtenue rapidement, lancer une seconde phase d'amelioration des criteres soft.
 
 Le point delicat est donc la reduction des patrons sans supprimer la solution manuelle possible. La prochaine intervention doit commencer par des mesures, puis ajouter une reduction conservative et testable.
+
+## Reprise du 11 juin 2026
+
+La capture du 10 juin a confirme un `MemoryError` pendant la construction de la matrice, apres generation de 1 628 454 patrons.
+
+Corrections implementees :
+
+- matrice construite directement en CSR avec des tableaux compacts, sans listes Python geantes ;
+- coefficients de pourcentage regroupes par patron et par site ;
+- index de couverture par site crees uniquement lorsqu'une regle de site les utilise ;
+- groupe principal repris du dernier planning valide lorsque `fix_primary_groups_from_latest` vaut `true` ;
+- `MemoryError` transforme en diagnostic lisible au lieu d'un traceback.
+
+Mesure sur `data/gwendo.json` :
+
+- avant : 1 628 454 patrons ;
+- apres reprise des groupes principaux : 660 964 patrons, soit environ 59 % de moins ;
+- le modele atteint HiGHS sans `MemoryError` ;
+- essai volontairement arrete avant son terme pour limiter le temps de calcul.
+
+Le groupe principal repris ne fige pas les jours, les horaires, les coupures, les groupes effectivement couverts ni les remplacements. Mettre `fix_primary_groups_from_latest` a `false` restaure la recherche complete des groupes principaux, avec un cout memoire nettement superieur.
