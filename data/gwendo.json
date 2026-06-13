@@ -73,7 +73,7 @@
         },
         {
             "name": "Léa",
-            "percentage": 80,
+            "percentage": 75,
             "type": "ASE",
             "attends_colloque": true
         },
@@ -398,7 +398,7 @@
             "site": "bas",
             "time_intervals": [
                 {
-                    "start": "12:15",
+                    "start": "12:00",
                     "end": "18:00",
                     "group": "Nurserie",
                     "min_staff": 2
@@ -482,7 +482,7 @@
             "time_intervals": [
                 {
                     "start": "11:00",
-                    "end": "12:15",
+                    "end": "12:00",
                     "group": "Nurserie",
                     "min_staff": 3
                 }

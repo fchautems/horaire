@@ -1381,11 +1381,30 @@ def timestamped_path(path: Path, timestamp: str | None) -> Path:
     return path.with_name(f"{path.stem}_{timestamp}{path.suffix}")
 
 
+def terminate_solver_process(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if sys.platform.startswith("win"):
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        process.kill()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
 class SolverProgressDialog(tk.Toplevel):
     def __init__(self, parent: tk.Tk, output: Path, time_limit_seconds: float | None = None):
         super().__init__(parent)
         self.title("Resolution du planning")
-        self.geometry("560x360")
+        self.geometry("620x390")
         self.resizable(False, False)
         self.transient(parent)
         self.running = True
@@ -1396,8 +1415,12 @@ class SolverProgressDialog(tk.Toplevel):
         self.target_percent = 0.0
         self.last_progress_message = ""
         self.time_limit_seconds = time_limit_seconds
+        self.stage_budget_seconds: float | None = None
+        self.stage_index = 0
+        self.stage_total = 0
         self.percent = tk.DoubleVar(value=0)
         self.message = tk.StringVar(value="Demarrage du solveur...")
+        self.stage = tk.StringVar(value="Etape en attente")
         self.elapsed = tk.StringVar(value="Temps ecoule: 0 s")
         self.output = output
 
@@ -1405,6 +1428,7 @@ class SolverProgressDialog(tk.Toplevel):
         frame.pack(fill="both", expand=True)
 
         ttk.Label(frame, text="Generation du planning", font=("", 13, "bold")).pack(anchor="w")
+        ttk.Label(frame, textvariable=self.stage, padding=(0, 8, 0, 0)).pack(anchor="w")
         ttk.Label(frame, textvariable=self.message, padding=(0, 8, 0, 4)).pack(anchor="w")
         self.progress = ttk.Progressbar(frame, maximum=100, variable=self.percent, length=520)
         self.progress.pack(fill="x")
@@ -1431,32 +1455,42 @@ class SolverProgressDialog(tk.Toplevel):
     def tick(self) -> None:
         if self.running:
             elapsed = int(time.monotonic() - self.started_monotonic)
+            stage_elapsed = int(time.monotonic() - self.phase_started_monotonic)
             if self.time_limit_seconds:
                 limit = int(self.time_limit_seconds)
-                self.elapsed.set(f"Temps ecoule: {elapsed} s / limite {limit} s")
+                text = f"Temps total: {elapsed} s / limite {limit} s"
             else:
-                self.elapsed.set(f"Temps ecoule: {elapsed} s")
+                text = f"Temps total: {elapsed} s"
+            if self.stage_budget_seconds is not None:
+                stage_limit = int(self.stage_budget_seconds)
+                stage_remaining = max(0, stage_limit - stage_elapsed)
+                text += (
+                    f" | etape: {stage_elapsed}/{stage_limit} s"
+                    f" (maximum restant {stage_remaining} s)"
+                )
+            self.elapsed.set(text)
             self.smooth_progress()
             self.after(500, self.tick)
 
     def smooth_progress(self) -> None:
-        target = self.target_percent
-        message = self.last_progress_message.lower()
-        if self.time_limit_seconds and "resolution" in message:
-            phase_elapsed = max(0.0, time.monotonic() - self.phase_started_monotonic)
-            remaining_budget = max(
-                1.0,
-                self.time_limit_seconds - (self.phase_started_monotonic - self.started_monotonic),
-            )
-            time_ratio = min(1.0, phase_elapsed / remaining_budget)
-            target = max(target, self.phase_start_percent + (92.0 - self.phase_start_percent) * time_ratio)
-
         current = float(self.percent.get())
+        target = self.target_percent
         if target > current:
             step = max(0.25, (target - current) * 0.12)
             current = min(target, current + step)
             self.percent.set(current)
             self.percent_label.config(text=f"{int(round(current))} %")
+
+    def update_stage(self, current: int, total: int, budget_seconds: float, message: str) -> None:
+        self.stage_index = max(1, int(current))
+        self.stage_total = max(self.stage_index, int(total))
+        self.stage_budget_seconds = max(0.0, float(budget_seconds))
+        self.phase_started_monotonic = time.monotonic()
+        self.stage.set(
+            f"Etape {self.stage_index}/{self.stage_total}: {message} "
+            f"(budget maximal {int(self.stage_budget_seconds)} s)"
+        )
+        self.append_log(self.stage.get())
 
     def close_requested(self) -> None:
         if self.running:
@@ -2021,6 +2055,11 @@ class CrecheEditor(tk.Tk):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 bufsize=1,
+                creationflags=(
+                    getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                    if sys.platform.startswith("win")
+                    else 0
+                ),
             )
             assert process.stdout is not None
             line_queue: queue.Queue[str | None] = queue.Queue()
@@ -2035,7 +2074,7 @@ class CrecheEditor(tk.Tk):
 
             reader = threading.Thread(target=read_output, daemon=True)
             reader.start()
-            deadline = time.monotonic() + max(1.0, time_limit_seconds) + 30.0
+            deadline = time.monotonic() + max(1.0, time_limit_seconds) + 5.0
             output_done = False
             while True:
                 try:
@@ -2047,6 +2086,26 @@ class CrecheEditor(tk.Tk):
                     raw_line = ""
                 if raw_line:
                     line = raw_line.rstrip()
+                    if line.startswith("STAGE|"):
+                        parts = line.split("|", 4)
+                        if len(parts) == 5:
+                            try:
+                                stage_index = int(parts[1])
+                                stage_total = int(parts[2])
+                                stage_budget = float(parts[3])
+                            except ValueError:
+                                stage_index, stage_total, stage_budget = 1, 1, 0.0
+                            stage_message = parts[4]
+                            self.after(
+                                0,
+                                lambda i=stage_index, t=stage_total, b=stage_budget, m=stage_message: dialog.update_stage(
+                                    i,
+                                    t,
+                                    b,
+                                    m,
+                                ),
+                            )
+                        continue
                     if line.startswith("PROGRESS|"):
                         parts = line.split("|", 2)
                         if len(parts) == 3:
@@ -2065,8 +2124,8 @@ class CrecheEditor(tk.Tk):
                 if returncode is not None and output_done:
                     break
                 if time.monotonic() > deadline:
-                    process.kill()
-                    returncode = process.wait(timeout=5)
+                    terminate_solver_process(process)
+                    returncode = process.returncode
                     lines.append(
                         f"Temps limite depasse: processus arrete apres environ {int(time_limit_seconds)} s."
                     )

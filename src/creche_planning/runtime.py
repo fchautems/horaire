@@ -65,3 +65,11 @@ def pick(cli_value: Any, config: dict[str, Any], key: str, default: Any = None) 
 def emit_progress(percent: int, message: str) -> None:
     print(f"PROGRESS|{max(0, min(100, int(percent)))}|{message}", flush=True)
 
+
+def emit_stage(current: int, total: int, budget_seconds: float, message: str) -> None:
+    print(
+        f"STAGE|{max(1, int(current))}|{max(1, int(total))}|"
+        f"{max(0, int(budget_seconds))}|{message}",
+        flush=True,
+    )
+
