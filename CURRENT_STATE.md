@@ -2,120 +2,106 @@
 
 Date de reference : 13 juin 2026.
 
-## But
-
-Generer un planning hebdomadaire de creche a partir de `data/gwendo.json`, avec controle des contraintes hard, optimisation des preferences soft, export JSON/CSV/HTML et edition graphique.
-
 ## Etat fonctionnel
 
-- L'editeur ouvre, modifie, valide et enregistre le JSON.
-- L'editeur peut lancer le solveur et afficher sa progression.
-- Le staffing accepte des besoins differents selon les jours.
-- Les sorties sont horodatees et un dernier planning valide peut etre recharge.
-- Les exports texte, CSV et HTML existent.
-- Le moteur actif est `pattern_mip`.
-- Le dernier commit pousse est `092407e` sur `main`.
-- Les modifications de stabilisation actuelles sont presentes dans le repertoire de travail, mais ne sont pas encore commitees.
+Le projet genere, verifie et exporte un planning hebdomadaire de creche.
+L'editeur, les lanceurs Windows, le cache JSON et les exports JSON/CSV/HTML
+restent compatibles.
 
-## Etat du solveur
+Le moteur configure reste `pattern_mip`, mais son orchestration utilise
+maintenant une recherche compacte CP-SAT avant le modele exhaustif lorsqu'aucun
+planning hard-valide n'est disponible.
 
-Le solveur a ete stabilise et separe :
+## Resultat principal
 
-- `solver.py` conserve l'orchestration et l'interface publique ;
-- `pattern_mip.py` contient la generation des patrons, la matrice et l'appel HiGHS ;
-- `pattern_search.py` contient les essais progressifs, budgets et choix du candidat ;
-- la recherche vise d'abord un candidat hard-valide, puis une amelioration soft ;
-- le dernier planning valide n'est remplace que si les controles finaux sont sans erreur ;
-- l'interface affiche l'etape et son budget, et arrete l'arbre de processus sous Windows ;
-- 23 tests de regression passent.
+Un planning strictement hard-valide est maintenant confirme :
 
-La recherche par patrons a aussi ete rendue progressive :
+- fichier actif : `outputs/planning_gwendo_latest.json` ;
+- `status: ok` ;
+- `checks.errors: []` ;
+- score interne de qualite : `15630` ;
+- verification finale : `OK`.
 
-- les deux premieres tentatives utilisent uniquement des journees continues, avec changement de groupe entre demi-journees autorise ;
-- les coupures sont ajoutees ensuite, puis l'espace complet en dernier recours ;
-- les patrons dont les heures ne peuvent mathematiquement pas completer la semaine sont retires ;
-- les regles horaires sont pre-calculees par masques et les couts repetes sont mis en cache ;
-- une reserve de temps empeche de transmettre un tres gros modele a HiGHS lorsqu'il ne reste pas assez de budget pour son chargement natif.
+Ce planning provient de la grille metier du 2 juin 2026, avec les corrections
+minimales deja documentees de couverture et de classification des remplacements
+de colloque. La reference immuable est :
 
-La memoire du moteur a ete reduite :
+`outputs/planning_gwendo_reference_valid_2026-06-13_19-27-08.json`
 
-- suppression de la table geante de signatures de patrons ;
-- metadonnees de patrons stockees dans des tableaux compacts ;
-- index de couverture et de matrice stockes dans des tableaux d'entiers ;
-- construction CSR sans grandes listes temporaires ;
-- expiration controlee pendant la generation.
+Les versions CSV et HTML correspondantes existent aussi.
 
-Le test utilisateur de 2 000 secondes du 12 juin a genere 935 658 patrons, puis `python.exe` a subi un `APPCRASH`. Ce resultat ne prouvait aucune infaisabilite. Apres compactage, les sous-modeles de 150 000 a environ 330 000 patrons terminent sans crash et donnent un statut HiGHS exploitable.
+## Corrections du solveur
 
-Le 13 juin, un benchmark limite a 180 secondes a termine proprement en environ 170 secondes :
+Le moteur compact CP-SAT a ete aligne sur `verify_solution` :
 
-- 53 729 patrons continus guides : `Infeasible` ;
-- 59 564 patrons continus libres : `Infeasible` ;
-- 717 582 patrons avec coupures : non lance dans HiGHS faute de budget de chargement suffisant ;
-- 1 356 055 patrons complets : timeout pendant la construction du modele.
+- heures enfants, THE et colloques comptabilises comme le validateur ;
+- limites de jours travaillees appliquees ;
+- maximum de deux blocs et coupures controlees ;
+- changement de site permis entre deux parties d'une journee ;
+- changement de groupe interdit dans une meme demi-journee ;
+- remplacements de colloque exclus des changements ordinaires de groupe ;
+- groupes principaux et regles hard correctement interpretes ;
+- tout candidat est obligatoirement soumis a `verify_solution`.
 
-Un calcul reel de 2 000 secondes a ensuite ete execute :
+Le CP-SAT a reproduit exactement le planning de reference en environ 5 secondes
+dans le test d'equivalence. Sans planning fixe, il a aussi produit de maniere
+autonome un candidat avec `checks.errors == []` : premiere faisabilite en
+environ 25 secondes, puis amelioration limitee a 60 secondes.
 
-- 53 523 patrons continus guides : `Infeasible` ;
-- 59 564 patrons continus libres : `Infeasible` ;
-- 715 311 patrons avec coupures : aucun candidat trouve dans le budget ;
-- 1 356 055 patrons complets : aucun resultat avant la limite globale.
+Le modele exhaustif par patrons reste disponible en repli. Il n'est plus lance
+si un planning hard-valide a deja ete trouve ou revalide.
 
-Le processus direct a ete arrete apres depassement de la limite dans l'appel natif HiGHS. Aucun fichier de sortie valide n'a ete remplace.
+## Cache et securite
 
-## Resultats etablis
+- `planning_gwendo_latest.json` est prioritaire sur les JSON de diagnostic ou
+  de test plus recents ;
+- le cache est revalide avec les donnees et regles courantes avant reutilisation ;
+- un cache incomplet ou invalide est refuse ;
+- un planning valide n'est jamais remplace par un candidat invalide ;
+- les anciens diagnostics CP-SAT ne sont plus affiches comme diagnostics du
+  lancement courant.
 
-- Le planning assoupli du 11 juin est reproductible exactement avec 65 patrons et `checks.errors == []` lorsque la limite de jours est desactivee.
-- La conversion de ce planning en patrons fixes est donc valide.
-- Plusieurs espaces reduits ont ete prouves `Infeasible`, notamment les grilles 60 minutes, les grilles mixtes 60/30 minutes, les coupures jusqu'a 90 minutes et plusieurs reparations locales.
-- Une optimisation locale assouplie optimale ramene Valerie a 3 jours.
-- Le blocage minimal observe reste :
-  - `A repourvoir` : 5 jours pour un maximum de 4 ;
-  - `Natacha` : 4 jours pour un maximum de 3 ;
-  - `Anais` : 5 jours pour un maximum de 3.
-- Aucun planning strictement valide n'est encore confirme.
-- Les modeles sans coupure sont maintenant prouves infaisables avec les regles courantes.
-- Les modeles avec coupures restent trop grands pour constituer une voie de recherche efficace sous leur forme exhaustive actuelle.
-- Ces preuves concernent les sous-modeles executes. Elles ne prouvent pas encore l'infaisabilite du modele metier complet a 15 minutes.
+Le lancement reel avec `config/solveur_config.json` a termine en 0,78 seconde :
 
-`outputs/planning_gwendo_latest.json` est ancien. Il porte `status: ok`, mais provient d'une execution avec limite de jours assouplie. Il peut guider une reparation, mais ne doit pas etre presente comme planning strictement valide.
+- `Dernier planning hard-valide revalide et conserve` ;
+- `Verification: OK` ;
+- aucun modele exhaustif lance.
 
-## Configuration actuelle
+## Tests
 
-Fichier : `config/solveur_config.json`.
+Commande utilisee :
 
-Valeurs importantes :
+`F:\anaconda3\envs\stable-diffusion\python.exe -m unittest discover -s tests -v`
 
-- `solver_engine`: `pattern_mip`;
-- `time_limit_seconds`: `2000`;
-- `weekly_hours_tolerance_percent`: `5.0`;
-- `absolute_max_weekly_hours`: `40`;
-- `hard_max_work_days`: `true`;
-- `max_pause_between_blocks_minutes`: `120`;
-- `enforce_max_pause_between_blocks`: `false`;
-- `fix_primary_groups_from_latest`: `true`;
-- `restricted_patterns`: `false`;
-- granularite : 15 minutes.
+Resultat : 27 tests passes en environ 5 secondes.
 
-## Fichiers importants
+Les tests couvrent notamment :
 
-- `data/gwendo.json` : donnees metier, educateurs et regles.
-- `config/solveur_config.json` : parametres du calcul et des sorties.
-- `src/creche_planning/solver.py` : orchestration et moteurs, dont `pattern_mip`.
-- `src/creche_planning/pattern_mip.py` : generation compacte des patrons, matrice CSR et appel HiGHS.
-- `src/creche_planning/pattern_search.py` : progression des essais, budgets et conservation du candidat valide.
-- `src/creche_planning/domain.py` : temps, jours, staffing, colloques, THE et tolerances.
-- `src/creche_planning/editor.py` : interface graphique et validation des donnees.
-- `src/creche_planning/reports.py` : rapport console, CSV et HTML.
-- `src/creche_planning/quality.py` : profils et metriques de qualite.
-- `src/creche_planning/runtime.py` : configuration, chemins et progression.
-- `solveur_v2.py` : lanceur compatible du solveur.
-- `creche_editor.py` : lanceur compatible de l'editeur.
-- `lancer_solveur.bat` / `lancer_editeur.bat` : lancement Windows.
-- `docs/REGLES_METIER.md` : formulation metier des contraintes.
-- `docs/DOCUMENTATION_UTILISATEUR.md` : parametres et utilisation.
-- `docs/ETAT_REPRISE_SOLVEUR.md` : historique technique des derniers diagnostics.
+- contraintes de groupe et changements entre demi-journees ;
+- remplacements de colloque ;
+- budgets et replis du moteur par patrons ;
+- conservation d'un candidat valide ;
+- timeout et arret de l'arbre de processus sous Windows ;
+- revalidation et priorite du cache ;
+- equivalence du planning de reference dans CP-SAT.
 
-## Etat du repertoire
+## Fichiers modifies dans le travail courant
 
-Le repertoire de travail contient des modifications de code et des tests non commites. Les fichiers de reprise Markdown sont egalement non suivis par Git. Ne pas ajouter les captures ou fichiers temporaires sans demande.
+- `src/creche_planning/solver.py`
+- `tests/test_solver_orchestration.py`
+- `tests/test_cp_sat_reference.py`
+- `tests/fixtures/planning_gwendo_reference_valid.json`
+- `CURRENT_STATE.md`
+- `CURRENT_TASK.md`
+
+Les donnees `data/gwendo.json` et les formats existants n'ont pas ete modifies
+par cette stabilisation.
+
+## Journaux utiles
+
+- `outputs/cp_sat_debug.log` : diagnostic du dernier calcul CP-SAT dans les sorties ;
+- `outputs/cp_sat_candidate_test.json` : candidat autonome de diagnostic, valide
+  mais moins bon que la reference active.
+
+Ces fichiers de diagnostic ne peuvent plus prendre automatiquement la priorite
+sur `planning_gwendo_latest.json`.

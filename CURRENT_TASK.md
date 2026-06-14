@@ -1,25 +1,37 @@
 # Tache suivante
 
-Obtenir un planning hard-valide ou isoler une contradiction metier precise, sans relancer le modele exhaustif de 1,35 million de patrons.
+Le blocage principal est leve : un planning hard-valide est disponible,
+reproductible et reutilise rapidement.
 
-Procedure :
+## Objectif
 
-1. Auditer le moteur compact CP-SAT/historique de `solver.py` sur les regles indispensables : jours maximum, THE, colloques, remplacements, staffing, pourcentages et changements de groupe.
-2. Ajouter uniquement les contraintes manquantes necessaires pour qu'il puisse servir de generateur rapide de candidat.
-3. Soumettre obligatoirement tout candidat a `verify_solution` et refuser toute sortie dont `checks.errors != []`.
-4. Conserver le premier candidat hard-valide, puis reparer ou ameliorer uniquement les personnes et journees concernes.
-5. Si aucun candidat compact n'existe, extraire une contradiction precise et lisible avant toute nouvelle recherche longue.
-6. Ne pas relancer le modele exhaustif actuel de 1,35 million de patrons sans changement d'algorithme ou decomposition.
+Ameliorer progressivement la qualite du planning sans perdre la solution valide
+ni relancer inutilement le modele exhaustif.
 
-Faits a conserver :
+## Etapes
 
-- le planning assoupli est une base de reparation, pas une preuve stricte ;
-- Valerie peut respecter ses 3 jours ;
-- les depassements minimaux observes restent A repourvoir, Natacha et Anais ;
-- `Time limit reached` n'est pas une preuve d'impossibilite ;
-- seul `Infeasible` vaut pour le sous-modele effectivement execute.
-- les deux sous-modeles sans coupure du 13 juin sont `Infeasible` ;
-- le modele avec coupures n'a pas trouve de candidat dans son budget, ce qui n'est pas une preuve d'infaisabilite ;
-- le dernier planning valide n'a pas ete ecrase.
+1. Garder `planning_gwendo_latest.json` comme solution de secours revalidee.
+2. Utiliser cette solution comme indice initial du CP-SAT.
+3. Optimiser uniquement les criteres soft : coupures, temps hors groupe
+   principal, remplacements et marge de couverture.
+4. Verifier chaque candidat avec `verify_solution`.
+5. Remplacer le planning actif uniquement si le candidat est hard-valide et
+   meilleur selon une comparaison de qualite explicite.
+6. Conserver le moteur exhaustif par patrons comme dernier repli, avec budget
+   borne et logs de diagnostic.
 
-Termine lorsque le planning courant est hard-valide, exporte et explique, ou lorsqu'une contradiction metier precise est demontree par un modele equivalent aux regles validees.
+## Criteres de fin
+
+- `checks.errors == []` ;
+- `planning_gwendo_latest.json` jamais remplace par un planning invalide ;
+- qualite egale ou meilleure que le score actuel `15630` ;
+- tests Windows et lancement reel toujours valides ;
+- cache et formats JSON/CSV/HTML inchanges.
+
+## Faits a conserver
+
+- un timeout ne prouve pas l'infaisabilite ;
+- le planning actif est strictement valide avec les regles courantes ;
+- le CP-SAT sait trouver un candidat valide sans enumerer 1,35 million de patrons ;
+- le candidat CP-SAT autonome actuel est valide mais moins bon que la reference ;
+- la priorite reste la fiabilite avant l'optimisation soft.

@@ -1,0 +1,1425 @@
+{
+  "status": "ok",
+  "objective": 0.0,
+  "solver_message": "Planning metier repare et valide par verify_solution.",
+  "warnings": [
+    "Base: horaire metier du 2 juin 2026; corrections minimales de couverture et de classification des remplacements de colloque."
+  ],
+  "schedule": {
+    "A repourvoir": {
+      "lundi": [
+        {
+          "start": "08:00",
+          "end": "12:00",
+          "hours": 4.0,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "colloque"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "start": "07:15",
+          "end": "13:15",
+          "hours": 6.0,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:30",
+          "hours": 1.25,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "remplacement_colloque"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "11:30",
+          "end": "18:45",
+          "hours": 7.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ]
+    },
+    "Fanny": {
+      "lundi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "06:45",
+          "end": "13:15",
+          "hours": 6.5,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:00",
+          "end": "14:30",
+          "hours": 0.5,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "11:45",
+          "end": "18:45",
+          "hours": 7.0,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "06:45",
+          "end": "12:00",
+          "hours": 5.25,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ]
+    },
+    "Natacha": {
+      "lundi": [
+        {
+          "start": "07:15",
+          "end": "11:00",
+          "hours": 3.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "11:15",
+          "end": "13:15",
+          "hours": 2.0,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "colloque"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "08:00",
+          "end": "11:15",
+          "hours": 3.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "12:45",
+          "end": "18:00",
+          "hours": 5.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "07:15",
+          "end": "12:15",
+          "hours": 5.0,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "14:00",
+          "end": "14:15",
+          "hours": 0.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [],
+      "vendredi": []
+    },
+    "Tara": {
+      "lundi": [
+        {
+          "start": "06:45",
+          "end": "14:30",
+          "hours": 7.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "11:00",
+          "end": "13:15",
+          "hours": 2.25,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:30",
+          "end": "18:45",
+          "hours": 4.25,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "start": "08:15",
+          "end": "12:00",
+          "hours": 3.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:15",
+          "hours": 1.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "remplacement_colloque"
+        },
+        {
+          "start": "14:15",
+          "end": "18:00",
+          "hours": 3.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "vendredi": []
+    },
+    "Gwendoline": {
+      "lundi": [
+        {
+          "start": "08:15",
+          "end": "12:00",
+          "hours": 3.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mardi": [],
+      "mercredi": [
+        {
+          "start": "06:45",
+          "end": "12:15",
+          "hours": 5.5,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [],
+      "vendredi": []
+    },
+    "Céline": {
+      "lundi": [
+        {
+          "start": "11:00",
+          "end": "13:15",
+          "hours": 2.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:30",
+          "end": "18:45",
+          "hours": 4.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mardi": [],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "vendredi": []
+    },
+    "Magali": {
+      "lundi": [
+        {
+          "start": "08:30",
+          "end": "12:15",
+          "hours": 3.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "18:00",
+          "hours": 4.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "08:30",
+          "end": "12:30",
+          "hours": 4.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00",
+          "hours": 4.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "08:30",
+          "end": "13:15",
+          "hours": 4.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "colloque"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "07:15",
+          "end": "12:15",
+          "hours": 5.0,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ]
+    },
+    "Léa": {
+      "lundi": [
+        {
+          "start": "12:45",
+          "end": "13:15",
+          "hours": 0.5,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:00",
+          "end": "18:45",
+          "hours": 4.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "07:15",
+          "end": "12:45",
+          "hours": 5.5,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:30",
+          "hours": 1.25,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "remplacement_colloque"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "11:45",
+          "end": "14:00",
+          "hours": 2.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "14:15",
+          "end": "18:45",
+          "hours": 4.5,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "08:00",
+          "end": "11:45",
+          "hours": 3.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "18:00",
+          "hours": 4.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "vendredi": []
+    },
+    "Emilie": {
+      "lundi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "06:45",
+          "end": "13:00",
+          "hours": 6.25,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:00",
+          "end": "14:00",
+          "hours": 1.0,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "remplacement_colloque"
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "start": "06:45",
+          "end": "12:30",
+          "hours": 5.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "colloque"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "08:30",
+          "end": "12:30",
+          "hours": 4.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00",
+          "hours": 4.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ]
+    },
+    "Anaïs": {
+      "lundi": [],
+      "mardi": [],
+      "mercredi": [
+        {
+          "start": "06:45",
+          "end": "14:15",
+          "hours": 7.5,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "11:00",
+          "end": "13:15",
+          "hours": 2.25,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:30",
+          "end": "18:45",
+          "hours": 4.25,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ]
+    },
+    "Priscila": {
+      "lundi": [
+        {
+          "start": "06:45",
+          "end": "13:15",
+          "hours": 6.5,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:30",
+          "hours": 1.25,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "remplacement_colloque"
+        }
+      ],
+      "mardi": [
+        {
+          "start": "08:30",
+          "end": "12:00",
+          "hours": 3.5,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        },
+        {
+          "start": "13:00",
+          "end": "18:00",
+          "hours": 5.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "mercredi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "jeudi": [
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "colloque"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00",
+          "hours": 4.0,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "06:45",
+          "end": "14:00",
+          "hours": 7.25,
+          "group": "Nurserie",
+          "site": "bas",
+          "activity": "children"
+        }
+      ]
+    },
+    "Valérie": {
+      "lundi": [],
+      "mardi": [
+        {
+          "start": "08:15",
+          "end": "12:00",
+          "hours": 3.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        },
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "colloque"
+        }
+      ],
+      "mercredi": [],
+      "jeudi": [
+        {
+          "start": "06:45",
+          "end": "14:30",
+          "hours": 7.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "vendredi": [
+        {
+          "start": "08:15",
+          "end": "14:30",
+          "hours": 6.25,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ]
+    },
+    "X": {
+      "lundi": [
+        {
+          "start": "13:15",
+          "end": "14:00",
+          "hours": 0.75,
+          "group": "Trotteur",
+          "site": "bas",
+          "activity": "remplacement_colloque"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00",
+          "hours": 4.0,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ],
+      "mardi": [],
+      "mercredi": [],
+      "jeudi": [],
+      "vendredi": [
+        {
+          "start": "11:00",
+          "end": "18:45",
+          "hours": 7.75,
+          "group": "Grands",
+          "site": "haut",
+          "activity": "children"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "hours_by_educator": {
+      "A repourvoir": 29.25,
+      "Fanny": 38.75,
+      "Natacha": 21.75,
+      "Tara": 25.25,
+      "Gwendoline": 10.25,
+      "Céline": 15.75,
+      "Magali": 38.0,
+      "Léa": 30.25,
+      "Emilie": 32.0,
+      "Anaïs": 24.25,
+      "Priscila": 39.25,
+      "Valérie": 19.75,
+      "X": 14.0
+    },
+    "weekly_targets": {
+      "A repourvoir": 29.25,
+      "Fanny": 40.0,
+      "Natacha": 22.0,
+      "Tara": 26.0,
+      "Gwendoline": 10.0,
+      "Céline": 16.0,
+      "Magali": 40.0,
+      "Léa": 30.0,
+      "Emilie": 32.0,
+      "Anaïs": 24.0,
+      "Priscila": 40.0,
+      "Valérie": 20.0,
+      "X": 14.0
+    },
+    "child_hours_by_educator": {
+      "A repourvoir": 26.25,
+      "Fanny": 34.75,
+      "Natacha": 19.5,
+      "Tara": 22.75,
+      "Gwendoline": 9.25,
+      "Céline": 14.25,
+      "Magali": 34.0,
+      "Léa": 27.25,
+      "Emilie": 28.75,
+      "Anaïs": 21.75,
+      "Priscila": 35.25,
+      "Valérie": 17.75,
+      "X": 12.5
+    },
+    "weekly_the_targets": {
+      "A repourvoir": 3.0,
+      "Fanny": 4.0,
+      "Natacha": 2.25,
+      "Tara": 2.5,
+      "Gwendoline": 1.0,
+      "Céline": 1.5,
+      "Magali": 4.0,
+      "Léa": 3.0,
+      "Emilie": 3.25,
+      "Anaïs": 2.5,
+      "Priscila": 4.0,
+      "Valérie": 2.0,
+      "X": 1.5
+    },
+    "colloque_the_hours_by_educator": {
+      "A repourvoir": 0.75,
+      "Fanny": 0.75,
+      "Natacha": 0.75,
+      "Tara": 0.75,
+      "Gwendoline": 0.0,
+      "Céline": 0.75,
+      "Magali": 0.75,
+      "Léa": 0.75,
+      "Emilie": 0.75,
+      "Anaïs": 0.75,
+      "Priscila": 0.75,
+      "Valérie": 0.75,
+      "X": 0.0
+    },
+    "invisible_the_hours_by_educator": {
+      "A repourvoir": 2.25,
+      "Fanny": 3.25,
+      "Natacha": 1.5,
+      "Tara": 1.75,
+      "Gwendoline": 1.0,
+      "Céline": 0.75,
+      "Magali": 3.25,
+      "Léa": 2.25,
+      "Emilie": 2.5,
+      "Anaïs": 1.75,
+      "Priscila": 3.25,
+      "Valérie": 1.25,
+      "X": 1.5
+    },
+    "total_the_hours_by_educator": {
+      "A repourvoir": 3.0,
+      "Fanny": 4.0,
+      "Natacha": 2.25,
+      "Tara": 2.5,
+      "Gwendoline": 1.0,
+      "Céline": 1.5,
+      "Magali": 4.0,
+      "Léa": 3.0,
+      "Emilie": 3.25,
+      "Anaïs": 2.5,
+      "Priscila": 4.0,
+      "Valérie": 2.0,
+      "X": 1.5
+    },
+    "worked_days_by_educator": {
+      "A repourvoir": 4,
+      "Fanny": 5,
+      "Natacha": 3,
+      "Tara": 3,
+      "Gwendoline": 2,
+      "Céline": 2,
+      "Magali": 5,
+      "Léa": 4,
+      "Emilie": 4,
+      "Anaïs": 3,
+      "Priscila": 5,
+      "Valérie": 3,
+      "X": 2
+    },
+    "primary_groups_by_educator": {
+      "A repourvoir": "Trotteur",
+      "Fanny": "Grands",
+      "Natacha": "Trotteur",
+      "Tara": "Grands",
+      "Gwendoline": "Grands",
+      "Céline": "Trotteur",
+      "Magali": "Nurserie",
+      "Léa": "Trotteur",
+      "Emilie": "Nurserie",
+      "Anaïs": "Nurserie",
+      "Priscila": "Nurserie",
+      "Valérie": "Grands",
+      "X": "Grands"
+    },
+    "primary_group_errors": [],
+    "target_work_days": {
+      "A repourvoir": 4,
+      "Fanny": 5,
+      "Natacha": 3,
+      "Tara": 4,
+      "Gwendoline": 2,
+      "Céline": 2,
+      "Magali": 5,
+      "Léa": 4,
+      "Emilie": 4,
+      "Anaïs": 3,
+      "Priscila": 5,
+      "Valérie": 3,
+      "X": 2
+    },
+    "max_work_days": {
+      "A repourvoir": 4,
+      "Fanny": 5,
+      "Natacha": 3,
+      "Tara": 4,
+      "Gwendoline": 2,
+      "Céline": 2,
+      "Magali": 5,
+      "Léa": 4,
+      "Emilie": 4,
+      "Anaïs": 3,
+      "Priscila": 5,
+      "Valérie": 3,
+      "X": 2
+    },
+    "work_day_errors": [],
+    "work_day_warnings": [],
+    "weekly_tolerances": {
+      "A repourvoir": 1.25,
+      "Fanny": 2.0,
+      "Natacha": 1.0,
+      "Tara": 1.25,
+      "Gwendoline": 0.5,
+      "Céline": 0.75,
+      "Magali": 2.0,
+      "Léa": 1.5,
+      "Emilie": 1.5,
+      "Anaïs": 1.0,
+      "Priscila": 2.0,
+      "Valérie": 1.0,
+      "X": 0.5
+    },
+    "weekly_max_errors": [],
+    "hours_by_site": {
+      "haut": 97.5,
+      "bas": 206.5
+    },
+    "hours_by_site_type": {
+      "haut": {
+        "EDE": 45.0,
+        "ASE": 34.75,
+        "APE": 17.75
+      },
+      "bas": {
+        "EDE": 90.0,
+        "APE": 19.5,
+        "ASE": 97.0
+      }
+    },
+    "percentage_rules": [
+      {
+        "site": "haut",
+        "types": [
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 40,
+        "actual_percent": 46.15,
+        "ok": true
+      },
+      {
+        "site": "haut",
+        "types": [
+          "APE"
+        ],
+        "rule": "max",
+        "target_percent": 20,
+        "actual_percent": 18.21,
+        "ok": true
+      },
+      {
+        "site": "haut",
+        "types": [
+          "ASE",
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 80,
+        "actual_percent": 81.79,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 40,
+        "actual_percent": 43.58,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "APE"
+        ],
+        "rule": "max",
+        "target_percent": 20,
+        "actual_percent": 9.44,
+        "ok": true
+      },
+      {
+        "site": "bas",
+        "types": [
+          "ASE",
+          "EDE"
+        ],
+        "rule": "min",
+        "target_percent": 80,
+        "actual_percent": 90.56,
+        "ok": true
+      }
+    ],
+    "coverage_errors": [],
+    "hard_rule_errors": [],
+    "group_structure_errors": [],
+    "quality_rule_errors": [],
+    "quality_profile": {
+      "name": "equilibre",
+      "label": "Equilibre"
+    },
+    "quality_summary": {
+      "profile": {
+        "name": "equilibre",
+        "label": "Equilibre"
+      },
+      "scorecard": [
+        {
+          "label": "Regles hard",
+          "value": "OK",
+          "ok": true
+        },
+        {
+          "label": "Coupures",
+          "value": "17 jour(s), plus grande 105 min",
+          "ok": true
+        },
+        {
+          "label": "Changements de groupe",
+          "value": "0 jour(s), 0 transition(s)",
+          "ok": true
+        },
+        {
+          "label": "Hors groupe principal",
+          "value": "1 jour(s), 5.0h, 1 personne(s) a revoir",
+          "ok": false
+        },
+        {
+          "label": "Preferences horaires soft",
+          "value": "aucune",
+          "ok": true
+        },
+        {
+          "label": "Preferences groupes soft",
+          "value": "3/3",
+          "ok": true
+        },
+        {
+          "label": "Remplacements colloque",
+          "value": "6 bloc(s), 6.5h",
+          "ok": true
+        },
+        {
+          "label": "Marge de couverture",
+          "value": "10.5h-personne",
+          "ok": true
+        }
+      ],
+      "metrics": {
+        "hard_error_count": 0,
+        "soft_warning_count": 0,
+        "split_days_count": 17,
+        "split_gaps_count": 17,
+        "total_split_gap_hours": 16.75,
+        "max_split_gap_minutes_found": 105,
+        "max_split_gap_minutes_allowed": null,
+        "split_gap_violations": 0,
+        "group_change_days_count": 0,
+        "group_change_transitions_count": 0,
+        "educators_with_group_changes_count": 0,
+        "weekly_group_limit_violations_count": 0,
+        "primary_group_outside_days_count": 1,
+        "primary_group_outside_hours": 5.0,
+        "replacement_colloque_blocks": 6,
+        "replacement_colloque_hours": 6.5,
+        "overstaffed_slots_count": 42,
+        "overstaffing_extra_hours": 10.5,
+        "primary_group_review_count": 1,
+        "soft_time_rules": {
+          "total": 0,
+          "respected": 0,
+          "violated": 0,
+          "matched_hours": 0.0,
+          "requested_hours": 0.0,
+          "violated_details": []
+        },
+        "soft_group_rules": {
+          "total": 3,
+          "respected": 3,
+          "violated": 0,
+          "violated_details": []
+        }
+      },
+      "split_day_details": [
+        "A repourvoir lundi",
+        "Natacha lundi",
+        "Natacha mardi",
+        "Natacha mercredi",
+        "Tara mardi",
+        "Tara jeudi",
+        "Céline lundi",
+        "Magali lundi",
+        "Magali mercredi",
+        "Léa mardi",
+        "Léa mercredi",
+        "Léa jeudi",
+        "Emilie jeudi",
+        "Emilie vendredi",
+        "Anaïs jeudi",
+        "Priscila mardi",
+        "Valérie mardi"
+      ],
+      "group_change_day_details": {},
+      "primary_group_report": {
+        "enabled": true,
+        "warning_outside_hours": 4.0,
+        "warning_outside_days": 1,
+        "items": [
+          {
+            "educator": "A repourvoir",
+            "primary_group": "Trotteur",
+            "majority_group": "Trotteur",
+            "primary_hours": 25.0,
+            "majority_hours": 25.0,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 25.0,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Fanny",
+            "primary_group": "Grands",
+            "majority_group": "Grands",
+            "primary_hours": 34.75,
+            "majority_hours": 34.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 34.75,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Natacha",
+            "primary_group": "Trotteur",
+            "majority_group": "Trotteur",
+            "primary_hours": 19.5,
+            "majority_hours": 19.5,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 19.5,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Tara",
+            "primary_group": "Grands",
+            "majority_group": "Grands",
+            "primary_hours": 21.75,
+            "majority_hours": 21.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 21.75,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Gwendoline",
+            "primary_group": "",
+            "majority_group": "Grands",
+            "primary_hours": 0.0,
+            "majority_hours": 9.25,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 9.25,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Céline",
+            "primary_group": "Trotteur",
+            "majority_group": "Trotteur",
+            "primary_hours": 14.25,
+            "majority_hours": 14.25,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 14.25,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Magali",
+            "primary_group": "Nurserie",
+            "majority_group": "Nurserie",
+            "primary_hours": 29.0,
+            "majority_hours": 29.0,
+            "outside_hours": 5.0,
+            "outside_days": 1,
+            "total_child_hours": 34.0,
+            "suggested_group": "Nurserie",
+            "needs_review": true
+          },
+          {
+            "educator": "Léa",
+            "primary_group": "Trotteur",
+            "majority_group": "Trotteur",
+            "primary_hours": 26.0,
+            "majority_hours": 26.0,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 26.0,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Emilie",
+            "primary_group": "Nurserie",
+            "majority_group": "Nurserie",
+            "primary_hours": 27.75,
+            "majority_hours": 27.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 27.75,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Anaïs",
+            "primary_group": "Nurserie",
+            "majority_group": "Nurserie",
+            "primary_hours": 21.75,
+            "majority_hours": 21.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 21.75,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Priscila",
+            "primary_group": "Nurserie",
+            "majority_group": "Nurserie",
+            "primary_hours": 34.0,
+            "majority_hours": 34.0,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 34.0,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "Valérie",
+            "primary_group": "Grands",
+            "majority_group": "Grands",
+            "primary_hours": 17.75,
+            "majority_hours": 17.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 17.75,
+            "suggested_group": "",
+            "needs_review": false
+          },
+          {
+            "educator": "X",
+            "primary_group": "",
+            "majority_group": "Grands",
+            "primary_hours": 0.0,
+            "majority_hours": 11.75,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 11.75,
+            "suggested_group": "",
+            "needs_review": false
+          }
+        ],
+        "review_items": [
+          {
+            "educator": "Magali",
+            "primary_group": "Nurserie",
+            "majority_group": "Nurserie",
+            "primary_hours": 29.0,
+            "majority_hours": 29.0,
+            "outside_hours": 5.0,
+            "outside_days": 1,
+            "total_child_hours": 34.0,
+            "suggested_group": "Nurserie",
+            "needs_review": true
+          }
+        ]
+      },
+      "weekly_group_limit_violations": {},
+      "notes": [
+        "Les remplacements de colloque sont exclus des changements de groupe.",
+        "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard."
+      ]
+    },
+    "soft_warnings": [],
+    "alerts": [],
+    "hard_errors": [],
+    "errors": []
+  },
+  "quality_profile": {
+    "name": "equilibre",
+    "label": "Equilibre"
+  },
+  "rule_summary": {
+    "hard": [
+      {
+        "code": "coverage_minimum",
+        "rule": "Couvrir les besoins minimums par groupe, site et tranche horaire.",
+        "source": "gwendo.json / rules_site_schedule"
+      },
+      {
+        "code": "qualification_percentages",
+        "rule": "Respecter les pourcentages EDE, ASE et APE par site.",
+        "source": "gwendo.json / rules_percentage"
+      },
+      {
+        "code": "time_rules_hard",
+        "rule": "Respecter les obligations et interdictions horaires marquees hard.",
+        "source": "gwendo.json / rules_time"
+      },
+      {
+        "code": "group_rules_hard",
+        "rule": "Respecter les obligations et interdictions de groupe principal marquees hard.",
+        "source": "gwendo.json / rules_group"
+      },
+      {
+        "code": "max_daily_hours",
+        "rule": "Ne pas depasser 8.5h de travail par jour.",
+        "source": "gwendo.json / rules_global.max_daily_hours"
+      },
+      {
+        "code": "absolute_weekly_cap",
+        "rule": "Ne jamais depasser 40h de travail par semaine.",
+        "source": "solveur_config.json / absolute_max_weekly_hours"
+      },
+      {
+        "code": "weekly_contract_tolerance",
+        "rule": "Rester autour des heures contractuelles avec une tolerance maximale de 5% par paliers de 15 minutes.",
+        "source": "solveur_config.json / weekly_hours_tolerance_percent"
+      },
+      {
+        "code": "the",
+        "rule": "Compter 10% du temps contractuel en THE. Les colloques en font partie; le THE hors colloque est invisible et ne compte pas dans la couverture enfants.",
+        "source": "solveur_config.json / the_percent et gwendo.json / rules_colloques"
+      },
+      {
+        "code": "half_day_group_stability",
+        "rule": "Ne pas changer de groupe dans une meme demi-journee, hors remplacement de colloque.",
+        "source": "solveur_config.json / half_day_split_time"
+      },
+      {
+        "code": "max_work_days",
+        "rule": "Respecter le nombre maximal de jours travaille calcule d'apres le taux, sauf exception max_work_days explicite sur la personne.",
+        "source": "solveur_config.json / hard_max_work_days et gwendo.json / educators"
+      },
+      {
+        "code": "weekly_group_exception_limit",
+        "rule": "Avoir au maximum 1 jour(s) avec changement de groupe par semaine.",
+        "source": "solveur_config.json / max_weekly_group_exception_days"
+      },
+      {
+        "code": "colloques",
+        "rule": "Chaque educateur participe au colloque complet de son groupe principal, sauf si sa fiche indique qu'il ne participe pas aux colloques. Pendant ce colloque, il ne compte plus en couverture; une personne de chaque autre groupe remplace; les remplacements comptent dans les pourcentages du site.",
+        "source": "gwendo.json / rules_colloques"
+      }
+    ],
+    "soft": [
+      {
+        "code": "compact_work_days",
+        "rule": "Regrouper les temps partiels sur le moins de jours possible.",
+        "source": "solveur_config.json / compact_work_days"
+      },
+      {
+        "code": "avoid_split_days",
+        "rule": "Eviter les horaires coupes quand une journee continue est possible.",
+        "source": "solveur_config.json / smooth_split_shift_weight"
+      },
+      {
+        "code": "avoid_short_days",
+        "rule": "Eviter les journees de moins de 2h, sans les interdire lorsqu'elles sont necessaires.",
+        "source": "solveur_config.json / min_daily_hours et short_day_penalty_weight"
+      },
+      {
+        "code": "avoid_long_split_gaps",
+        "rule": "Eviter les coupures longues; le seuil de reference est 120 minutes.",
+        "source": "solveur_config.json / max_pause_between_blocks_minutes"
+      },
+      {
+        "code": "same_group_week",
+        "rule": "Garder autant que possible une personne dans le meme groupe sur la semaine.",
+        "source": "solveur_config.json / smooth_same_group_week_weight"
+      },
+      {
+        "code": "soft_preferences",
+        "rule": "Respecter autant que possible les preferences horaires et de groupe marquees soft.",
+        "source": "gwendo.json / rules_time et rules_group"
+      }
+    ]
+  }
+}

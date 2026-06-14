@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import argparse
+import itertools
 import math
 import os
 import time
@@ -3448,7 +3449,6 @@ def make_ortools_payload(
     def add_pattern(
         e_i: int,
         d_i: int,
-        primary_g: int,
         site: str | None,
         segments: tuple[tuple[int, int], ...],
         half_groups: dict[int, int],
@@ -3589,14 +3589,38 @@ def make_ortools_payload(
             objective_terms.append(var * int(pattern_cost[pattern_id]))
 
     for e_i, educator in enumerate(educators):
-        target = int(round((float(educator["percentage"]) / 100.0) * weekly_base / (horizon.step / 60.0)))
+        target_hours = float(educator["percentage"]) / 100.0 * weekly_base
+        target = int(round(target_hours / (horizon.step / 60.0)))
+        the_slots = the_target_slots(target, the_percent, enabled=the_enabled)
+        child_target = max(0, target - the_slots)
+        tolerance_slots = weekly_tolerance_slots(
+            target_hours,
+            horizon,
+            percent=weekly_hours_tolerance_percent,
+            minutes=weekly_hours_tolerance_minutes,
+            step_minutes=weekly_hours_tolerance_step_minutes,
+        )
         total = sum(variables[p_i] * int(pattern_duration[p_i]) for p_i in by_educator.get(e_i, []))
-        model.Add(total >= max(0, target - tolerance_slots))
-        model.Add(total <= target + tolerance_slots)
+        model.Add(total >= max(0, child_target - tolerance_slots))
+        model.Add(total <= child_target + tolerance_slots)
         over = model.NewIntVar(0, tolerance_slots, f"over_{e_i}")
         under = model.NewIntVar(0, tolerance_slots, f"under_{e_i}")
-        model.Add(total - target == over - under)
+        model.Add(total - child_target == over - under)
         objective_terms.append((over + under) * 2500)
+        if hard_max_work_days:
+            worked_day_terms = [
+                variables[p_i]
+                for p_i in by_educator.get(e_i, [])
+                if pattern_duration[p_i] > 0
+            ]
+            model.Add(
+                sum(worked_day_terms)
+                <= max_work_days_for_educator(
+                    educator,
+                    weekly_base,
+                    float(data.get("rules_global", {}).get("max_daily_hours", 8.5)),
+                )
+            )
 
     for d_i in range(len(DAYS)):
         for g_i in range(len(groups)):
@@ -3693,11 +3717,8 @@ def make_ortools_payload(
             active_state: tuple[int, str] | None = None
             if slot in worked:
                 half_i = 0 if slot < split_slot else 1
-                display_group = pattern_slot_display_overrides[pattern_id].get(
-                    slot,
-                    pattern_slot_coverage_overrides[pattern_id].get(slot, pattern_half_groups[pattern_id][half_i]),
-                )
-                activity = pattern_slot_activities[pattern_id].get(slot, "")
+                display_group = pattern_half_groups[pattern_id][half_i]
+                activity = ""
                 if display_group >= 0:
                     active_state = (display_group, activity)
             if active_state != current_state:
@@ -3777,21 +3798,35 @@ def make_ortools_slot_payload(
     time_limit: float = 300.0,
     type_aliases: dict[str, str] | None = None,
     min_daily_hours: float = 2.0,
+    enforce_min_daily_hours: bool = False,
     max_split_gap_minutes: int | None = 90,
     weekly_hours_tolerance_minutes: int | None = None,
     weekly_hours_tolerance_percent: float = 3.0,
     weekly_hours_tolerance_step_minutes: int | None = 15,
     enforce_absolute_max_weekly_hours: bool = True,
     absolute_max_weekly_hours: float | None = 40.0,
+    the_enabled: bool = True,
+    the_percent: float = 10.0,
+    the_colloques_count: bool = True,
     half_day_split_time: str = "12:30",
     max_weekly_group_exception_days: int | None = 1,
     split_shift_weight: float = 120.0,
     split_gap_weight: float = 4.0,
     group_switch_day_weight: float = 8.0,
     same_group_week_weight: float = 0.4,
+    work_day_weight: float = 0.0,
     hard_max_work_days: bool = True,
+    enforce_daily_block_structure: bool = True,
+    enforce_half_day_group_structure: bool = True,
+    enforce_percentage_rules: bool = True,
+    enforce_daily_hours: bool = True,
+    enforce_weekly_hours: bool = True,
     progress_callback: Callable[[int, str], None] | None = None,
     hint_payload: dict[str, Any] | None = None,
+    fixed_schedule: dict[str, dict[str, list[dict[str, Any]]]] | None = None,
+    debug_log_path: Path | None = None,
+    candidate_callback: Callable[[dict[str, Any], Any], None] | None = None,
+    accept_invalid_for_hint: bool = False,
 ) -> tuple[dict[str, Any], Any]:
     try:
         from ortools.sat.python import cp_model
@@ -3827,6 +3862,23 @@ def make_ortools_slot_payload(
     educators = list(data.get("educators", []))
     sites = [site["name"] for site in data.get("sites", [])]
     warnings: list[str] = []
+    debug_lines: list[str] = []
+
+    def debug(message: str) -> None:
+        line = f"{time.monotonic():.3f}|{message}"
+        debug_lines.append(line)
+        if debug_log_path is not None:
+            debug_log_path.parent.mkdir(parents=True, exist_ok=True)
+            with debug_log_path.open("a", encoding="utf-8") as stream:
+                stream.write(line + "\n")
+
+    if debug_log_path is not None:
+        debug_log_path.parent.mkdir(parents=True, exist_ok=True)
+        debug_log_path.write_text("", encoding="utf-8")
+    debug(
+        f"start educators={len(educators)} groups={len(groups)} "
+        f"slots={horizon.slots} time_limit={float(time_limit):.1f}"
+    )
     bundle = type(
         "OrtoolsBundle",
         (),
@@ -3871,25 +3923,41 @@ def make_ortools_slot_payload(
     )
     split_slot = split_slot_for_horizon(horizon, half_day_split_time)
     max_gap_slots = None if max_split_gap_minutes is None else int(round(max_split_gap_minutes / horizon.step))
+    colloques = parse_colloques(data, horizon, groups, warnings)
+    colloque_by_group = {int(colloque["group_i"]): colloque for colloque in colloques}
 
-    main_groups: dict[int, int] = {}
+    hard_main_groups: dict[int, int] = {}
     soft_groups: dict[int, int] = {}
+    forbidden_main_groups: dict[int, set[int]] = {}
     for raw_rule in data.get("rules_group", []):
         if len(raw_rule) < 4:
             continue
         pref_type, strength, educator_name, group_name = raw_rule[:4]
-        if normalize_flag(pref_type) in {"negatif", "negative", "neg"}:
-            continue
         if educator_name not in educator_by_name or group_name not in group_by_name:
             continue
+        is_negative = normalize_flag(pref_type) in {"negatif", "negative", "neg"}
         target = group_by_name[group_name]
+        if normalize_flag(strength) == "hard" and is_negative:
+            forbidden_main_groups.setdefault(educator_by_name[educator_name], set()).add(target)
+            continue
+        if is_negative:
+            continue
         if normalize_flag(strength) == "hard":
-            main_groups.setdefault(educator_by_name[educator_name], target)
+            hard_main_groups.setdefault(educator_by_name[educator_name], target)
         else:
             soft_groups.setdefault(educator_by_name[educator_name], target)
-    for e_i, g_i in soft_groups.items():
-        main_groups.setdefault(e_i, g_i)
+    hinted_main_groups: dict[int, int] = {}
     if hint_payload and isinstance(hint_payload.get("schedule"), dict):
+        explicit_hint_groups = hint_payload.get("checks", {}).get(
+            "primary_groups_by_educator",
+            {},
+        )
+        if isinstance(explicit_hint_groups, dict):
+            for educator_name, group_name in explicit_hint_groups.items():
+                if educator_name in educator_by_name and group_name in group_by_name:
+                    hinted_main_groups[educator_by_name[educator_name]] = group_by_name[
+                        group_name
+                    ]
         hinted_totals: dict[int, dict[int, int]] = {}
         for educator_name, by_day in hint_payload.get("schedule", {}).items():
             if educator_name not in educator_by_name or not isinstance(by_day, dict):
@@ -3899,6 +3967,8 @@ def make_ortools_slot_payload(
                 if not isinstance(blocks, list):
                     continue
                 for block in blocks:
+                    if block.get("activity") in {"colloque", "remplacement_colloque"}:
+                        continue
                     group_name = block.get("group")
                     if group_name not in group_by_name:
                         continue
@@ -3907,7 +3977,179 @@ def make_ortools_slot_payload(
                     hinted_totals[e_i][group_by_name[group_name]] = hinted_totals[e_i].get(group_by_name[group_name], 0) + minutes
         for e_i, totals in hinted_totals.items():
             if totals:
-                main_groups.setdefault(e_i, max(totals.items(), key=lambda item: item[1])[0])
+                allowed = [
+                    (minutes, g_i)
+                    for g_i, minutes in totals.items()
+                    if g_i not in forbidden_main_groups.get(e_i, set())
+                ]
+                if allowed:
+                    hinted_main_groups.setdefault(e_i, max(allowed)[1])
+
+    primary_hint_groups: dict[int, int] = dict(hard_main_groups)
+    for source in (soft_groups, hinted_main_groups):
+        for e_i, g_i in source.items():
+            if g_i not in forbidden_main_groups.get(e_i, set()):
+                primary_hint_groups.setdefault(e_i, g_i)
+    demand_by_group = {
+        g_i: sum(
+            demand
+            for (_d_i, demand_g_i, _t_i), demand in group_demand.items()
+            if demand_g_i == g_i
+        )
+        for g_i in range(len(groups))
+    }
+    hinted_capacity_by_group = {g_i: 0 for g_i in range(len(groups))}
+
+    def educator_child_capacity(e_i: int) -> int:
+        target_slots = int(
+            round(
+                float(educators[e_i].get("percentage", 0.0))
+                / 100.0
+                * weekly_base
+                / (horizon.step / 60.0)
+            )
+        )
+        return max(
+            0,
+            target_slots - the_target_slots(target_slots, the_percent, enabled=the_enabled),
+        )
+
+    for e_i, g_i in primary_hint_groups.items():
+        hinted_capacity_by_group[g_i] += educator_child_capacity(e_i)
+    for e_i in sorted(
+        range(len(educators)),
+        key=educator_child_capacity,
+        reverse=True,
+    ):
+        if e_i in primary_hint_groups:
+            continue
+        allowed_groups = [
+            g_i
+            for g_i in range(len(groups))
+            if g_i not in forbidden_main_groups.get(e_i, set())
+        ]
+        if not allowed_groups:
+            continue
+        selected_group = max(
+            allowed_groups,
+            key=lambda g_i: (
+                demand_by_group[g_i] - hinted_capacity_by_group[g_i],
+                demand_by_group[g_i],
+                -g_i,
+            ),
+        )
+        primary_hint_groups[e_i] = selected_group
+        hinted_capacity_by_group[selected_group] += educator_child_capacity(e_i)
+
+    def ranked_primary_group_candidates(limit: int = 8) -> list[dict[int, int]]:
+        provisional_fixed = dict(hard_main_groups)
+        for e_i, g_i in soft_groups.items():
+            if g_i not in forbidden_main_groups.get(e_i, set()):
+                provisional_fixed.setdefault(e_i, g_i)
+        free_educators = [
+            e_i for e_i in range(len(educators)) if e_i not in provisional_fixed
+        ]
+        allowed_by_educator = [
+            [
+                g_i
+                for g_i in range(len(groups))
+                if g_i not in forbidden_main_groups.get(e_i, set())
+            ]
+            for e_i in free_educators
+        ]
+        if any(not allowed for allowed in allowed_by_educator):
+            return []
+
+        percentage_rules: list[tuple[set[str], str, float, str]] = []
+        for raw_rule in data.get("rules_percentage", []):
+            if len(raw_rule) < 4:
+                continue
+            raw_types, minmax, value, site = raw_rule[:4]
+            wanted_types, _type_warnings = split_types(
+                list(raw_types),
+                aliases,
+                known_types,
+            )
+            percentage_rules.append(
+                (wanted_types, normalize_flag(minmax), float(value), str(site))
+            )
+
+        scored: list[tuple[float, tuple[int, ...]]] = []
+        for choices in itertools.product(*allowed_by_educator):
+            assignment = dict(provisional_fixed)
+            assignment.update(zip(free_educators, choices))
+            group_capacity = {g_i: 0 for g_i in range(len(groups))}
+            site_capacity: dict[str, int] = {site: 0 for site in sites}
+            site_type_capacity: dict[tuple[str, str], int] = {}
+            for e_i, g_i in assignment.items():
+                capacity = educator_child_capacity(e_i)
+                site = str(groups[g_i]["site"])
+                educator_type = str(educators[e_i].get("type", ""))
+                group_capacity[g_i] += capacity
+                site_capacity[site] = site_capacity.get(site, 0) + capacity
+                site_type_capacity[(site, educator_type)] = (
+                    site_type_capacity.get((site, educator_type), 0) + capacity
+                )
+            capacity_score = sum(
+                abs(group_capacity[g_i] - demand_by_group[g_i])
+                for g_i in range(len(groups))
+            )
+            percentage_score = 0.0
+            for wanted_types, minmax, value, site in percentage_rules:
+                total = site_capacity.get(site, 0)
+                selected = sum(
+                    site_type_capacity.get((site, educator_type), 0)
+                    for educator_type in wanted_types
+                )
+                actual = 100.0 * selected / max(1, total)
+                violation = (
+                    max(0.0, value - actual)
+                    if minmax == "min"
+                    else max(0.0, actual - value)
+                )
+                percentage_score += violation * 5.0
+            ordered_assignment = tuple(
+                assignment[e_i] for e_i in range(len(educators))
+            )
+            scored.append((capacity_score + percentage_score, ordered_assignment))
+        scored.sort(key=lambda item: item[0])
+        if not scored:
+            return []
+        positions = [0, 1, 3, 7, 15, 31, 63, 127]
+        selected: list[dict[int, int]] = []
+        seen: set[tuple[int, ...]] = set()
+        for position in positions:
+            if len(selected) >= limit or position >= len(scored):
+                break
+            assignment_tuple = scored[position][1]
+            if assignment_tuple in seen:
+                continue
+            seen.add(assignment_tuple)
+            selected.append(
+                {e_i: g_i for e_i, g_i in enumerate(assignment_tuple)}
+            )
+        heuristic_tuple = tuple(
+            primary_hint_groups[e_i] for e_i in range(len(educators))
+        )
+        if heuristic_tuple not in seen and len(selected) < limit:
+            selected.append(
+                {e_i: g_i for e_i, g_i in enumerate(heuristic_tuple)}
+            )
+        return selected
+
+    primary_group_candidates = ranked_primary_group_candidates()
+    if len(hinted_main_groups) == len(educators):
+        hinted_candidate = {
+            e_i: hinted_main_groups[e_i] for e_i in range(len(educators))
+        }
+        primary_group_candidates = [
+            hinted_candidate,
+            *[
+                candidate
+                for candidate in primary_group_candidates
+                if candidate != hinted_candidate
+            ],
+        ]
 
     x: dict[tuple[int, int, int, int], Any] = {}
     work: dict[tuple[int, int, int], Any] = {}
@@ -3917,27 +4159,89 @@ def make_ortools_slot_payload(
     group_day: dict[tuple[int, int, int], Any] = {}
     mixed_day: dict[tuple[int, int], Any] = {}
     outside_primary_day: dict[tuple[int, int], Any] = {}
+    outside_primary_group_day: dict[tuple[int, int, int], Any] = {}
     start_var: dict[tuple[int, int, int], Any] = {}
+    primary_group: dict[tuple[int, int], Any] = {}
+    replacement_assignment: dict[tuple[int, int, int, int], Any] = {}
     objective_terms: list[Any] = []
     scale = 100
 
     for e_i in range(len(educators)):
+        primary_terms = []
+        for g_i in range(len(groups)):
+            var = model.NewBoolVar(f"primary_{e_i}_{g_i}")
+            primary_group[(e_i, g_i)] = var
+            primary_terms.append(var)
+        model.Add(sum(primary_terms) == 1)
+        required_group = hard_main_groups.get(e_i)
+        if required_group is not None:
+            model.Add(primary_group[(e_i, required_group)] == 1)
+        for forbidden_group in forbidden_main_groups.get(e_i, set()):
+            model.Add(primary_group[(e_i, forbidden_group)] == 0)
+        preferred_group = soft_groups.get(e_i)
+        if preferred_group is not None:
+            objective_terms.append(primary_group[(e_i, preferred_group)] * -500)
+
+    for e_i in range(len(educators)):
         for d_i in range(len(DAYS)):
             work_day[(e_i, d_i)] = model.NewBoolVar(f"wd_{e_i}_{d_i}")
+            if work_day_weight:
+                objective_terms.append(
+                    work_day[(e_i, d_i)]
+                    * int(round(work_day_weight * scale))
+                )
             mixed_day[(e_i, d_i)] = model.NewBoolVar(f"mix_{e_i}_{d_i}")
-            if e_i in main_groups:
-                outside_primary_day[(e_i, d_i)] = model.NewBoolVar(f"outside_{e_i}_{d_i}")
+            outside_primary_day[(e_i, d_i)] = model.NewBoolVar(f"outside_{e_i}_{d_i}")
             for s_i in range(len(sites)):
                 site_day[(e_i, d_i, s_i)] = model.NewBoolVar(f"site_{e_i}_{d_i}_{s_i}")
             for g_i in range(len(groups)):
                 group_day[(e_i, d_i, g_i)] = model.NewBoolVar(f"gd_{e_i}_{d_i}_{g_i}")
+                outside_primary_group_day[(e_i, d_i, g_i)] = model.NewBoolVar(
+                    f"outside_group_{e_i}_{d_i}_{g_i}"
+                )
                 for half_i in range(2):
                     half_group[(e_i, d_i, half_i, g_i)] = model.NewBoolVar(f"hg_{e_i}_{d_i}_{half_i}_{g_i}")
             for t_i in range(horizon.slots):
                 work[(e_i, d_i, t_i)] = model.NewBoolVar(f"w_{e_i}_{d_i}_{t_i}")
                 start_var[(e_i, d_i, t_i)] = model.NewBoolVar(f"st_{e_i}_{d_i}_{t_i}")
                 for g_i in range(len(groups)):
-                    x[(e_i, d_i, g_i, t_i)] = model.NewBoolVar(f"x_{e_i}_{d_i}_{g_i}_{t_i}")
+                    assignment = model.NewBoolVar(f"x_{e_i}_{d_i}_{g_i}_{t_i}")
+                    x[(e_i, d_i, g_i, t_i)] = assignment
+                    objective_terms.append(assignment)
+
+    replacement_windows: set[tuple[int, int, int, int]] = set()
+    colloque_group_by_slot: dict[tuple[int, int], int] = {}
+    for target_g, target_colloque in colloque_by_group.items():
+        d_i = int(target_colloque["day_i"])
+        for t_i in target_colloque["slots"]:
+            colloque_group_by_slot[(d_i, int(t_i))] = target_g
+        start = max(0, int(target_colloque["start_slot"]) - 1)
+        end = min(horizon.slots, int(target_colloque["end_slot"]) + 2)
+        for e_i in range(len(educators)):
+            for t_i in range(start, end):
+                key = (e_i, d_i, target_g, t_i)
+                replacement_windows.add(key)
+                replacement = model.NewBoolVar(
+                    f"replacement_{e_i}_{d_i}_{target_g}_{t_i}"
+                )
+                replacement_assignment[key] = replacement
+                model.Add(replacement <= x[key])
+                model.Add(replacement + primary_group[(e_i, target_g)] <= 1)
+                model.Add(replacement >= x[key] - primary_group[(e_i, target_g)])
+    debug(
+        f"primary_group_variables={len(primary_group)} "
+        f"hard_primary_groups={len(hard_main_groups)} "
+        f"soft_primary_groups={len(soft_groups)} "
+        f"replacement_variables={len(replacement_assignment)}"
+    )
+    debug(
+        "primary_group_hints="
+        + ",".join(
+            f"{educators[e_i]['name']}:{groups[g_i]['name']}"
+            for e_i, g_i in sorted(primary_hint_groups.items())
+        )
+    )
+    debug(f"primary_group_candidates={len(primary_group_candidates)}")
 
     if progress_callback:
         progress_callback(20, "Contraintes de couverture")
@@ -3982,9 +4286,35 @@ def make_ortools_slot_payload(
     )
     final_states = [0, 1, overflow_state, second_state, final_done_state] + [1 + gap for gap in range(1, max_gap + 1)]
 
+    def regular_assignment(e_i: int, d_i: int, g_i: int, t_i: int) -> Any:
+        key = (e_i, d_i, g_i, t_i)
+        replacement = replacement_assignment.get(key)
+        return x[key] if replacement is None else x[key] - replacement
+
+    for e_i, educator in enumerate(educators):
+        if not educator_attends_colloque(educator):
+            continue
+        for primary_g, colloque in colloque_by_group.items():
+            colloque_day = int(colloque["day_i"])
+            for assigned_g in range(len(groups)):
+                if assigned_g == primary_g:
+                    continue
+                for t_i in range(horizon.slots):
+                    model.Add(
+                        regular_assignment(
+                            e_i,
+                            colloque_day,
+                            assigned_g,
+                            t_i,
+                        )
+                        + primary_group[(e_i, primary_g)]
+                        <= 1
+                    )
+
     for e_i, educator in enumerate(educators):
         target_hours = float(educator["percentage"]) / 100.0 * weekly_base
         target = int(round(target_hours / (horizon.step / 60.0)))
+        the_slots = the_target_slots(target, the_percent, enabled=the_enabled)
         tolerance_slots = weekly_tolerance_slots(
             target_hours,
             horizon,
@@ -3992,15 +4322,24 @@ def make_ortools_slot_payload(
             minutes=weekly_hours_tolerance_minutes,
             step_minutes=weekly_hours_tolerance_step_minutes,
         )
-        weekly_terms = []
+        weekly_child_terms = []
+        weekly_visible_terms = []
         for d_i in range(len(DAYS)):
             day_work_terms = []
             for t_i in range(horizon.slots):
                 group_terms = [x[(e_i, d_i, g_i, t_i)] for g_i in range(len(groups))]
-                model.Add(sum(group_terms) == work[(e_i, d_i, t_i)])
+                colloque_group = colloque_group_by_slot.get((d_i, t_i))
+                if colloque_group is not None and educator_attends_colloque(educator):
+                    model.Add(
+                        sum(group_terms) + primary_group[(e_i, colloque_group)]
+                        == work[(e_i, d_i, t_i)]
+                    )
+                else:
+                    model.Add(sum(group_terms) == work[(e_i, d_i, t_i)])
                 model.Add(work[(e_i, d_i, t_i)] <= work_day[(e_i, d_i)])
                 day_work_terms.append(work[(e_i, d_i, t_i)])
-                weekly_terms.append(work[(e_i, d_i, t_i)])
+                weekly_child_terms.extend(group_terms)
+                weekly_visible_terms.append(work[(e_i, d_i, t_i)])
                 if t_i == 0:
                     model.Add(start_var[(e_i, d_i, t_i)] == work[(e_i, d_i, t_i)])
                 else:
@@ -4008,22 +4347,49 @@ def make_ortools_slot_payload(
                     model.Add(start_var[(e_i, d_i, t_i)] <= work[(e_i, d_i, t_i)])
                     model.Add(start_var[(e_i, d_i, t_i)] <= 1 - work[(e_i, d_i, t_i - 1)])
                 objective_terms.append(start_var[(e_i, d_i, t_i)] * int(round(split_shift_weight * scale)))
-            model.Add(sum(day_work_terms) <= max_daily_slots)
-            model.Add(sum(day_work_terms) >= min_daily_slots * work_day[(e_i, d_i)])
-            model.Add(sum(start_var[(e_i, d_i, t_i)] for t_i in range(horizon.slots)) <= 2)
+            if enforce_daily_hours:
+                model.Add(sum(day_work_terms) <= max_daily_slots)
+            minimum_worked_slots = min_daily_slots if enforce_min_daily_hours else 1
+            model.Add(
+                sum(day_work_terms)
+                >= (
+                    minimum_worked_slots if enforce_daily_hours else 1
+                )
+                * work_day[(e_i, d_i)]
+            )
+            if enforce_daily_block_structure:
+                model.Add(
+                    sum(
+                        start_var[(e_i, d_i, t_i)]
+                        for t_i in range(horizon.slots)
+                    )
+                    <= 2
+                )
+                model.AddAutomaton(
+                    [work[(e_i, d_i, t_i)] for t_i in range(horizon.slots)],
+                    0,
+                    final_states,
+                    transitions,
+                )
 
-            site_terms = [site_day[(e_i, d_i, s_i)] for s_i in range(len(sites))]
-            model.Add(sum(site_terms) <= 1)
             for g_i, group in enumerate(groups):
                 s_i = site_index[group["site"]]
-                group_terms_for_day = []
+                regular_group_terms_for_day = []
                 for t_i in range(horizon.slots):
-                    group_terms_for_day.append(x[(e_i, d_i, g_i, t_i)])
                     model.Add(x[(e_i, d_i, g_i, t_i)] <= site_day[(e_i, d_i, s_i)])
+                    regular_term = regular_assignment(e_i, d_i, g_i, t_i)
+                    regular_group_terms_for_day.append(regular_term)
                     half_i = 0 if t_i < split_slot else 1
-                    model.Add(x[(e_i, d_i, g_i, t_i)] <= half_group[(e_i, d_i, half_i, g_i)])
-                    model.Add(x[(e_i, d_i, g_i, t_i)] <= group_day[(e_i, d_i, g_i)])
-                model.Add(group_day[(e_i, d_i, g_i)] <= sum(group_terms_for_day))
+                    if enforce_half_day_group_structure:
+                        model.Add(
+                            regular_term
+                            <= half_group[(e_i, d_i, half_i, g_i)]
+                        )
+                    model.Add(regular_term <= group_day[(e_i, d_i, g_i)])
+                if regular_group_terms_for_day:
+                    model.Add(group_day[(e_i, d_i, g_i)] <= sum(regular_group_terms_for_day))
+                else:
+                    model.Add(group_day[(e_i, d_i, g_i)] == 0)
             for s_i, site_name in enumerate(sites):
                 site_terms_for_day = [
                     x[(e_i, d_i, g_i, t_i)]
@@ -4036,33 +4402,99 @@ def make_ortools_slot_payload(
                 else:
                     model.Add(site_day[(e_i, d_i, s_i)] == 0)
             for half_i in range(2):
-                half_slots = range(0, split_slot) if half_i == 0 else range(split_slot, horizon.slots)
+                half_slots = (
+                    range(0, split_slot)
+                    if half_i == 0
+                    else range(split_slot, horizon.slots)
+                )
                 for g_i in range(len(groups)):
-                    half_terms = [x[(e_i, d_i, g_i, t_i)] for t_i in half_slots]
-                    if half_terms:
-                        model.Add(half_group[(e_i, d_i, half_i, g_i)] <= sum(half_terms))
+                    half_terms = [
+                        regular_assignment(e_i, d_i, g_i, t_i)
+                        for t_i in half_slots
+                    ]
+                    if enforce_half_day_group_structure and half_terms:
+                        model.Add(
+                            half_group[(e_i, d_i, half_i, g_i)]
+                            <= sum(half_terms)
+                        )
                     else:
                         model.Add(half_group[(e_i, d_i, half_i, g_i)] == 0)
-                model.Add(sum(half_group[(e_i, d_i, half_i, g_i)] for g_i in range(len(groups))) <= 1)
-            model.Add(sum(group_day[(e_i, d_i, g_i)] for g_i in range(len(groups))) <= 1 + mixed_day[(e_i, d_i)])
+                if enforce_half_day_group_structure:
+                    model.Add(
+                        sum(
+                            half_group[(e_i, d_i, half_i, g_i)]
+                            for g_i in range(len(groups))
+                        )
+                        <= 1
+                    )
+            regular_group_count = sum(group_day[(e_i, d_i, g_i)] for g_i in range(len(groups)))
+            model.Add(regular_group_count <= 1 + mixed_day[(e_i, d_i)])
+            model.Add(regular_group_count >= 2 * mixed_day[(e_i, d_i)])
             objective_terms.append(mixed_day[(e_i, d_i)] * int(round(group_switch_day_weight * scale)))
-            if e_i in main_groups:
-                outside_var = outside_primary_day[(e_i, d_i)]
-                primary_group = main_groups[e_i]
-                for g_i in range(len(groups)):
-                    if g_i != primary_group:
-                        model.Add(group_day[(e_i, d_i, g_i)] <= outside_var)
-                objective_terms.append(outside_var * int(round(group_switch_day_weight * scale * 4)))
-        model.Add(sum(weekly_terms) >= max(0, target - tolerance_slots))
-        model.Add(sum(weekly_terms) <= target + tolerance_slots)
-        over = model.NewIntVar(0, tolerance_slots, f"over_{e_i}")
-        under = model.NewIntVar(0, tolerance_slots, f"under_{e_i}")
-        model.Add(sum(weekly_terms) - target == over - under)
-        objective_terms.append((over + under) * 2500)
+            outside_var = outside_primary_day[(e_i, d_i)]
+            non_primary_terms = []
+            for g_i in range(len(groups)):
+                outside_group = outside_primary_group_day[(e_i, d_i, g_i)]
+                model.Add(outside_group <= group_day[(e_i, d_i, g_i)])
+                model.Add(outside_group + primary_group[(e_i, g_i)] <= 1)
+                model.Add(
+                    outside_group
+                    >= group_day[(e_i, d_i, g_i)] - primary_group[(e_i, g_i)]
+                )
+                model.Add(outside_group <= outside_var)
+                non_primary_terms.append(outside_group)
+                objective_terms.append(
+                    outside_group * int(round(same_group_week_weight * scale))
+                )
+            model.Add(outside_var <= sum(non_primary_terms))
+            objective_terms.append(
+                outside_var * int(round(group_switch_day_weight * scale * 4))
+            )
+        if enforce_weekly_hours:
+            upper_visible = target + tolerance_slots
+            if absolute_max_slots is not None:
+                upper_visible = min(upper_visible, absolute_max_slots)
+            child_target = max(0, target - the_slots)
+            model.Add(
+                sum(weekly_child_terms)
+                >= max(0, target - tolerance_slots - the_slots)
+            )
+            model.Add(
+                sum(weekly_child_terms)
+                <= max(0, upper_visible - the_slots)
+            )
+            model.Add(sum(weekly_visible_terms) <= upper_visible)
+            over = model.NewIntVar(0, tolerance_slots, f"over_{e_i}")
+            under = model.NewIntVar(0, tolerance_slots, f"under_{e_i}")
+            model.Add(sum(weekly_child_terms) - child_target == over - under)
+            objective_terms.append((over + under) * 2500)
+        else:
+            child_target = max(0, target - the_slots)
+            max_deviation = len(DAYS) * horizon.slots
+            over = model.NewIntVar(0, max_deviation, f"soft_over_{e_i}")
+            under = model.NewIntVar(0, max_deviation, f"soft_under_{e_i}")
+            model.Add(sum(weekly_child_terms) - child_target == over - under)
+            objective_terms.append((over + under) * 2500)
+        if hard_max_work_days:
+            minimum_work_days = int(
+                math.ceil(
+                    max(0, target - tolerance_slots)
+                    / max(1, max_daily_slots)
+                    - 1e-9
+                )
+            )
+            model.Add(
+                sum(work_day[(e_i, d_i)] for d_i in range(len(DAYS)))
+                <= max_work_days_for_educator(educator, weekly_base, max_daily_hours)
+            )
+            model.Add(
+                sum(work_day[(e_i, d_i)] for d_i in range(len(DAYS)))
+                >= minimum_work_days
+            )
 
-        if max_weekly_group_exception_days is not None:
+        if max_weekly_group_exception_days is not None and educator_attends_colloque(educator):
             model.Add(sum(mixed_day[(e_i, d_i)] for d_i in range(len(DAYS))) <= int(max_weekly_group_exception_days))
-            outside_terms = [outside_primary_day[(e_i, d_i)] for d_i in range(len(DAYS)) if (e_i, d_i) in outside_primary_day]
+            outside_terms = [outside_primary_day[(e_i, d_i)] for d_i in range(len(DAYS))]
             if outside_terms:
                 model.Add(sum(outside_terms) <= int(max_weekly_group_exception_days))
 
@@ -4116,26 +4548,19 @@ def make_ortools_slot_payload(
         target_g = group_by_name[group_name]
         is_negative = normalize_flag(pref_type) in {"negatif", "negative", "neg"}
         is_hard = normalize_flag(strength) == "hard"
+        if is_hard:
+            # Hard group rules select the educator's primary group. Temporary
+            # coverage and colloque replacements remain allowed.
+            continue
         for d_i in range(len(DAYS)):
             for g_i in range(len(groups)):
                 affected = g_i == target_g if is_negative else g_i != target_g
                 if not affected:
                     continue
                 for t_i in range(horizon.slots):
-                    if is_hard:
-                        model.Add(x[(e_i, d_i, g_i, t_i)] == 0)
-                    else:
-                        objective_terms.append(x[(e_i, d_i, g_i, t_i)] * 18)
+                    objective_terms.append(x[(e_i, d_i, g_i, t_i)] * 18)
 
-    for e_i, main_g in main_groups.items():
-        for d_i in range(len(DAYS)):
-            for g_i in range(len(groups)):
-                if g_i == main_g:
-                    continue
-                for t_i in range(horizon.slots):
-                    objective_terms.append(x[(e_i, d_i, g_i, t_i)] * int(round(same_group_week_weight * scale)))
-
-    for raw_rule in data.get("rules_percentage", []):
+    for raw_rule in data.get("rules_percentage", []) if enforce_percentage_rules else []:
         if len(raw_rule) < 4:
             warnings.append(f"Regle pourcentage ignoree: {raw_rule}.")
             continue
@@ -4165,17 +4590,26 @@ def make_ortools_slot_payload(
 
     if progress_callback:
         progress_callback(48, "Recherche d'une solution valide")
-    has_hint = False
-    if hint_payload and isinstance(hint_payload.get("schedule"), dict):
-        hinted_x: set[tuple[int, int, int, int]] = set()
-        hinted_work: set[tuple[int, int, int]] = set()
-        schedule_hint = hint_payload.get("schedule", {})
-        for e_i, educator in enumerate(educators):
-            educator_name = educator["name"]
-            if educator_name not in schedule_hint:
+
+    def schedule_slot_sets(
+        source: dict[str, dict[str, list[dict[str, Any]]]],
+    ) -> tuple[
+        set[tuple[int, int, int, int]],
+        set[tuple[int, int, int]],
+        set[tuple[int, int, int, int]],
+    ]:
+        assigned: set[tuple[int, int, int, int]] = set()
+        visible: set[tuple[int, int, int]] = set()
+        regular: set[tuple[int, int, int, int]] = set()
+        for educator_name, by_day in source.items():
+            if educator_name not in educator_by_name or not isinstance(by_day, dict):
                 continue
-            for d_i, (day_key, _) in enumerate(DAYS):
-                for block in schedule_hint.get(educator_name, {}).get(day_key, []):
+            e_i = educator_by_name[educator_name]
+            for day_key, blocks in by_day.items():
+                if day_key not in day_by_name or not isinstance(blocks, list):
+                    continue
+                d_i = day_by_name[day_key]
+                for block in blocks:
                     group_name = block.get("group")
                     if group_name not in group_by_name:
                         continue
@@ -4185,10 +4619,26 @@ def make_ortools_slot_payload(
                         end_slot = (parse_time(block["end"]) - horizon.start) // horizon.step
                     except Exception:
                         continue
+                    activity = str(block.get("activity", "children"))
                     for t_i in range(max(0, start_slot), min(horizon.slots, end_slot)):
-                        hinted_x.add((e_i, d_i, g_i, t_i))
-                        hinted_work.add((e_i, d_i, t_i))
-        has_hint = bool(hinted_x)
+                        visible.add((e_i, d_i, t_i))
+                        if activity == "colloque":
+                            continue
+                        key = (e_i, d_i, g_i, t_i)
+                        assigned.add(key)
+                        if activity != "remplacement_colloque":
+                            regular.add(key)
+        return assigned, visible, regular
+
+    has_hint = bool(primary_hint_groups)
+    has_schedule_hint = False
+    for key, var in primary_group.items():
+        e_i, g_i = key
+        model.AddHint(var, 1 if primary_hint_groups.get(e_i) == g_i else 0)
+    if hint_payload and isinstance(hint_payload.get("schedule"), dict):
+        hinted_x, hinted_work, hinted_regular_x = schedule_slot_sets(hint_payload["schedule"])
+        has_schedule_hint = bool(hinted_work)
+        has_hint = has_hint or bool(hinted_work)
         for key, var in x.items():
             model.AddHint(var, 1 if key in hinted_x else 0)
         for key, var in work.items():
@@ -4198,11 +4648,17 @@ def make_ortools_slot_payload(
             model.AddHint(var, 1 if any((e_i, d_i, t_i) in hinted_work for t_i in range(horizon.slots)) else 0)
         for key, var in group_day.items():
             e_i, d_i, g_i = key
-            model.AddHint(var, 1 if any((e_i, d_i, g_i, t_i) in hinted_x for t_i in range(horizon.slots)) else 0)
+            model.AddHint(
+                var,
+                1 if any((e_i, d_i, g_i, t_i) in hinted_regular_x for t_i in range(horizon.slots)) else 0,
+            )
         for key, var in half_group.items():
             e_i, d_i, half_i, g_i = key
             half_slots = range(0, split_slot) if half_i == 0 else range(split_slot, horizon.slots)
-            model.AddHint(var, 1 if any((e_i, d_i, g_i, t_i) in hinted_x for t_i in half_slots) else 0)
+            model.AddHint(
+                var,
+                1 if any((e_i, d_i, g_i, t_i) in hinted_regular_x for t_i in half_slots) else 0,
+            )
         for key, var in site_day.items():
             e_i, d_i, s_i = key
             model.AddHint(
@@ -4221,18 +4677,18 @@ def make_ortools_slot_payload(
             hinted_groups = {
                 g_i
                 for g_i in range(len(groups))
-                if any((e_i, d_i, g_i, t_i) in hinted_x for t_i in range(horizon.slots))
+                if any((e_i, d_i, g_i, t_i) in hinted_regular_x for t_i in range(horizon.slots))
             }
             model.AddHint(var, 1 if len(hinted_groups) > 1 else 0)
         for key, var in outside_primary_day.items():
             e_i, d_i = key
-            primary_group = main_groups.get(e_i)
+            hinted_group = hinted_main_groups.get(e_i, soft_groups.get(e_i))
             model.AddHint(
                 var,
                 1
-                if primary_group is not None
+                if hinted_group is not None
                 and any(
-                    g_i != primary_group and (e_i, d_i, g_i, t_i) in hinted_x
+                    g_i != hinted_group and (e_i, d_i, g_i, t_i) in hinted_regular_x
                     for g_i in range(len(groups))
                     for t_i in range(horizon.slots)
                 )
@@ -4242,112 +4698,465 @@ def make_ortools_slot_payload(
             e_i, d_i, t_i = key
             previous = (e_i, d_i, t_i - 1) in hinted_work if t_i else False
             model.AddHint(var, 1 if key in hinted_work and not previous else 0)
-    solver = cp_model.CpSolver()
-    first_phase_limit = max(30.0, min(float(time_limit) * 0.7, max(30.0, float(time_limit) - 30.0)))
-    solver.parameters.max_time_in_seconds = first_phase_limit
-    solver.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
-    solver.parameters.stop_after_first_solution = True
-    if os.environ.get("CRECHE_CP_LOG"):
-        solver.parameters.log_search_progress = True
-    if has_hint:
-        solver.parameters.use_optimization_hints = True
-    status = solver.Solve(model)
-    if status not in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+
+    if fixed_schedule is not None:
+        fixed_x, fixed_work, _fixed_regular_x = schedule_slot_sets(fixed_schedule)
+        for key, var in x.items():
+            model.Add(var == int(key in fixed_x))
+        for key, var in work.items():
+            model.Add(var == int(key in fixed_work))
+        debug(f"fixed_schedule assigned={len(fixed_x)} visible={len(fixed_work)}")
+
+    model.Minimize(sum(objective_terms) if objective_terms else 0)
+    model_variable_count = len(model.Proto().variables)
+    model_constraint_count = len(model.Proto().constraints)
+    debug(
+        f"model variables={model_variable_count} constraints={model_constraint_count} "
+        f"x={len(x)} hint={has_hint} fixed={fixed_schedule is not None}"
+    )
+    if progress_callback:
+        progress_callback(
+            48,
+            f"CP-SAT: {model_variable_count} variables, {model_constraint_count} contraintes",
+        )
+
+    def build_candidate(
+        solution_solver: Any,
+        solution_status: Any,
+        solver_message: str,
+    ) -> dict[str, Any]:
+        selected_main_groups = {
+            e_i: next(
+                g_i
+                for g_i in range(len(groups))
+                if solution_solver.Value(primary_group[(e_i, g_i)])
+            )
+            for e_i in range(len(educators))
+        }
+        schedule = {
+            educator["name"]: {day_key: [] for day_key, _ in DAYS}
+            for educator in educators
+        }
+        for e_i, educator in enumerate(educators):
+            name = educator["name"]
+            selected_main_group = selected_main_groups[e_i]
+            for d_i, (day_key, _) in enumerate(DAYS):
+                current_state: tuple[int, str] | None = None
+                start_slot: int | None = None
+                for t_i in range(horizon.slots + 1):
+                    active_state: tuple[int, str] | None = None
+                    if t_i < horizon.slots:
+                        colloque_group = colloque_group_by_slot.get((d_i, t_i))
+                        if (
+                            colloque_group == selected_main_group
+                            and educator_attends_colloque(educator)
+                        ):
+                            active_state = (selected_main_group, "colloque")
+                        else:
+                            for g_i in range(len(groups)):
+                                if solution_solver.Value(x[(e_i, d_i, g_i, t_i)]):
+                                    replacement = replacement_assignment.get(
+                                        (e_i, d_i, g_i, t_i)
+                                    )
+                                    activity = (
+                                        "remplacement_colloque"
+                                        if replacement is not None
+                                        and solution_solver.Value(replacement)
+                                        else "children"
+                                    )
+                                    active_state = (g_i, activity)
+                                    break
+                    if active_state != current_state:
+                        if current_state is not None and start_slot is not None:
+                            start_min = horizon.start + start_slot * horizon.step
+                            end_min = horizon.start + t_i * horizon.step
+                            group_i, activity = current_state
+                            group = groups[group_i]
+                            schedule[name][day_key].append(
+                                {
+                                    "site": group["site"],
+                                    "group": group["name"],
+                                    "start": format_time(start_min),
+                                    "end": format_time(end_min),
+                                    "hours": round((end_min - start_min) / 60.0, 2),
+                                    "activity": activity,
+                                }
+                            )
+                        current_state = active_state
+                        start_slot = t_i if active_state is not None else None
+
+        primary_groups_by_educator = {
+            educators[e_i]["name"]: groups[g_i]["name"]
+            for e_i, g_i in selected_main_groups.items()
+        }
+        checks = verify_solution(
+            bundle,
+            schedule,
+            half_day_split_time=half_day_split_time,
+            max_weekly_group_exception_days=max_weekly_group_exception_days,
+            max_split_gap_minutes=max_split_gap_minutes,
+            hard_max_work_days=hard_max_work_days,
+            weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+            weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+            weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+            enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+            absolute_max_weekly_hours=absolute_max_weekly_hours,
+            the_enabled=the_enabled,
+            the_percent=the_percent,
+            the_colloques_count=the_colloques_count,
+            primary_groups_by_educator=primary_groups_by_educator,
+        )
+        objective = 0.0
+        try:
+            objective = float(solution_solver.ObjectiveValue())
+        except Exception:
+            objective = 0.0
+        debug(
+            "selected_primary_groups="
+            + ",".join(
+                f"{educators[e_i]['name']}:{groups[g_i]['name']}"
+                for e_i, g_i in selected_main_groups.items()
+            )
+        )
+        debug(f"validation hard_errors={len(checks['errors'])}")
+        return {
+            "status": "ok" if not checks["errors"] else "invalid",
+            "objective": round(objective, 4),
+            "solver_message": solver_message,
+            "warnings": sorted(set(warnings)),
+            "schedule": schedule,
+            "checks": checks,
+            "diagnostics": list(debug_lines),
+        }
+
+    class IncumbentProgressCallback(cp_model.CpSolverSolutionCallback):
+        def __init__(self, phase: str, progress_percent: int) -> None:
+            super().__init__()
+            self.phase = phase
+            self.progress_percent = progress_percent
+            self.solution_count = 0
+            self.best_objective: float | None = None
+
+        def on_solution_callback(self) -> None:
+            self.solution_count += 1
+            if self.phase == "faisabilite":
+                objective = float(self.ObjectiveValue())
+                message = (
+                    f"CP-SAT: candidat realisable {self.solution_count}, "
+                    f"note interne {objective:.0f}, validation en cours"
+                )
+            else:
+                objective = float(self.ObjectiveValue())
+                if (
+                    self.best_objective is not None
+                    and objective >= self.best_objective - 1e-6
+                ):
+                    return
+                self.best_objective = objective
+                message = (
+                    f"CP-SAT: solution {self.solution_count}, "
+                    f"note interne {objective:.0f} (plus bas = mieux)"
+                )
+            debug(f"incumbent phase={self.phase} count={self.solution_count} message={message}")
+            if progress_callback:
+                progress_callback(self.progress_percent, message)
+
+    total_limit = max(1.0, float(time_limit))
+    solve_started_at = time.monotonic()
+    feasibility_limit = total_limit
+    if fixed_schedule is not None or has_schedule_hint or feasibility_limit < 90.0:
+        attempt_specs = [("automatic", cp_model.AUTOMATIC_SEARCH, 1, 1.0)]
+    else:
+        attempt_specs = [
+            ("automatic", cp_model.AUTOMATIC_SEARCH, 1, 0.60),
+            ("portfolio", cp_model.PORTFOLIO_SEARCH, 17, 0.25),
+            ("pseudo_cost", cp_model.PSEUDO_COST_SEARCH, 43, 0.15),
+        ]
+
+    feasibility_attempts: list[dict[str, Any]] = []
+    solver: Any = None
+    status: Any = None
+    remaining_feasibility = feasibility_limit
+    if (
+        fixed_schedule is None
+        and not has_schedule_hint
+        and primary_group_candidates
+        and feasibility_limit >= 60.0
+    ):
+        candidate_phase_limit = min(240.0, feasibility_limit * 0.30)
+        candidate_count = min(
+            len(primary_group_candidates),
+            max(1, min(6, int(candidate_phase_limit // 20.0))),
+        )
+        candidate_limit = candidate_phase_limit / candidate_count
+        for candidate_index, candidate_groups in enumerate(
+            primary_group_candidates[:candidate_count]
+        ):
+            elapsed = time.monotonic() - solve_started_at
+            remaining_total = max(0.0, total_limit - elapsed)
+            if remaining_total < 1.0 or remaining_feasibility < 1.0:
+                break
+            assumptions = [
+                primary_group[(e_i, g_i)]
+                for e_i, g_i in candidate_groups.items()
+            ]
+            model.ClearAssumptions()
+            model.AddAssumptions(assumptions)
+            solver = cp_model.CpSolver()
+            solver.parameters.max_time_in_seconds = min(
+                candidate_limit,
+                remaining_total,
+                remaining_feasibility,
+            )
+            solver.parameters.num_search_workers = max(
+                1,
+                min(8, os.cpu_count() or 1),
+            )
+            solver.parameters.stop_after_first_solution = True
+            solver.parameters.random_seed = 101 + candidate_index
+            solver.parameters.use_optimization_hints = True
+            if os.environ.get("CRECHE_CP_LOG"):
+                solver.parameters.log_search_progress = True
+            callback = IncumbentProgressCallback("faisabilite", 52)
+            if progress_callback:
+                progress_callback(
+                    50 + min(5, candidate_index),
+                    f"CP-SAT groupes candidats {candidate_index + 1}/{candidate_count} "
+                    f"(budget {int(solver.parameters.max_time_in_seconds)} s)",
+                )
+            status = solver.Solve(model, callback)
+            statistics = {
+                "attempt": len(feasibility_attempts) + 1,
+                "strategy": f"primary_candidate_{candidate_index + 1}",
+                "status": solver.StatusName(status),
+                "wall_time_seconds": round(float(solver.WallTime()), 3),
+                "conflicts": int(solver.NumConflicts()),
+                "branches": int(solver.NumBranches()),
+                "solutions": callback.solution_count,
+                "variables": model_variable_count,
+                "constraints": model_constraint_count,
+            }
+            feasibility_attempts.append(statistics)
+            remaining_feasibility = max(
+                0.0,
+                remaining_feasibility - float(solver.WallTime()),
+            )
+            debug(
+                f"primary_candidate={candidate_index + 1} "
+                f"status={statistics['status']} wall={statistics['wall_time_seconds']} "
+                f"groups="
+                + ",".join(
+                    f"{educators[e_i]['name']}:{groups[g_i]['name']}"
+                    for e_i, g_i in candidate_groups.items()
+                )
+            )
+            if progress_callback:
+                progress_callback(
+                    52,
+                    f"CP-SAT groupes {candidate_index + 1}/{candidate_count}: "
+                    f"{statistics['status']} en {statistics['wall_time_seconds']:.1f}s",
+                )
+            if status in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+                break
+        model.ClearAssumptions()
+
+    for attempt_index, (label, strategy, random_seed, share) in enumerate(attempt_specs):
+        if status in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+            break
+        elapsed = time.monotonic() - solve_started_at
+        remaining_total = max(0.0, total_limit - elapsed)
+        if remaining_total < 1.0 or remaining_feasibility < 1.0:
+            break
+        if attempt_index == len(attempt_specs) - 1:
+            attempt_limit = remaining_feasibility
+        else:
+            attempt_limit = max(1.0, feasibility_limit * share)
+            attempt_limit = min(attempt_limit, remaining_feasibility)
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = min(attempt_limit, remaining_total)
+        solver.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
+        solver.parameters.stop_after_first_solution = True
+        solver.parameters.search_branching = strategy
+        solver.parameters.random_seed = random_seed
+        if os.environ.get("CRECHE_CP_LOG"):
+            solver.parameters.log_search_progress = True
+        if has_hint:
+            solver.parameters.use_optimization_hints = True
+        callback = IncumbentProgressCallback("faisabilite", 55)
+        if progress_callback:
+            progress_callback(
+                50 + min(9, attempt_index * 3),
+                f"CP-SAT faisabilite {attempt_index + 1}/{len(attempt_specs)} "
+                f"({label}, budget {int(solver.parameters.max_time_in_seconds)} s)",
+            )
+        status = solver.Solve(model, callback)
+        statistics = {
+            "attempt": attempt_index + 1,
+            "strategy": label,
+            "status": solver.StatusName(status),
+            "wall_time_seconds": round(float(solver.WallTime()), 3),
+            "conflicts": int(solver.NumConflicts()),
+            "branches": int(solver.NumBranches()),
+            "solutions": callback.solution_count,
+            "variables": model_variable_count,
+            "constraints": model_constraint_count,
+        }
+        feasibility_attempts.append(statistics)
+        remaining_feasibility = max(
+            0.0,
+            remaining_feasibility - float(solver.WallTime()),
+        )
+        debug(
+            f"feasibility_attempt={attempt_index + 1} strategy={label} "
+            f"status={statistics['status']} wall={statistics['wall_time_seconds']} "
+            f"conflicts={statistics['conflicts']} branches={statistics['branches']}"
+        )
+        if progress_callback:
+            progress_callback(
+                55,
+                f"CP-SAT {statistics['status']}: "
+                f"{statistics['wall_time_seconds']:.1f}s, "
+                f"{statistics['conflicts']} conflits, "
+                f"{statistics['branches']} branches",
+            )
+        if status in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+            break
+        if status == cp_model.INFEASIBLE:
+            break
+
+    if solver is None or status not in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+        status_name = solver.StatusName(status) if solver is not None else "UNKNOWN"
+        debug(f"feasibility_finished status={status_name} attempts={len(feasibility_attempts)}")
         return (
             {
                 "status": "infeasible_or_not_solved",
-                "solver_message": solver.StatusName(status),
+                "solver_message": status_name,
                 "warnings": sorted(set(warnings)),
-                "diagnostics": diagnose_basic_conflicts(data, horizon),
+                "diagnostics": diagnose_basic_conflicts(data, horizon) + debug_lines,
+                "cp_sat_statistics": {
+                    "feasibility": (
+                        feasibility_attempts[-1] if feasibility_attempts else None
+                    ),
+                    "feasibility_attempts": feasibility_attempts,
+                    "optimization": None,
+                },
             },
             bundle,
         )
 
-    for var in list(x.values()) + list(work.values()) + list(work_day.values()) + list(mixed_day.values()):
-        model.AddHint(var, int(solver.Value(var)))
-    model.Minimize(sum(objective_terms) if objective_terms else 0)
-    optimizer = cp_model.CpSolver()
-    optimizer.parameters.max_time_in_seconds = max(10.0, float(time_limit) - solver.WallTime())
-    optimizer.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
-    optimizer.parameters.relative_gap_limit = 0.05
-    optimizer.parameters.use_optimization_hints = True
-    if progress_callback:
-        progress_callback(64, "Optimisation de la qualite")
-    opt_status = optimizer.Solve(model)
-    best_solver = optimizer if opt_status in {cp_model.OPTIMAL, cp_model.FEASIBLE} else solver
-    best_status = opt_status if opt_status in {cp_model.OPTIMAL, cp_model.FEASIBLE} else status
-
-    schedule = {educator["name"]: {day_key: [] for day_key, _ in DAYS} for educator in educators}
-    for e_i, educator in enumerate(educators):
-        name = educator["name"]
-        for d_i, (day_key, _) in enumerate(DAYS):
-            current_group: int | None = None
-            start_slot: int | None = None
-            for t_i in range(horizon.slots + 1):
-                active_group: int | None = None
-                if t_i < horizon.slots:
-                    for g_i in range(len(groups)):
-                        if best_solver.Value(x[(e_i, d_i, g_i, t_i)]):
-                            active_group = g_i
-                            break
-                if active_group != current_group:
-                    if current_group is not None and start_slot is not None:
-                        start_min = horizon.start + start_slot * horizon.step
-                        end_min = horizon.start + t_i * horizon.step
-                        group = groups[current_group]
-                        schedule[name][day_key].append(
-                            {
-                                "site": group["site"],
-                                "group": group["name"],
-                                "start": format_time(start_min),
-                                "end": format_time(end_min),
-                                "hours": round((end_min - start_min) / 60.0, 2),
-                            }
-                        )
-                    current_group = active_group
-                    start_slot = t_i if active_group is not None else None
-
-    checks = verify_solution(
-        bundle,
-        schedule,
-        half_day_split_time=half_day_split_time,
-        max_weekly_group_exception_days=max_weekly_group_exception_days,
-        max_split_gap_minutes=max_split_gap_minutes,
-        weekly_hours_tolerance_percent=0.0,
+    first_statistics = feasibility_attempts[-1]
+    first_payload = build_candidate(
+        solver,
+        status,
+        f"OR-Tools CP-SAT {solver.StatusName(status)}",
     )
-    weekly_errors = []
-    allowed_hours = float(weekly_hours_tolerance_minutes) / 60.0
-    for name, actual in checks["hours_by_educator"].items():
-        target = checks["weekly_targets"][name]
-        if abs(actual - target) > allowed_hours + 1e-6:
-            weekly_errors.append(
-                f"{name}: {actual:.2f}h hors tolerance autour de {target:.2f}h "
-                f"(+/- {weekly_hours_tolerance_minutes} min)"
+    first_score = planning_quality_score(first_payload)
+    debug(f"first_candidate status={first_payload['status']} score={first_score:.0f}")
+    if payload_is_hard_valid(first_payload):
+        if progress_callback:
+            progress_callback(
+                60,
+                f"Solution hard-valide trouvee - note {first_score:.0f} "
+                "(plus bas = mieux)",
             )
-    filtered = [
-        error
-        for error in checks["errors"]
-        if "hors tolerance autour" not in error and "!=" not in error
-    ]
-    checks["errors"] = filtered + weekly_errors
-    checks["hard_errors"] = checks["errors"]
-    status_text = "ok" if not checks["errors"] else "invalid"
-    objective = 0.0
-    try:
-        objective = float(best_solver.ObjectiveValue())
-    except Exception:
-        objective = 0.0
-    return (
-        {
-            "status": status_text,
-            "objective": round(objective, 4),
-            "solver_message": f"OR-Tools CP-SAT {best_solver.StatusName(best_status)}",
-            "warnings": sorted(set(warnings)),
-            "schedule": schedule,
-            "checks": checks,
-        },
-        bundle,
+        if candidate_callback is not None:
+            candidate_callback(first_payload, bundle)
+    elif not accept_invalid_for_hint:
+        first_payload["cp_sat_statistics"] = {
+            "feasibility": first_statistics,
+            "feasibility_attempts": feasibility_attempts,
+            "optimization": None,
+        }
+        first_payload["diagnostics"] = list(debug_lines)
+        return first_payload, bundle
+
+    best_payload = first_payload
+    optimization_statistics: dict[str, Any] | None = None
+    remaining_for_optimization = max(
+        0.0,
+        total_limit - (time.monotonic() - solve_started_at),
     )
+    if fixed_schedule is None and remaining_for_optimization >= 1.0:
+        model.ClearHints()
+        hinted_variables = (
+            list(primary_group.values())
+            + list(x.values())
+            + list(work.values())
+            + list(work_day.values())
+            + list(site_day.values())
+            + list(half_group.values())
+            + list(group_day.values())
+            + list(mixed_day.values())
+            + list(outside_primary_day.values())
+            + list(outside_primary_group_day.values())
+            + list(start_var.values())
+            + list(replacement_assignment.values())
+        )
+        for var in hinted_variables:
+            model.AddHint(var, int(solver.Value(var)))
+        optimizer = cp_model.CpSolver()
+        optimizer.parameters.max_time_in_seconds = remaining_for_optimization
+        optimizer.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
+        optimizer.parameters.relative_gap_limit = 0.05
+        optimizer.parameters.use_optimization_hints = True
+        if os.environ.get("CRECHE_CP_LOG"):
+            optimizer.parameters.log_search_progress = True
+        if progress_callback:
+            progress_callback(
+                64,
+                f"Optimisation de la qualite (budget {int(remaining_for_optimization)} s)",
+            )
+        optimization_callback = IncumbentProgressCallback("optimisation", 70)
+        opt_status = optimizer.Solve(model, optimization_callback)
+        optimization_statistics = {
+            "status": optimizer.StatusName(opt_status),
+            "wall_time_seconds": round(float(optimizer.WallTime()), 3),
+            "conflicts": int(optimizer.NumConflicts()),
+            "branches": int(optimizer.NumBranches()),
+            "solutions": optimization_callback.solution_count,
+        }
+        debug(
+            f"optimization status={optimization_statistics['status']} "
+            f"wall={optimization_statistics['wall_time_seconds']} "
+            f"conflicts={optimization_statistics['conflicts']} "
+            f"branches={optimization_statistics['branches']}"
+        )
+        if opt_status in {cp_model.OPTIMAL, cp_model.FEASIBLE}:
+            optimized_payload = build_candidate(
+                optimizer,
+                opt_status,
+                f"OR-Tools CP-SAT {optimizer.StatusName(opt_status)}",
+            )
+            optimized_score = planning_quality_score(optimized_payload)
+            if accept_invalid_for_hint or (
+                payload_is_hard_valid(optimized_payload)
+                and optimized_score <= first_score
+            ):
+                best_payload = optimized_payload
+                if progress_callback and payload_is_hard_valid(optimized_payload):
+                    progress_callback(
+                        90,
+                        f"Meilleure solution hard-valide - note {optimized_score:.0f}",
+                    )
+                if (
+                    candidate_callback is not None
+                    and payload_is_hard_valid(best_payload)
+                ):
+                    candidate_callback(best_payload, bundle)
+            elif not payload_is_hard_valid(optimized_payload):
+                warnings.append(
+                    "Amelioration CP-SAT invalide apres verification; "
+                    "premiere solution hard-valide conservee."
+                )
+
+    best_payload["warnings"] = sorted(set(warnings + list(best_payload.get("warnings", []))))
+    best_payload["diagnostics"] = list(debug_lines)
+    best_payload["cp_sat_statistics"] = {
+        "feasibility": first_statistics,
+        "feasibility_attempts": feasibility_attempts,
+        "optimization": optimization_statistics,
+    }
+    return best_payload, bundle
 
 
 def make_pattern_mip_payload(
@@ -4528,25 +5337,42 @@ def infer_preferred_groups_from_payload(
 
 
 def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
-    candidates: list[Path] = []
+    explicit_candidates: list[Path] = []
     seen: set[Path] = set()
     for path in paths:
         if path is None:
             continue
         resolved = path.resolve()
         if resolved not in seen and resolved.exists():
-            candidates.append(resolved)
+            explicit_candidates.append(resolved)
             seen.add(resolved)
+
+    for candidate in explicit_candidates:
+        try:
+            payload = load_json(candidate)
+        except Exception:
+            continue
+        if payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
+            return payload
+
+    fallback_candidates: list[Path] = []
+    for path in paths:
+        if path is None:
+            continue
+        resolved = path.resolve()
         directory = resolved.parent
         if directory.exists():
             for candidate in directory.glob("*.json"):
                 candidate = candidate.resolve()
                 if candidate not in seen:
-                    candidates.append(candidate)
+                    fallback_candidates.append(candidate)
                     seen.add(candidate)
 
-    candidates.sort(key=lambda item: item.stat().st_mtime if item.exists() else 0.0, reverse=True)
-    for candidate in candidates:
+    fallback_candidates.sort(
+        key=lambda item: item.stat().st_mtime if item.exists() else 0.0,
+        reverse=True,
+    )
+    for candidate in fallback_candidates:
         try:
             payload = load_json(candidate)
         except Exception:
@@ -4554,6 +5380,74 @@ def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
         if payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
             return payload
     return None
+
+
+def revalidate_cached_payload(
+    data: dict[str, Any],
+    payload: dict[str, Any] | None,
+    **verification_options: Any,
+) -> tuple[dict[str, Any], Any] | None:
+    if not payload or not isinstance(payload.get("schedule"), dict):
+        return None
+    groups = list(data.get("groups", []))
+    educators = list(data.get("educators", []))
+    sites = [site["name"] for site in data.get("sites", [])]
+    schedule = payload["schedule"]
+    missing_entries = [
+        f"{educator['name']}:{day_key}"
+        for educator in educators
+        for day_key, _label in DAYS
+        if not isinstance(schedule.get(educator["name"]), dict)
+        or not isinstance(schedule[educator["name"]].get(day_key), list)
+    ]
+    if missing_entries:
+        candidate = dict(payload)
+        errors = [
+            "Planning en cache incomplet: "
+            + ", ".join(missing_entries[:10])
+            + ("..." if len(missing_entries) > 10 else "")
+        ]
+        candidate["checks"] = {"errors": errors, "hard_errors": errors}
+        candidate["status"] = "invalid"
+        candidate["solver_message"] = "Dernier planning refuse: structure incomplete."
+        return candidate, None
+    bundle = type(
+        "CachedPlanningBundle",
+        (),
+        {
+            "data": data,
+            "horizon": make_horizon(data),
+            "groups": groups,
+            "educators": educators,
+            "sites": sites,
+        },
+    )()
+    primary_groups = payload.get("checks", {}).get("primary_groups_by_educator", {})
+    if not isinstance(primary_groups, dict) or not primary_groups:
+        preferred = infer_preferred_groups_from_payload(data, payload)
+        primary_groups = {
+            educators[e_i]["name"]: groups[g_i]["name"]
+            for e_i, g_i in preferred.items()
+            if 0 <= e_i < len(educators) and 0 <= g_i < len(groups)
+        }
+    checks = verify_solution(
+        bundle,
+        schedule,
+        primary_groups_by_educator=primary_groups,
+        **verification_options,
+    )
+    candidate = dict(payload)
+    candidate["checks"] = checks
+    candidate["status"] = "ok" if not checks["errors"] else "invalid"
+    candidate["diagnostics"] = [
+        "Planning en cache revalide avec les donnees et regles actuelles."
+    ]
+    candidate["solver_message"] = (
+        "Dernier planning revalide avec les donnees et regles actuelles."
+        if candidate["status"] == "ok"
+        else "Dernier planning refuse apres revalidation avec les regles actuelles."
+    )
+    return candidate, bundle
 
 
 def infer_majority_primary_groups_from_payload(
@@ -4948,6 +5842,10 @@ def main() -> int:
         if write_latest_outputs
         else None
     )
+    initial_solution_path = resolve_config_path(
+        config.get("initial_solution_json"),
+        config_dir,
+    )
     timestamp_outputs = bool(config.get("timestamp_outputs", False))
     if args.timestamp_outputs:
         timestamp_outputs = True
@@ -4960,6 +5858,16 @@ def main() -> int:
         csv_path = timestamped_path(csv_path, timestamp)
         html_path = timestamped_path(html_path, timestamp)
     time_limit = float(pick(args.time_limit, config, "time_limit_seconds", 300.0))
+    raw_compact_candidate_time = config.get("compact_candidate_time_seconds")
+    compact_candidate_time = (
+        None
+        if raw_compact_candidate_time is None
+        else max(1.0, float(raw_compact_candidate_time))
+    )
+    pattern_fallback_time = max(
+        0.0,
+        float(config.get("pattern_fallback_time_seconds", 60.0)),
+    )
     run_started_at = time.monotonic()
 
     def remaining_time_limit() -> float:
@@ -5073,6 +5981,75 @@ def main() -> int:
     aliases = config_aliases(config.get("type_aliases"))
     aliases.update(parse_aliases(args.type_alias))
     latest_payload = load_latest_valid_payload(latest_output_path, output_path)
+    revalidated_latest = revalidate_cached_payload(
+        data,
+        latest_payload,
+        half_day_split_time=half_day_split_time,
+        max_weekly_group_exception_days=max_weekly_group_exception_days,
+        max_split_gap_minutes=hard_max_split_gap_minutes,
+        hard_max_work_days=hard_max_work_days,
+        weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+        weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+        weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+        enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+        absolute_max_weekly_hours=absolute_max_weekly_hours,
+        the_enabled=the_enabled,
+        the_percent=the_percent,
+        the_colloques_count=the_colloques_count,
+        quality_profile=quality_profile_name,
+        quality_profile_label=quality_profile_label,
+        primary_group_report_enabled=primary_group_report_enabled,
+        primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+        primary_group_warning_outside_days=primary_group_warning_outside_days,
+    )
+    initial_solution_used = False
+    if (
+        initial_solution_path is not None
+        and initial_solution_path.exists()
+        and (
+            revalidated_latest is None
+            or not payload_is_hard_valid(revalidated_latest[0])
+        )
+    ):
+        try:
+            initial_payload = load_json(initial_solution_path)
+        except Exception as exc:
+            profile_warnings.append(
+                f"Solution initiale illisible ({initial_solution_path.name}): {exc}"
+            )
+        else:
+            revalidated_initial = revalidate_cached_payload(
+                data,
+                initial_payload,
+                half_day_split_time=half_day_split_time,
+                max_weekly_group_exception_days=max_weekly_group_exception_days,
+                max_split_gap_minutes=hard_max_split_gap_minutes,
+                hard_max_work_days=hard_max_work_days,
+                weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+                weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+                weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+                enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+                absolute_max_weekly_hours=absolute_max_weekly_hours,
+                the_enabled=the_enabled,
+                the_percent=the_percent,
+                the_colloques_count=the_colloques_count,
+                quality_profile=quality_profile_name,
+                quality_profile_label=quality_profile_label,
+                primary_group_report_enabled=primary_group_report_enabled,
+                primary_group_warning_outside_hours=primary_group_warning_outside_hours,
+                primary_group_warning_outside_days=primary_group_warning_outside_days,
+            )
+            if (
+                revalidated_initial is not None
+                and payload_is_hard_valid(revalidated_initial[0])
+            ):
+                latest_payload = revalidated_initial[0]
+                revalidated_latest = revalidated_initial
+                initial_solution_used = True
+            else:
+                profile_warnings.append(
+                    "Solution initiale refusee: elle ne passe plus la validation hard."
+                )
     fixed_primary_groups = (
         infer_majority_primary_groups_from_payload(data, latest_payload)
         if fix_primary_groups_from_latest
@@ -5104,9 +6081,131 @@ def main() -> int:
         emit_progress(100, "Termine")
         return 0 if payload["status"] == "ok" else 2
 
+    def save_valid_checkpoint(payload: dict[str, Any], output_bundle: Any) -> None:
+        ensure_verified_status(payload)
+        if not payload_is_hard_valid(payload):
+            return
+        attach_quality_profile(payload, quality_profile_name, quality_profile_label)
+        payload["rule_summary"] = build_rule_summary(data, config)
+        if latest_output_path:
+            save_json(latest_output_path, payload)
+        if latest_csv_path:
+            write_csv(latest_csv_path, payload)
+        if latest_html_path:
+            write_html(latest_html_path, payload, output_bundle)
+
+    debug_output = latest_output_path or output_path
+    cp_sat_debug_log_path = (
+        debug_output.with_name("cp_sat_debug.log")
+        if debug_output is not None
+        else Path.cwd() / "cp_sat_debug.log"
+    )
+
+    def run_compact_candidate(budget_seconds: float) -> tuple[dict[str, Any], Any]:
+        return make_ortools_slot_payload(
+            data,
+            time_limit=max(1.0, budget_seconds),
+            type_aliases=aliases,
+            min_daily_hours=min_daily_hours,
+            enforce_min_daily_hours=enforce_min_daily_hours,
+            max_split_gap_minutes=hard_max_split_gap_minutes,
+            weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+            weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+            weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+            enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+            absolute_max_weekly_hours=absolute_max_weekly_hours,
+            the_enabled=the_enabled,
+            the_percent=the_percent,
+            the_colloques_count=the_colloques_count,
+            half_day_split_time=half_day_split_time,
+            max_weekly_group_exception_days=max_weekly_group_exception_days,
+            split_shift_weight=split_shift_weight,
+            split_gap_weight=split_gap_weight,
+            group_switch_day_weight=group_switch_day_weight,
+            same_group_week_weight=same_group_week_weight,
+            work_day_weight=compact_work_day_weight,
+            hard_max_work_days=hard_max_work_days,
+            progress_callback=emit_progress,
+            hint_payload=latest_payload,
+            debug_log_path=cp_sat_debug_log_path,
+            candidate_callback=save_valid_checkpoint,
+        )
+
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(5, "Preparation de la recherche par patrons")
+        if revalidated_latest is not None and payload_is_hard_valid(revalidated_latest[0]):
+            cached_payload, cached_bundle = revalidated_latest
+            warnings = list(cached_payload.get("warnings", []))
+            if initial_solution_used:
+                warnings.append(
+                    "Solution initiale hard-valide restauree apres revalidation complete; "
+                    "aucun calcul exhaustif relance."
+                )
+            else:
+                warnings.append(
+                    "Dernier planning hard-valide reutilise apres revalidation complete; "
+                    "aucun calcul exhaustif relance."
+                )
+            cached_payload["warnings"] = sorted(set(warnings))
+            emit_progress(
+                90,
+                (
+                    "Solution initiale hard-valide restauree et conservee"
+                    if initial_solution_used
+                    else "Dernier planning hard-valide revalide et conserve"
+                ),
+            )
+            return finish_payload(cached_payload, cached_bundle)
+        compact_failure: str | None = None
+        if bool(config.get("compact_candidate_first", True)) and remaining_time_limit() >= 30.0:
+            fallback_reserve = min(
+                pattern_fallback_time,
+                max(0.0, time_limit * 0.10),
+                remaining_time_limit(),
+            )
+            if compact_candidate_time is None:
+                compact_budget = max(
+                    1.0,
+                    remaining_time_limit() - fallback_reserve,
+                )
+            else:
+                compact_budget = min(
+                    compact_candidate_time,
+                    remaining_time_limit(),
+                )
+            emit_stage(1, 6, compact_budget, "Recherche compacte CP-SAT")
+            emit_progress(6, f"Recherche compacte CP-SAT (budget {int(compact_budget)} s)")
+            compact_payload, compact_bundle = run_compact_candidate(compact_budget)
+            ensure_verified_status(compact_payload)
+            if payload_is_hard_valid(compact_payload):
+                warnings = list(compact_payload.get("warnings", []))
+                warnings.append(
+                    "Planning hard-valide trouve par la recherche compacte CP-SAT; "
+                    "le modele exhaustif par patrons n'a pas ete lance."
+                )
+                compact_payload["warnings"] = sorted(set(warnings))
+                emit_progress(96, "Verification et ecriture des fichiers")
+                return finish_payload(compact_payload, compact_bundle)
+            compact_failure = str(
+                compact_payload.get("solver_message", "aucun candidat hard-valide")
+            )
+
+        pattern_budget = min(
+            pattern_fallback_time,
+            max(0.0, time_limit * 0.10),
+            remaining_time_limit(),
+        )
+        pattern_started_at = time.monotonic()
+
+        def remaining_pattern_time() -> float:
+            return max(
+                0.0,
+                min(
+                    remaining_time_limit(),
+                    pattern_budget - (time.monotonic() - pattern_started_at),
+                ),
+            )
 
         def empty_pattern_bundle() -> Any:
             horizon = make_horizon(data)
@@ -5224,9 +6323,11 @@ def main() -> int:
         best_payload: dict[str, Any] | None = None
         best_bundle: Any = None
         search_history: list[str] = []
+        if compact_failure:
+            search_history.append(f"Recherche compacte CP-SAT: {compact_failure}.")
 
         for attempt_index, attempt in enumerate(attempts):
-            remaining = remaining_time_limit()
+            remaining = remaining_pattern_time()
             budget = attempt_budget(
                 remaining,
                 attempts,
@@ -5283,7 +6384,7 @@ def main() -> int:
                 break
 
         if best_payload is not None:
-            remaining = remaining_time_limit()
+            remaining = remaining_pattern_time()
             if remaining >= 60.0 and not fast_feasible:
                 fixed_from_candidate = infer_majority_primary_groups_from_payload(data, best_payload)
                 emit_stage(
@@ -5321,9 +6422,9 @@ def main() -> int:
         elif (
             hard_max_work_days
             and relax_work_days_if_infeasible
-            and remaining_time_limit() >= 30.0
+            and remaining_pattern_time() >= 30.0
         ):
-            diagnostic_budget = remaining_time_limit()
+            diagnostic_budget = remaining_pattern_time()
             emit_stage(
                 len(attempts) + 1,
                 len(attempts) + 1,
@@ -5363,23 +6464,7 @@ def main() -> int:
 
     if solver_engine in {"ortools", "cp-sat", "cpsat"}:
         emit_progress(10, "Calcul OR-Tools CP-SAT")
-        payload, output_bundle = make_ortools_slot_payload(
-            data,
-            time_limit=time_limit,
-            type_aliases=aliases,
-            min_daily_hours=min_daily_hours,
-            max_split_gap_minutes=hard_max_split_gap_minutes,
-            weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
-            half_day_split_time=half_day_split_time,
-            max_weekly_group_exception_days=max_weekly_group_exception_days,
-            split_shift_weight=split_shift_weight,
-            split_gap_weight=split_gap_weight,
-            group_switch_day_weight=group_switch_day_weight,
-            same_group_week_weight=same_group_week_weight,
-            hard_max_work_days=hard_max_work_days,
-            progress_callback=emit_progress,
-            hint_payload=latest_payload,
-        )
+        payload, output_bundle = run_compact_candidate(time_limit)
         emit_progress(96, "Verification et ecriture des fichiers")
         return finish_payload(payload, output_bundle)
 
