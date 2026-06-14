@@ -6055,6 +6055,20 @@ def main() -> int:
         if fix_primary_groups_from_latest
         else None
     )
+    protected_valid = (
+        revalidated_latest
+        if (
+            revalidated_latest is not None
+            and payload_is_hard_valid(revalidated_latest[0])
+        )
+        else None
+    )
+    protected_score = (
+        planning_quality_score(protected_valid[0])
+        if protected_valid is not None
+        else float("inf")
+    )
+    checkpoint_score = protected_score
 
     def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
         ensure_verified_status(payload)
@@ -6082,9 +6096,14 @@ def main() -> int:
         return 0 if payload["status"] == "ok" else 2
 
     def save_valid_checkpoint(payload: dict[str, Any], output_bundle: Any) -> None:
+        nonlocal checkpoint_score
         ensure_verified_status(payload)
         if not payload_is_hard_valid(payload):
             return
+        candidate_score = planning_quality_score(payload)
+        if candidate_score > checkpoint_score:
+            return
+        checkpoint_score = candidate_score
         attach_quality_profile(payload, quality_profile_name, quality_profile_label)
         payload["rule_summary"] = build_rule_summary(data, config)
         if latest_output_path:
@@ -6100,6 +6119,8 @@ def main() -> int:
         if debug_output is not None
         else Path.cwd() / "cp_sat_debug.log"
     )
+    if protected_valid is not None:
+        save_valid_checkpoint(protected_valid[0], protected_valid[1])
 
     def run_compact_candidate(budget_seconds: float) -> tuple[dict[str, Any], Any]:
         return make_ortools_slot_payload(
@@ -6134,29 +6155,15 @@ def main() -> int:
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
     if solver_engine in {"pattern_mip", "pattern-mip", "patterns", "patrons"}:
         emit_progress(5, "Preparation de la recherche par patrons")
-        if revalidated_latest is not None and payload_is_hard_valid(revalidated_latest[0]):
-            cached_payload, cached_bundle = revalidated_latest
-            warnings = list(cached_payload.get("warnings", []))
-            if initial_solution_used:
-                warnings.append(
-                    "Solution initiale hard-valide restauree apres revalidation complete; "
-                    "aucun calcul exhaustif relance."
-                )
-            else:
-                warnings.append(
-                    "Dernier planning hard-valide reutilise apres revalidation complete; "
-                    "aucun calcul exhaustif relance."
-                )
-            cached_payload["warnings"] = sorted(set(warnings))
+        if protected_valid is not None:
             emit_progress(
-                90,
+                5,
                 (
-                    "Solution initiale hard-valide restauree et conservee"
+                    "Solution initiale valide conservee comme secours et indice"
                     if initial_solution_used
-                    else "Dernier planning hard-valide revalide et conserve"
+                    else "Dernier planning valide conserve comme secours et indice"
                 ),
             )
-            return finish_payload(cached_payload, cached_bundle)
         compact_failure: str | None = None
         if bool(config.get("compact_candidate_first", True)) and remaining_time_limit() >= 30.0:
             fallback_reserve = min(
@@ -6179,11 +6186,23 @@ def main() -> int:
             compact_payload, compact_bundle = run_compact_candidate(compact_budget)
             ensure_verified_status(compact_payload)
             if payload_is_hard_valid(compact_payload):
-                warnings = list(compact_payload.get("warnings", []))
-                warnings.append(
-                    "Planning hard-valide trouve par la recherche compacte CP-SAT; "
-                    "le modele exhaustif par patrons n'a pas ete lance."
-                )
+                compact_score = planning_quality_score(compact_payload)
+                if (
+                    protected_valid is not None
+                    and compact_score > protected_score
+                ):
+                    compact_payload, compact_bundle = protected_valid
+                    warnings = list(compact_payload.get("warnings", []))
+                    warnings.append(
+                        "La recherche CP-SAT a trouve un planning valide mais moins bon; "
+                        "la solution de secours a ete conservee."
+                    )
+                else:
+                    warnings = list(compact_payload.get("warnings", []))
+                    warnings.append(
+                        "Planning hard-valide trouve par la recherche compacte CP-SAT; "
+                        "le modele exhaustif par patrons n'a pas ete lance."
+                    )
                 compact_payload["warnings"] = sorted(set(warnings))
                 emit_progress(96, "Verification et ecriture des fichiers")
                 return finish_payload(compact_payload, compact_bundle)
@@ -6451,6 +6470,20 @@ def main() -> int:
             if payload_is_hard_valid(relaxed_payload):
                 payload = mark_work_day_diagnostic(relaxed_payload)
                 output_bundle = relaxed_bundle
+
+        if protected_valid is not None:
+            candidate_is_valid = payload_is_hard_valid(payload)
+            candidate_score = (
+                planning_quality_score(payload)
+                if candidate_is_valid
+                else float("inf")
+            )
+            if candidate_score > protected_score:
+                payload, output_bundle = protected_valid
+                search_history.append(
+                    "Aucune meilleure solution hard-valide trouvee; "
+                    "la solution de secours revalidee a ete conservee."
+                )
 
         warnings = list(payload.get("warnings", []))
         warnings.extend(search_history)
