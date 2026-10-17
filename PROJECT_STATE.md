@@ -302,3 +302,33 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - L'alignement est confirmé sur cette recherche réelle ; cinq minutes supplémentaires n'ont pas donné de progrès. Cela ne prouve pas que le planning est optimal.
 - Les écarts THE/interdictions de groupe et l'absence de pénalité distincte sur la durée des coupures restent ouverts, comme documenté au lot précédent.
 - Prochaine action possible : examiner les critères métier et la décomposition du score avant de décider d'un nouvel essai ; aucun calcul supplémentaire lancé automatiquement.
+
+
+## Diagnostic des trois contributions principales — 17 octobre 2026
+
+- Demande de Frédéric : expliquer les trois principaux postes du planning à 631977, sans nouveau calcul d’optimisation ni modification de code.
+- Recalcul indépendant avec `compact_quality_breakdown` depuis `docs/experiments/2026-10-17-aligned-300s/result.json` : total exactement 631977, identique au résumé sauvegardé.
+- Débuts de présence : 624000 = 52 périodes × 12000 ; 45 journées travaillées, donc sept périodes supplémentaires après coupure (84000 points). Ne pas présenter les 624000 points comme une pénalité uniquement sur les coupures. La durée des coupures ne figure pas séparément au score.
+- Écart aux heures cibles enfants : 5000 = deux créneaux de quinze minutes d’écart absolu cumulés, soit trente minutes. Ce chiffre porte sur les cibles enfants utilisées dans l’objectif, pas directement sur un déficit contractuel total.
+- Travail ordinaire hors groupe principal : 3240 au total (3200 pour une journée + 40 pour le couple groupe/journée).
+- Autres contributions : créneaux enfants 1237 ; bonus de groupe principal préféré -1500 ; toutes les autres contributions nulles. Somme contrôlée.
+- Aucun planning actif, code, paramètre ou donnée métier modifié ; aucun test ni recherche longue relancé pour cette lecture.
+- Prochaine action possible : examiner la répartition des sept coupures et les contraintes qui les imposent, avant de décider d’un nouvel essai. Note locale de diagnostic, non publiée sur GitHub.
+
+
+## Durées des sept coupures — 17 octobre 2026
+
+- Lecture du résultat sauvegardé à 631977 ; fusion des activités adjacentes avant calcul des intervalles sans présence.
+- Durées vérifiées par ordre décroissant : Léa jeudi 10:45–13:15 (150 min) ; Tara jeudi 11:00–13:15 (135 min) ; Emilie vendredi 12:00–14:15 (135 min) ; Natacha mardi 11:45–13:15 (90 min) ; Priscila mardi 12:00–13:15 (75 min) ; Magali lundi 12:00–13:00 et mercredi 12:30–13:30 (60 min chacune).
+- Chaque reprise coûte 12000 points indépendamment de la durée. Le classement par durée est un indicateur de gêne potentielle, pas un classement par score ni une preuve de facilité de suppression.
+- Aucun code, planning actif ou paramètre modifié, aucune recherche lancée. Prochaine action éventuelle : examiner la faisabilité de réorganisation des coupures retenues, sans oublier les pauses requises. Note locale non publiée.
+
+
+## Essai ciblé Léa jeudi — 17 octobre 2026
+
+- Essai de cinq minutes explicitement autorisé après explication : viser la suppression de la coupure de Léa le jeudi en conservant une meilleure note globale.
+- Instrumentation expérimentale uniquement en mémoire, script conservé dans `docs/experiments/2026-10-17-lea-thursday-300s/run.py` : exactement une période de présence de Léa jeudi ; objectif commun <= 631976. Toutes les affectations restent libres ; aucun planning fixé, aucune règle métier assouplie. Le planning à 631977 sert d’indice. Cette restriction réduit volontairement le domaine de cet essai ciblé, pas celui du modèle de production.
+- Résultat : 302,155 s au total ; CP-SAT `UNKNOWN`, zéro solution, 17060 branches, quatre conflits. Aucun candidat ni nouvelle note disponible, phase d’optimisation non engagée. Ce résultat ne prouve ni l’impossibilité de supprimer cette coupure ni l’optimalité du planning de départ.
+- Le planning de départ a été revalidé avant le calcul. `selected.json` conserve ses affectations à l’identique ; aucune sortie active remplacée. Empreintes du solveur, du module de score et des données inchangées après le calcul. Aucun code de production modifié, aucune suite de tests relancée pour ce script expérimental.
+- Conditions, journaux, résultat et résumé sauvegardés dans le dossier de l’essai. Le moteur actuel ne fait pas l’objet d’un audit des pauses réglementaires ; ne pas présenter cet essai comme une validation de celles-ci. Les limites THE/interdictions de groupe restent ouvertes.
+- Prochaine action possible : isoler la faisabilité de Léa jeudi en une seule période sans exiger en même temps une meilleure note ; aucune nouvelle recherche lancée.

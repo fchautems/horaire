@@ -1,0 +1,42 @@
+{
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "warnings": [],
+  "diagnostics": [
+    "1987.801|start educators=13 groups=3 slots=48 time_limit=300.0",
+    "1988.100|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234",
+    "1988.100|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands",
+    "1988.100|primary_group_candidates=9",
+    "1988.747|EXPERIMENT: Lea Thursday one presence period; common score <= 631976",
+    "1988.809|model variables=16991 constraints=51525 x=9360 hint=True fixed=False",
+    "2289.345|feasibility_attempt=1 strategy=automatic status=UNKNOWN wall=300.512 conflicts=4 branches=17060",
+    "2289.346|feasibility_finished status=UNKNOWN attempts=1"
+  ],
+  "cp_sat_statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 300.512,
+      "conflicts": 4,
+      "branches": 17060,
+      "solutions": 0,
+      "variables": 16991,
+      "constraints": 51525
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 300.512,
+        "conflicts": 4,
+        "branches": 17060,
+        "solutions": 0,
+        "variables": 16991,
+        "constraints": 51525
+      }
+    ],
+    "optimization": null
+  }
+}

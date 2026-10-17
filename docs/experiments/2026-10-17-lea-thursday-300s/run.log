@@ -1,0 +1,9 @@
+0.586|12|Construction du modele CP-SAT
+0.885|20|Contraintes de couverture
+0.918|28|Contraintes educateurs
+1.316|36|Contraintes hard et preferences
+1.404|48|Recherche d'une solution valide
+1.593|48|CP-SAT: 16991 variables, 51525 contraintes
+1.594|50|CP-SAT faisabilite 1/1 (automatic, budget 299 s)
+302.130|55|CP-SAT UNKNOWN: 300.5s, 4 conflits, 17060 branches
+SUMMARY {"elapsed_seconds": 302.155, "status": "infeasible_or_not_solved", "solver_message": "UNKNOWN", "statistics": {"feasibility": {"attempt": 1, "strategy": "automatic", "status": "UNKNOWN", "wall_time_seconds": 300.512, "conflicts": 4, "branches": 17060, "solutions": 0, "variables": 16991, "constraints": 51525}, "feasibility_attempts": [{"attempt": 1, "strategy": "automatic", "status": "UNKNOWN", "wall_time_seconds": 300.512, "conflicts": 4, "branches": 17060, "solutions": 0, "variables": 16991, "constraints": 51525}], "optimization": null}, "reference_score": 631977, "candidate_score": null, "independent_errors": null, "accepted": false, "active_schedule_replaced": false}
