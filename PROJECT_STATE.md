@@ -347,3 +347,14 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 ### Limites et prochaine action
 - Les écarts connus THE/interdictions de groupe et l'absence d'audit des pauses réglementaires restent ouverts ; aucune nouvelle garantie métier n'est déduite de cet essai.
 - Avant une autre recherche longue, examiner les contraintes concrètes de Léa le jeudi et leur interaction avec la couverture, ainsi que les restrictions déjà identifiées du modèle. Ce diagnostic doit distinguer une nécessité métier d'une restriction de modélisation. Aucun nouveau calcul long lancé automatiquement.
+
+
+## Nouveau contrôle du planning de référence — 17 octobre 2026, 17 h (Suisse)
+
+- Contrôle demandé par Frédéric avant toute nouvelle optimisation globale.
+- Revalidation exécutée sur `docs/experiments/2026-10-17-lea-feasibility-300s/selected.json`, avec les options sauvegardées de cet essai, puis deuxième appel direct à `verify_solution` : statut `ok`, aucune erreur.
+- Score recalculé avec le contexte reconstruit depuis les données actuelles : **631977**. Décomposition : débuts de présence 624000 ; créneaux enfants 1237 ; écart aux heures cibles 5000 ; hors groupe principal 3240 ; préférence du groupe principal -1500 ; autres termes nuls.
+- Identité avec les fichiers de `main` vérifiée par empreinte Git pour `solver.py`, `scoring.py`, `domain.py` et `data/gwendo.json`. Les affectations sont inchangées par la revalidation. Aucun solveur ni test complet relancé, aucun code ou planning actif modifié.
+- Conclusion : reprendre ce planning comme indice initial est compatible avec le code corrigé et sa note actuelle ; l'ancien score stocké n'a pas servi de référence au recalcul.
+- Limites conservées : contrôles actuels seulement ; écarts THE/interdictions de groupe et audit des pauses encore ouverts. Cette vérification ne constitue pas un audit complet des règles métier.
+- Prochaine action : la base est confirmée ; aucun nouvel essai ciblé Léa à poursuivre. Avant un calcul global supplémentaire, choisir un changement de stratégie motivé par les essais globaux déjà sans progrès ; aucun nouveau calcul long lancé dans ce contrôle.
