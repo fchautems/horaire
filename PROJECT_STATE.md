@@ -99,3 +99,16 @@ Précisions :
 
 ### Prochaine action
 Préparer des corrections ciblées des contrôles de cohérence du validateur et du minimum de jours avec THE. Clarifier la règle des jours hors groupe principal avant de la modifier. Ne pas relancer de calcul long sans hypothèse précise.
+
+## Décision métier — 17 octobre 2026
+
+Clarification de Frédéric, consignée dans `docs/REGLES_METIER.md` :
+- Une journée entière dans un autre groupe que le groupe principal reste possible, si les autres contraintes le permettent. Elle ne compte pas à elle seule comme une journée avec changement de groupe.
+- La limite des journées exceptionnelles porte sur les changements en cours de journée ; une matinée dans un groupe et un après-midi dans un autre est possible.
+- Une interdiction de groupe hard doit bloquer les affectations ordinaires dans ce groupe, pas uniquement son choix comme groupe principal. Une préférence négative soft doit pénaliser ces affectations.
+- L'articulation avec les remplacements de colloque n'est pas encore précisée : aucune exception supplémentaire n'a été inventée.
+- Les autres règles, notamment la présence au colloque du groupe principal, restent applicables.
+
+**État : documentation mise à jour ; code inchangé.** La restriction CP-SAT sur les jours hors groupe principal et le traitement des interdictions de groupe doivent être revus selon cette clarification. Les contrôles manquants du validateur et le calcul du minimum de jours avec THE restent à corriger.
+
+Contrôle : relecture des documents publiés ; aucun nouveau calcul ni test nécessaire pour cette modification documentaire. Prochaine action : poursuivre la revue selon ces règles explicites ; toute correction de code reste hors du périmètre actuel.
