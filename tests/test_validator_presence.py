@@ -57,11 +57,34 @@ class ValidatorPresenceTests(unittest.TestCase):
                                            self.block('13:00', '15:00', 2)]), [])
 
     def test_colloque_record_does_not_split_continuous_presence(self):
-        errors = self.check_blocks([self.block('08:00', '09:00', 1),
-                                   self.block('09:00', '09:45', .75, activity='colloque'),
-                                   self.block('09:45', '10:45', 1),
-                                   self.block('13:00', '14:00', 1)])
-        self.assertFalse(any('periodes de presence' in error for error in errors), errors)
+        self.assertEqual(self.check_blocks([
+            self.block('08:00', '08:45', .75),
+            self.block('08:45', '09:30', .75, activity='colloque'),
+            self.block('09:30', '10:00', .5),
+            self.block('13:00', '14:00', 1),
+        ]), [])
+
+    def test_overlapping_colloque_is_rejected(self):
+        errors = self.check_blocks([
+            self.block('08:00', '10:15', 2.25),
+            self.block('09:00', '09:45', .75, activity='colloque'),
+        ])
+        self.assertTrue(any('chevauchement' in error for error in errors), errors)
+
+    def test_nested_overlaps_do_not_hide_a_later_overlap(self):
+        errors = self.check_blocks([
+            self.block('08:00', '10:00', 2),
+            self.block('08:15', '08:30', .25),
+            self.block('09:00', '09:45', .75),
+        ])
+        self.assertEqual(sum('chevauchement' in error for error in errors), 2, errors)
+
+    def test_zero_duration_is_rejected(self):
+        errors = self.check_blocks([
+            self.block('08:00', '11:00', 3),
+            self.block('13:00', '13:00', 0),
+        ])
+        self.assertTrue(any('plage horaire invalide' in error for error in errors), errors)
 
     def test_reversed_time_range_is_rejected(self):
         errors = self.check_blocks([self.block('09:00', '08:00', 3)])

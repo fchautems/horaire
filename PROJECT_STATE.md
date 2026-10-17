@@ -159,3 +159,17 @@ Frédéric a demandé de passer aux corrections et laissé le choix de l'ordre. 
 
 ### Reste à traiter / prochaine action
 Le minimum de jours avec THE invisible, les jours entiers hors groupe principal, les interdictions de groupe et l'écart des objectifs restent ouverts. Prochaine action : corriger le minimum de jours avec THE par un microcas de régression, puis appliquer la clarification métier sur les journées hors groupe principal. L'exception des interdictions lors des remplacements de colloque demeure non précisée. L'alignement des scores doit s'appuyer sur la spec avant une nouvelle optimisation longue.
+
+## Vérification complémentaire du validateur — 17 octobre 2026
+
+### État vérifié et changements
+- Le correctif de cohérence des périodes est publié dans le commit `274bac802c00aeeef7b396233abf087345f3dd64` ; aucun autre changement du solveur dans ce complément.
+- Trois tests ajoutés : chevauchement avec un colloque, chevauchements imbriqués et plage de durée nulle. Le test de continuité autour d'un colloque vérifie maintenant l'absence de toute erreur sur un contrat cohérent, au lieu de ne vérifier que le compteur de périodes.
+
+### Contrôles
+- Les dix tests ciblés ont été exécutés sur le code antérieur au correctif (`0966437`) dans une copie temporaire : sept échecs reproduisent les anomalies, trois cas autorisés passent.
+- Sur le code corrigé : **38 tests réussis**, en 1,515 seconde, avec Python 3.12.14 et OR-Tools 9.15.6755. Les deux tests CP-SAT de la référence restent réussis.
+- `git diff --check` : aucune erreur. Données métier, configuration et planning de référence inchangés ; aucun essai long relancé.
+
+### Limites et prochaine action
+Ce lot corrige les contrôles des périodes ; il ne démontre pas l'équivalence complète du solveur et du validateur. Les écarts THE, affectations de groupe et critères de qualité restent ouverts, ainsi que la vérification réelle sous Windows. Prochaine correction : le minimum de jours calculé avec le THE invisible, à isoler par un test de régression avant modification.
