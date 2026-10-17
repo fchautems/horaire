@@ -261,3 +261,27 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Le meilleur planning connu selon le score corrigé reste à 13560, contre 14280 pour la référence historique. Aucun progrès supplémentaire retenu dans cet essai.
 - Prochaine action : décomposer les contributions aux deux scores sur ces candidats, puis aligner les critères selon les priorités métier avant de prolonger les calculs. Les écarts THE et interdictions de groupe restent ouverts.
 - Conditions, script, journaux, résumé et revalidation conservés dans `docs/experiments/2026-10-17-score-fixed-300s/`.
+
+
+## Alignement du score de sélection sur le moteur compact — 17 octobre 2026
+
+### Décision et changements
+- Frédéric autorise la correction des deux calculs ensemble. Choix : conserver les critères/pondérations actuels du moteur compact CP-SAT et les utiliser pour sélectionner les plannings ; aucune nouvelle priorité métier introduite.
+- Nouveau module `scoring.py` : coefficients communs et évaluation indépendante à partir des créneaux du planning. Le moteur lit ces mêmes coefficients pour construire son objectif.
+- `planning_quality_score` utilise désormais ce calcul pour les résultats nouveaux/revalidés. Le lanceur compare tous les candidats, caches et checkpoints avec la configuration courante ; un ancien champ `objective` n'est jamais utilisé comme note fiable.
+- Les caches reconstruisent leur contexte de score après revalidation. Champ JSON additionnel `quality_scoring`, formats d'affectation conservés. Compatibilité de l'appel de bas niveau sans contexte sur JSON ancien documentée dans `docs/QUALITY_SCORING.md`.
+- Écart aux heures cibles calculé par une valeur absolue exacte dans le modèle, évitant des variables de surplus/déficit simultanément positives lors de la première faisabilité. Aucun horaire autorisé supprimé par ce changement auxiliaire.
+
+### Contrôles vérifiés
+- **55 tests réussis**, en 7,210 secondes, dont cinq nouveaux tests d'alignement. Le test d'orchestration simulé fournit maintenant les champs de contrat/groupe nécessaires au calcul.
+- Trois horaires sauvegardés ont été fixés dans CP-SAT pour comparer l'objectif du modèle avec le score recalculé depuis leurs affectations : référence historique **809618**, candidat du premier essai corrigé **650975**, dernier candidat **631977**. Égalité exacte dans chaque cas, aucune erreur du validateur.
+- Le candidat à 631977, rejeté lors du dernier essai sous l'ancien critère de sélection, est désormais meilleur selon les deux calculs. Ceci est un reclassement d'horaires déjà obtenus, pas un nouveau progrès de recherche.
+- Microcas avec pondérations non standard, préférences horaires positives/négatives et de groupe multiples, écart d'heures, jour mixte et travail hors groupe principal : notes identiques.
+- Fragmenter une activité adjacente ne change pas la note. Un objectif stocké ou un ancien contexte de cache ne supplante pas la politique courante après revalidation.
+- Recherche libre courte sur microcas : objectif et score des checkpoints/résultat identiques ; la sélection ne dégrade pas la première solution valide.
+- `git diff --check` sans erreur. Aucun essai de cinq minutes relancé ; aucun planning actif, donnée métier ou configuration remplacé. Les tests Windows restent simulés.
+
+### Limites et prochaine action
+- Alignement couvert : objectif compact CP-SAT et sélection finale dans le lanceur. Les autres moteurs conservent leurs propres objectifs de recherche ; leurs candidats sont toutefois comparés par le score commun du lanceur.
+- Les critères actuels sont conservés, pas déclarés exhaustifs de la spec. En particulier la durée des coupures n'est toujours pas un terme distinct de l'objectif compact (`split_gap_weight` inutilisé auparavant et inchangé). Les écarts THE/interdictions de groupe restent ouverts.
+- Les scores 13560/15780 de l'ancien critère ne sont plus les valeurs du score commun. Prochaine étape possible : essai borné depuis le dernier candidat, score commun 631977, sans figer ses affectations ; aucun lancement long automatique effectué dans ce lot.

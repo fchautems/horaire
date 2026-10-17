@@ -118,7 +118,7 @@ class SolverOrchestrationTests(unittest.TestCase):
             "timestamp_outputs": False,
         }
         data = {
-            "educators": [{"name": "A"}],
+            "educators": [{"name": "A", "percentage": 0}],
             "groups": [],
             "sites": [],
             "rules_global": {},
@@ -137,7 +137,7 @@ class SolverOrchestrationTests(unittest.TestCase):
             "solver_message": "Feasible",
             "warnings": [],
             "schedule": {},
-            "checks": {"errors": [], "hard_errors": []},
+            "checks": {"errors": [], "hard_errors": [], "primary_groups_by_educator": {"A": ""}},
         }
         timeout = {
             "status": "infeasible_or_not_solved",

@@ -40,6 +40,7 @@ from .domain import (
     the_target_slots,
     weekly_tolerance_slots,
 )
+from .scoring import compact_quality_context, compact_quality_breakdown
 from .quality import (
     attach_quality_profile,
     build_quality_summary,
@@ -4196,7 +4197,13 @@ def make_ortools_slot_payload(
     primary_group: dict[tuple[int, int], Any] = {}
     replacement_assignment: dict[tuple[int, int, int, int], Any] = {}
     objective_terms: list[Any] = []
-    scale = 100
+    quality_context = compact_quality_context(
+        data, split_shift_weight=split_shift_weight,
+        group_switch_day_weight=group_switch_day_weight,
+        same_group_week_weight=same_group_week_weight, work_day_weight=work_day_weight,
+        the_enabled=the_enabled, the_percent=the_percent,
+    )
+    quality_weights = quality_context["weights"]
 
     for e_i in range(len(educators)):
         primary_terms = []
@@ -4212,7 +4219,7 @@ def make_ortools_slot_payload(
             model.Add(primary_group[(e_i, forbidden_group)] == 0)
         preferred_group = soft_groups.get(e_i)
         if preferred_group is not None:
-            objective_terms.append(primary_group[(e_i, preferred_group)] * -500)
+            objective_terms.append(primary_group[(e_i, preferred_group)] * quality_weights["preferred_primary"])
 
     for e_i in range(len(educators)):
         for d_i in range(len(DAYS)):
@@ -4220,7 +4227,7 @@ def make_ortools_slot_payload(
             if work_day_weight:
                 objective_terms.append(
                     work_day[(e_i, d_i)]
-                    * int(round(work_day_weight * scale))
+                    * quality_weights["worked_days"]
                 )
             mixed_day[(e_i, d_i)] = model.NewBoolVar(f"mix_{e_i}_{d_i}")
             outside_primary_day[(e_i, d_i)] = model.NewBoolVar(f"outside_{e_i}_{d_i}")
@@ -4239,7 +4246,7 @@ def make_ortools_slot_payload(
                 for g_i in range(len(groups)):
                     assignment = model.NewBoolVar(f"x_{e_i}_{d_i}_{g_i}_{t_i}")
                     x[(e_i, d_i, g_i, t_i)] = assignment
-                    objective_terms.append(assignment)
+                    objective_terms.append(assignment * quality_weights["child_slots"])
 
     replacement_windows: set[tuple[int, int, int, int]] = set()
     colloque_group_by_slot: dict[tuple[int, int], int] = {}
@@ -4378,7 +4385,7 @@ def make_ortools_slot_payload(
                     model.Add(start_var[(e_i, d_i, t_i)] >= work[(e_i, d_i, t_i)] - work[(e_i, d_i, t_i - 1)])
                     model.Add(start_var[(e_i, d_i, t_i)] <= work[(e_i, d_i, t_i)])
                     model.Add(start_var[(e_i, d_i, t_i)] <= 1 - work[(e_i, d_i, t_i - 1)])
-                objective_terms.append(start_var[(e_i, d_i, t_i)] * int(round(split_shift_weight * scale)))
+                objective_terms.append(start_var[(e_i, d_i, t_i)] * quality_weights["presence_starts"])
             if enforce_daily_hours:
                 model.Add(sum(day_work_terms) <= max_daily_slots)
             minimum_worked_slots = min_daily_slots if enforce_min_daily_hours else 1
@@ -4462,7 +4469,7 @@ def make_ortools_slot_payload(
             regular_group_count = sum(group_day[(e_i, d_i, g_i)] for g_i in range(len(groups)))
             model.Add(regular_group_count <= 1 + mixed_day[(e_i, d_i)])
             model.Add(regular_group_count >= 2 * mixed_day[(e_i, d_i)])
-            objective_terms.append(mixed_day[(e_i, d_i)] * int(round(group_switch_day_weight * scale)))
+            objective_terms.append(mixed_day[(e_i, d_i)] * quality_weights["mixed_days"])
             outside_var = outside_primary_day[(e_i, d_i)]
             non_primary_terms = []
             for g_i in range(len(groups)):
@@ -4476,11 +4483,11 @@ def make_ortools_slot_payload(
                 model.Add(outside_group <= outside_var)
                 non_primary_terms.append(outside_group)
                 objective_terms.append(
-                    outside_group * int(round(same_group_week_weight * scale))
+                    outside_group * quality_weights["outside_group_days"]
                 )
             model.Add(outside_var <= sum(non_primary_terms))
             objective_terms.append(
-                outside_var * int(round(group_switch_day_weight * scale * 4))
+                outside_var * quality_weights["outside_days"]
             )
         if enforce_weekly_hours:
             upper_visible = target + tolerance_slots
@@ -4496,17 +4503,12 @@ def make_ortools_slot_payload(
                 <= max(0, upper_visible - the_slots)
             )
             model.Add(sum(weekly_visible_terms) <= upper_visible)
-            over = model.NewIntVar(0, tolerance_slots, f"over_{e_i}")
-            under = model.NewIntVar(0, tolerance_slots, f"under_{e_i}")
-            model.Add(sum(weekly_child_terms) - child_target == over - under)
-            objective_terms.append((over + under) * 2500)
-        else:
-            child_target = max(0, target - the_slots)
-            max_deviation = len(DAYS) * horizon.slots
-            over = model.NewIntVar(0, max_deviation, f"soft_over_{e_i}")
-            under = model.NewIntVar(0, max_deviation, f"soft_under_{e_i}")
-            model.Add(sum(weekly_child_terms) - child_target == over - under)
-            objective_terms.append((over + under) * 2500)
+        child_target = max(0, target - the_slots)
+        deviation = model.NewIntVar(
+            0, max(child_target, len(DAYS) * horizon.slots), f"deviation_{e_i}"
+        )
+        model.AddAbsEquality(deviation, sum(weekly_child_terms) - child_target)
+        objective_terms.append(deviation * quality_weights["hour_deviation_slots"])
         if hard_max_work_days:
             minimum_work_days = int(
                 math.ceil(
@@ -4562,7 +4564,7 @@ def make_ortools_slot_payload(
                 model.Add(sum(work[(e_i, d_i, t_i)] for t_i in slot_list) >= 1)
         else:
             for t_i in slot_list:
-                objective_terms.append(work[(e_i, d_i, t_i)] * (45 if is_negative else -35))
+                objective_terms.append(work[(e_i, d_i, t_i)] * quality_weights["negative_time_slots" if is_negative else "positive_time_slots"])
 
     for raw_rule in data.get("rules_group", []):
         if len(raw_rule) < 4:
@@ -4589,7 +4591,7 @@ def make_ortools_slot_payload(
                 if not affected:
                     continue
                 for t_i in range(horizon.slots):
-                    objective_terms.append(x[(e_i, d_i, g_i, t_i)] * 18)
+                    objective_terms.append(x[(e_i, d_i, g_i, t_i)] * quality_weights["group_rule_slots"])
 
     for raw_rule in data.get("rules_percentage", []) if enforce_percentage_rules else []:
         if len(raw_rule) < 4:
@@ -4853,6 +4855,7 @@ def make_ortools_slot_payload(
         return {
             "status": "ok" if not checks["errors"] else "invalid",
             "objective": round(objective, 4),
+            "quality_scoring": quality_context,
             "solver_message": solver_message,
             "warnings": sorted(set(warnings)),
             "schedule": schedule,
@@ -5290,9 +5293,19 @@ def make_pattern_mip_payload(
         return exc.payload, exc.bundle
 
 
-def planning_quality_score(payload: dict[str, Any]) -> float:
+def planning_quality_score(
+    payload: dict[str, Any], *, context: dict[str, Any] | None = None,
+) -> float:
     if payload.get("status") != "ok":
         return 1_000_000_000.0
+
+    # New/revalidated payloads use the compact objective. Legacy payloads
+    # without scoring inputs retain the old API until they are revalidated.
+    scoring_context = context if context is not None else payload.get("quality_scoring")
+    if scoring_context is not None:
+        if payload.get("checks", {}).get("errors"):
+            return float("inf")
+        return float(sum(compact_quality_breakdown(payload, scoring_context).values()))
 
     schedule = payload.get("schedule", {})
     errors = len(payload.get("checks", {}).get("errors", []))
@@ -5425,6 +5438,7 @@ def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
 def revalidate_cached_payload(
     data: dict[str, Any],
     payload: dict[str, Any] | None,
+    *, quality_context: dict[str, Any] | None = None,
     **verification_options: Any,
 ) -> tuple[dict[str, Any], Any] | None:
     if not payload or not isinstance(payload.get("schedule"), dict):
@@ -5477,6 +5491,10 @@ def revalidate_cached_payload(
         **verification_options,
     )
     candidate = dict(payload)
+    candidate["quality_scoring"] = quality_context if quality_context is not None else compact_quality_context(
+        data, the_enabled=verification_options.get("the_enabled", True),
+        the_percent=verification_options.get("the_percent", 10.0),
+    )
     candidate["checks"] = checks
     candidate["status"] = "ok" if not checks["errors"] else "invalid"
     candidate["diagnostics"] = [
@@ -6018,12 +6036,23 @@ def main() -> int:
 
     emit_progress(3, "Lecture des donnees")
     data = load_json(json_path)
+    quality_context = compact_quality_context(
+        data, split_shift_weight=split_shift_weight,
+        group_switch_day_weight=group_switch_day_weight,
+        same_group_week_weight=same_group_week_weight, work_day_weight=compact_work_day_weight,
+        the_enabled=the_enabled, the_percent=the_percent,
+    )
+
+    def quality_score(candidate: dict[str, Any]) -> float:
+        return planning_quality_score(candidate, context=quality_context)
+
     aliases = config_aliases(config.get("type_aliases"))
     aliases.update(parse_aliases(args.type_alias))
     latest_payload = load_latest_valid_payload(latest_output_path, output_path)
     revalidated_latest = revalidate_cached_payload(
         data,
         latest_payload,
+        quality_context=quality_context,
         half_day_split_time=half_day_split_time,
         max_weekly_group_exception_days=max_weekly_group_exception_days,
         max_split_gap_minutes=hard_max_split_gap_minutes,
@@ -6061,6 +6090,7 @@ def main() -> int:
             revalidated_initial = revalidate_cached_payload(
                 data,
                 initial_payload,
+                quality_context=quality_context,
                 half_day_split_time=half_day_split_time,
                 max_weekly_group_exception_days=max_weekly_group_exception_days,
                 max_split_gap_minutes=hard_max_split_gap_minutes,
@@ -6104,7 +6134,7 @@ def main() -> int:
         else None
     )
     protected_score = (
-        planning_quality_score(protected_valid[0])
+        quality_score(protected_valid[0])
         if protected_valid is not None
         else float("inf")
     )
@@ -6112,6 +6142,7 @@ def main() -> int:
 
     def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
         ensure_verified_status(payload)
+        payload["quality_scoring"] = quality_context
         if profile_warnings:
             warnings = list(payload.get("warnings", []))
             warnings.extend(profile_warnings)
@@ -6140,10 +6171,11 @@ def main() -> int:
         ensure_verified_status(payload)
         if not payload_is_hard_valid(payload):
             return
-        candidate_score = planning_quality_score(payload)
+        candidate_score = quality_score(payload)
         if candidate_score > checkpoint_score:
             return
         checkpoint_score = candidate_score
+        payload["quality_scoring"] = quality_context
         attach_quality_profile(payload, quality_profile_name, quality_profile_label)
         payload["rule_summary"] = build_rule_summary(data, config)
         if latest_output_path:
@@ -6226,7 +6258,7 @@ def main() -> int:
             compact_payload, compact_bundle = run_compact_candidate(compact_budget)
             ensure_verified_status(compact_payload)
             if payload_is_hard_valid(compact_payload):
-                compact_score = planning_quality_score(compact_payload)
+                compact_score = quality_score(compact_payload)
                 if (
                     protected_valid is not None
                     and compact_score > protected_score
@@ -6470,7 +6502,7 @@ def main() -> int:
                 )
                 ensure_verified_status(quality_payload)
                 if payload_is_hard_valid(quality_payload):
-                    if planning_quality_score(quality_payload) <= planning_quality_score(best_payload):
+                    if quality_score(quality_payload) <= quality_score(best_payload):
                         best_payload, best_bundle = quality_payload, quality_bundle
                         search_history.append("Amelioration: meilleure solution hard-valide retenue.")
                 else:
@@ -6514,7 +6546,7 @@ def main() -> int:
         if protected_valid is not None:
             candidate_is_valid = payload_is_hard_valid(payload)
             candidate_score = (
-                planning_quality_score(payload)
+                quality_score(payload)
                 if candidate_is_valid
                 else float("inf")
             )
@@ -6630,7 +6662,7 @@ def main() -> int:
             progress_start=74,
             progress_end=95,
         )
-        if planning_quality_score(stable_payload) < planning_quality_score(payload):
+        if quality_score(stable_payload) < quality_score(payload):
             payload = stable_payload
             payload["warnings"].append("Variante stabilisee retenue.")
         else:
