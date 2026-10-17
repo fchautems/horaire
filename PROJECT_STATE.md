@@ -358,3 +358,15 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Conclusion : reprendre ce planning comme indice initial est compatible avec le code corrigé et sa note actuelle ; l'ancien score stocké n'a pas servi de référence au recalcul.
 - Limites conservées : contrôles actuels seulement ; écarts THE/interdictions de groupe et audit des pauses encore ouverts. Cette vérification ne constitue pas un audit complet des règles métier.
 - Prochaine action : la base est confirmée ; aucun nouvel essai ciblé Léa à poursuivre. Avant un calcul global supplémentaire, choisir un changement de stratégie motivé par les essais globaux déjà sans progrès ; aucun nouveau calcul long lancé dans ce contrôle.
+
+
+## Recherche globale de cinq minutes — 17 octobre 2026, après 17 h Suisse
+
+- Lancement explicitement autorisé par Frédéric depuis le planning revalidé à 631977. Aucune affectation fixée, aucune restriction spécifique à Léa, mêmes paramètres et pondérations que l'essai global précédent, budget 300 s.
+- Résultat vérifié : **626975**, soit **5002 points de mieux** ; durée totale **301,103 s**, première solution valide à 9,173 s. Phase optimisation : 291,828 s, statut `FEASIBLE`, trois solutions signalées. Aucun optimum prouvé.
+- Validation du résultat, puis appel indépendant à `verify_solution` avec les options enregistrées : aucune erreur selon les contrôles actuels. Égalité exacte entre objectif interne et score commun recalculé : 626975. Le résultat est différent du départ.
+- Gain : terme d'écart aux heures cibles enfants 5000 → 0 ; terme des créneaux enfants 1237 → 1235. Autres contributions identiques : débuts de présence 624000, travail hors groupe principal 3240, préférence de groupe -1500. Les sept coupures restent présentes.
+- Empreintes des fichiers de production, données, configuration et planning de départ inchangées après le calcul. Aucun code ni planning actif remplacé ; le résultat est sauvegardé comme nouveau meilleur candidat connu selon le score commun actuel.
+- Script, conditions, journaux, résumé et planning complet regroupés dans `docs/experiments/2026-10-17-global-restart-300s/evidence.json` (dictionnaire de noms de fichiers et contenus UTF-8). Pour une reprise, lire la valeur `result.json`, puis revalider avec les options de `conditions.json` et le code courant.
+- Pas de suite complète relancée : aucun code de production modifié. Limites THE/interdictions de groupe et audit des pauses inchangées ; aucune conformité métier exhaustive déduite de cette validation.
+- Prochaine action : utiliser le nouveau candidat à 626975 comme référence revalidée pour toute suite autorisée ; ne pas poursuivre une restriction Léa ni relancer automatiquement un calcul long. L'essai global a apporté un progrès mesuré, sans suppression de coupure.
