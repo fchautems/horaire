@@ -5306,7 +5306,16 @@ def planning_quality_score(payload: dict[str, Any]) -> float:
         educator_groups: set[str] = set()
         educator_sites: set[str] = set()
         for day_blocks in by_day.values():
-            day_count = len(day_blocks)
+            # Count continuous presence, not activity records. A colloque,
+            # replacement or group change does not create a break by itself.
+            day_count = 0
+            presence_end: int | None = None
+            for block in sorted(day_blocks, key=lambda item: parse_time(item["start"])):
+                start = parse_time(block["start"])
+                end = parse_time(block["end"])
+                if presence_end is None or start > presence_end:
+                    day_count += 1
+                presence_end = max(presence_end if presence_end is not None else end, end)
             blocks += day_count
             extra_blocks += max(0, day_count - 1)
             if day_count > 3:

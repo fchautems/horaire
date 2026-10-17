@@ -226,3 +226,22 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Aucun planning actif, donnée métier ou paramètre remplacé. Le planning renvoyé reste la référence. Les 44 tests précédemment réussis n'ont pas été relancés : aucun code de production n'a changé pendant l'essai.
 - Les écarts connus sur le THE et les interdictions de groupe restent ouverts ; « aucune erreur » désigne les contrôles actuels, pas une preuve d'application complète de la spec.
 - Prochaine action recommandée : aligner les critères de qualité, en distinguant les périodes de présence des enregistrements d'activité, avant de prolonger l'optimisation. Aucune correction des scores appliquée dans cet essai.
+
+
+## Correctif du comptage dans le score de sélection — 17 octobre 2026
+
+### Changements
+- Correction demandée par Frédéric : `planning_quality_score` compte désormais les périodes de présence continues, en fusionnant les activités adjacentes ou chevauchantes après tri horaire, sans modifier le planning.
+- Les pondérations, pénalités de groupes/sites et d'erreurs, ainsi que le seuil existant de plus de trois périodes dans le score, sont conservés. Le validateur continue d'interdire plus de deux périodes ; ce seuil soft n'est pas une autorisation hard.
+- Six tests de régression ajoutés dans `tests/test_planning_quality_score.py` : remplacement fragmenté, colloque adjacent, vraie coupure, quatre périodes distinctes, intervalles imbriqués non triés sans mutation, journée vide et erreurs.
+
+### Contrôles et état vérifié
+- Avant correction : trois des six nouveaux tests échouent et reproduisent les pénalités artificielles.
+- Après correction : **50 tests réussis**, en 1,768 seconde, avec l'environnement Python/OR-Tools existant. Les tests CP-SAT et de validation de la référence passent.
+- Recalcul sur les horaires sauvegardés : référence **14280**, candidat optimisé de l'essai de cinq minutes **13560** (plus bas est meilleur). Ils étaient respectivement à 15630 et 25720 avec l'ancien comptage. Le candidat devient meilleur selon le score corrigé de 720 points.
+- Les scores avant/après ne sont pas directement comparables : la métrique a changé. Aucun nouveau calcul d'optimisation lancé, aucun planning actif remplacé.
+- `git diff --check` sans erreur pour les fichiers de ce lot. Aucun changement des données métier ou des contraintes hard ; pas de test réel sous Windows.
+
+### Limites et prochaine action
+- Le bug de fragmentation est corrigé ; l'alignement complet avec l'objectif interne CP-SAT reste ouvert, ainsi que les écarts THE et interdictions de groupe déjà documentés.
+- Prochaine action : utiliser ce score corrigé lors du prochain essai autorisé ; ne pas interpréter le seul recalcul comme une nouvelle optimisation.
