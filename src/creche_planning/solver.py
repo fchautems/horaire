@@ -4525,10 +4525,9 @@ def make_ortools_slot_payload(
             )
 
         if max_weekly_group_exception_days is not None and educator_attends_colloque(educator):
+            # Only changes within a day consume the weekly exception limit.
+            # A whole day outside the primary group remains a soft penalty.
             model.Add(sum(mixed_day[(e_i, d_i)] for d_i in range(len(DAYS))) <= int(max_weekly_group_exception_days))
-            outside_terms = [outside_primary_day[(e_i, d_i)] for d_i in range(len(DAYS))]
-            if outside_terms:
-                model.Add(sum(outside_terms) <= int(max_weekly_group_exception_days))
 
     if progress_callback:
         progress_callback(36, "Contraintes hard et preferences")

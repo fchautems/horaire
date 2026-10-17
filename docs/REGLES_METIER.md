@@ -74,4 +74,6 @@ Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire 
 
 ## Etat d'application — 17 octobre 2026
 
-Les clarifications ci-dessus expriment les regles metier confirmees par Frederic. Le code n'a pas encore ete aligne : le moteur CP-SAT limite encore les jours hors groupe principal et les interdictions hard de groupe ne portent actuellement que sur le groupe principal. Voir `PROJECT_STATE.md` pour les constats de revue et les prochaines actions.
+Les clarifications ci-dessus expriment les regles metier confirmees par Frederic. La limite hebdomadaire du moteur compact CP-SAT est maintenant alignee : seules les journees avec changement de groupe en cours de journee consomment la limite. Une journee entiere hors groupe principal reste possible, avec les penalites soft existantes et les autres contraintes applicables.
+
+Les interdictions hard de groupe ne portent encore que sur le groupe principal dans le code : leur application aux affectations ordinaires reste a corriger. L'articulation avec les remplacements de colloque reste a preciser. Voir `PROJECT_STATE.md` pour les controles, limites et prochaines actions.

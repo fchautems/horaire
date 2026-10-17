@@ -173,3 +173,22 @@ Le minimum de jours avec THE invisible, les jours entiers hors groupe principal,
 
 ### Limites et prochaine action
 Ce lot corrige les contrôles des périodes ; il ne démontre pas l'équivalence complète du solveur et du validateur. Les écarts THE, affectations de groupe et critères de qualité restent ouverts, ainsi que la vérification réelle sous Windows. Prochaine correction : le minimum de jours calculé avec le THE invisible, à isoler par un test de régression avant modification.
+
+## Correctif des jours avec changement de groupe — 17 octobre 2026
+
+### Décision et changement
+- Frédéric choisit de traiter maintenant les jours de changement de groupe. Cette priorité remplace la prochaine action proposée ci-dessus sur le THE.
+- Dans `make_ortools_slot_payload`, suppression du plafond hard sur le nombre de jours hors groupe principal. La limite `max_weekly_group_exception_days` porte uniquement sur les jours avec plusieurs groupes ordinaires (`mixed_day`), comme dans le validateur.
+- Les pénalités soft hors groupe principal, les contraintes des colloques et la stabilité dans chaque demi-journée restent en place. L'exception hebdomadaire existante pour les personnes ne participant pas aux colloques est conservée.
+- `docs/REGLES_METIER.md` décrit désormais l'état d'application de ce correctif.
+
+### Tests et état vérifié
+- Six tests ajoutés dans `tests/test_cp_sat_group_days.py`, avec plannings fixés, THE désactivé et contrat de 10 h pour isoler cette règle.
+- Avant correction : trois assertions échouent (deux journées entières hors groupe principal avec limite 0 puis 1, et une journée entière plus une journée mixte avec limite 1). Le validateur accepte ces cas, CP-SAT les déclare `INFEASIBLE`.
+- Après correction, solveur et validateur acceptent ces cas. Ils refusent toujours deux jours mixtes avec limite 1, un jour mixte avec limite 0 et un changement ordinaire dans une même demi-journée. L'exception des non-participants aux colloques reste acceptée.
+- Suite complète : **44 tests réussis**, en 1,776 seconde, avec Python 3.12.14 et OR-Tools 9.15.6755. Les deux tests de référence CP-SAT passent avec les contrôles renforcés.
+- La contrainte hebdomadaire de `pattern_mip.py` utilise déjà les patrons mixtes (`pattern_mixed`) : contrôle par lecture, sans audit complet de ce moteur ni des moteurs historiques.
+- `git diff --check` sans erreur. Données métier, configuration et planning de référence inchangés. Aucun essai long ni lancement réel sous Windows.
+
+### Points ouverts et prochaine action
+Ce correctif retire une restriction indue ; son effet sur la vitesse ou la qualité d'un calcul libre n'a pas été mesuré. Restent le minimum de jours avec THE invisible, les interdictions hard de groupe appliquées aux affectations ordinaires, et l'alignement des scores. Prochaine action proposée : corriger le calcul des jours avec THE par un microcas ciblé. L'exception éventuelle des interdictions de groupe pendant les remplacements de colloque reste à clarifier avant de modifier ce cas.
