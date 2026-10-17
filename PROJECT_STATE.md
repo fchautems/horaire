@@ -332,3 +332,18 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Le planning de départ a été revalidé avant le calcul. `selected.json` conserve ses affectations à l’identique ; aucune sortie active remplacée. Empreintes du solveur, du module de score et des données inchangées après le calcul. Aucun code de production modifié, aucune suite de tests relancée pour ce script expérimental.
 - Conditions, journaux, résultat et résumé sauvegardés dans le dossier de l’essai. Le moteur actuel ne fait pas l’objet d’un audit des pauses réglementaires ; ne pas présenter cet essai comme une validation de celles-ci. Les limites THE/interdictions de groupe restent ouvertes.
 - Prochaine action possible : isoler la faisabilité de Léa jeudi en une seule période sans exiger en même temps une meilleure note ; aucune nouvelle recherche lancée.
+
+## Essai de faisabilité Léa jeudi sans coupure — 17 octobre 2026
+
+### Résultat vérifié et fin de la reprise
+- La relance complète a été retrouvée dans la copie de travail : journal, conditions, résultat et résumé cohérents. Aucun processus de calcul n'était encore actif. Le résultat était disponible localement mais n'avait pas été publié ; la cause de l'interruption initiale n'est pas établie.
+- Recherche de faisabilité uniquement : exactement une période de présence pour Léa jeudi, sans imposer une amélioration du score, arrêt au premier candidat et budget de 300 secondes. Toutes les affectations restent libres et les contraintes métier existantes restent actives.
+- Durée totale : **301,770 secondes**, dont **300,458 secondes** de recherche. Statut CP-SAT **UNKNOWN**, **zéro solution**, 166520 branches et 4796 conflits. Aucune phase d'optimisation engagée.
+- **Conclusion : aucune solution trouvée dans ce délai ; l'impossibilité de supprimer la coupure n'est pas démontrée.** Retirer l'exigence d'une meilleure note n'a pas suffi à obtenir une réponse dans cet essai.
+- Le planning conservé est identique au départ. Revalidation indépendante effectuée lors de cette reprise avec les options sauvegardées : aucune erreur du validateur actuel, score **631977**. Aucun planning actif remplacé.
+- Empreintes SHA-256 du solveur, du score et des données conformes aux conditions enregistrées ; empreintes Git des trois fichiers identiques à celles de main au commit `c10800f`.
+- Aucun nouveau calcul lancé inutilement : la relance autorisée avait déjà terminé ses cinq minutes. Aucun code de production ou donnée métier modifié. Script expérimental, conditions, journaux et résultats publiés dans `docs/experiments/2026-10-17-lea-feasibility-300s/`.
+
+### Limites et prochaine action
+- Les écarts connus THE/interdictions de groupe et l'absence d'audit des pauses réglementaires restent ouverts ; aucune nouvelle garantie métier n'est déduite de cet essai.
+- Avant une autre recherche longue, examiner les contraintes concrètes de Léa le jeudi et leur interaction avec la couverture, ainsi que les restrictions déjà identifiées du modèle. Ce diagnostic doit distinguer une nécessité métier d'une restriction de modélisation. Aucun nouveau calcul long lancé automatiquement.

@@ -1,0 +1,37 @@
+{
+  "elapsed_seconds": 301.77,
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 300.458,
+      "conflicts": 4796,
+      "branches": 166520,
+      "solutions": 0,
+      "variables": 16991,
+      "constraints": 51524
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 300.458,
+        "conflicts": 4796,
+        "branches": 166520,
+        "solutions": 0,
+        "variables": 16991,
+        "constraints": 51524
+      }
+    ],
+    "optimization": null
+  },
+  "reference_score": 631977,
+  "candidate_score": null,
+  "independent_errors": null,
+  "accepted": false,
+  "active_schedule_replaced": false
+}

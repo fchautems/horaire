@@ -1,0 +1,30 @@
+{
+  "time_limit": 300,
+  "options": {
+    "min_daily_hours": 2.0,
+    "enforce_min_daily_hours": false,
+    "max_split_gap_minutes": null,
+    "weekly_hours_tolerance_percent": 5.0,
+    "weekly_hours_tolerance_step_minutes": 15,
+    "enforce_absolute_max_weekly_hours": true,
+    "absolute_max_weekly_hours": 40.0,
+    "the_enabled": true,
+    "the_percent": 10.0,
+    "the_colloques_count": true,
+    "half_day_split_time": "12:30",
+    "max_weekly_group_exception_days": 1,
+    "hard_max_work_days": true
+  },
+  "target": "Léa jeudi: exactly one presence period",
+  "score_upper_bound": null,
+  "stop_after_first_solution": true,
+  "optimization": false,
+  "fixed_schedule": null,
+  "reference_score": 631977,
+  "instrumentation": "    # Experimental restriction only: Lea works one continuous period on Thursday.\n    target_e = educator_by_name['Léa']\n    target_d = next(i for i, (day, _) in enumerate(DAYS) if day == 'jeudi')\n    model.Add(sum(start_var[(target_e, target_d, t)] for t in range(horizon.slots)) == 1)\n    debug('EXPERIMENT: Lea Thursday one presence period; no score bound; stop at first solution')\n",
+  "hashes": {
+    "src/creche_planning/solver.py": "e6d65680981e57413ded002a9722103a687e7fb7d6bfd012a688d9bf7d4da4e4",
+    "src/creche_planning/scoring.py": "23cef2bc51b7b6d844f6d525d8809c7fa1cffac9dd8d1e2397923e8ce7c35762",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629"
+  }
+}
