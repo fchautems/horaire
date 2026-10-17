@@ -1,0 +1,289 @@
+{
+  "ordinary_forbidden": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "partial_required": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "fake_replacement": {
+    "validator_errors": [],
+    "cp_status": "infeasible_or_not_solved",
+    "cp_message": "INFEASIBLE",
+    "cp_errors": []
+  },
+  "fake_meeting": {
+    "validator_errors": [],
+    "cp_status": "infeasible_or_not_solved",
+    "cp_message": "INFEASIBLE",
+    "cp_errors": []
+  },
+  "unknown_educator": {
+    "cache_status": "ok",
+    "errors": []
+  },
+  "wrong_site": [],
+  "off_grid": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "nan_hours": {
+    "errors": [],
+    "nan_total": "nan",
+    "worked_days": 0
+  },
+  "missing_primary": [],
+  "multiple_meetings": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "simultaneous_meetings": {
+    "validator_errors": [],
+    "cp_status": "infeasible_or_not_solved",
+    "cp_message": "INFEASIBLE",
+    "cp_errors": []
+  },
+  "the_budget": {
+    "validator_errors": [],
+    "cp_status": "infeasible_or_not_solved",
+    "cp_message": "INFEASIBLE",
+    "cp_errors": [],
+    "target_the": {
+      "Lea": 0.0
+    },
+    "actual_the": {
+      "Lea": 0.75
+    }
+  },
+  "aliases": {
+    "status": "invalid",
+    "errors": [
+      "Pourcentage invalide: {'site': 'bas', 'types': ['ancien'], 'rule': 'min', 'target_percent': 100, 'actual_percent': 0.0, 'ok': False}"
+    ],
+    "model_status": "OPTIMAL"
+  },
+  "staffing_max": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "opening_hours": {
+    "validator_errors": [],
+    "cp_status": "ok",
+    "cp_message": "OR-Tools CP-SAT OPTIMAL",
+    "cp_errors": []
+  },
+  "gap_score": {
+    "gap_60": {
+      "child_slots": 8,
+      "presence_starts": 24000,
+      "worked_days": 0,
+      "mixed_days": 0,
+      "outside_group_days": 0,
+      "outside_days": 0,
+      "hour_deviation_slots": 0,
+      "preferred_primary": 0,
+      "negative_time_slots": 0,
+      "positive_time_slots": 0,
+      "group_rule_slots": 0
+    },
+    "gap_180": {
+      "child_slots": 8,
+      "presence_starts": 24000,
+      "worked_days": 0,
+      "mixed_days": 0,
+      "outside_group_days": 0,
+      "outside_days": 0,
+      "hour_deviation_slots": 0,
+      "preferred_primary": 0,
+      "negative_time_slots": 0,
+      "positive_time_slots": 0,
+      "group_rule_slots": 0
+    }
+  },
+  "replacement_engines": {
+    "cp": "ok",
+    "patterns": "infeasible_or_not_solved",
+    "pattern_message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+  },
+  "fallback_100_seconds": {
+    "return_code": 2,
+    "compact_calls": 1,
+    "pattern_calls": 0,
+    "returned_status": "infeasible_or_not_solved",
+    "reference_score": 16508.0,
+    "returned_score": 1000000000.0,
+    "warnings": [
+      "Recherche compacte CP-SAT: UNKNOWN.",
+      "Temps global insuffisant pour lancer les essais restants."
+    ]
+  },
+  "ortools_protection": {
+    "return_code": 0,
+    "compact_calls": 1,
+    "pattern_calls": 0,
+    "returned_status": "ok",
+    "reference_score": 16508.0,
+    "returned_score": 28508.0,
+    "warnings": []
+  },
+  "ui_error_callback": {
+    "callbacks": 3,
+    "exception": "NameError",
+    "message": "cannot access free variable 'exc' where it is not associated with a value in enclosing scope"
+  },
+  "editor_latest": {
+    "selected": "out_2026.json",
+    "valid_latest_exists": true
+  },
+  "typo_day_roundtrip": {
+    "serialized": [
+      {
+        "site": "bas",
+        "time_intervals": [
+          {
+            "start": "08:00",
+            "end": "09:00",
+            "group": "A",
+            "min_staff": 1
+          }
+        ]
+      }
+    ],
+    "demanded_days": [
+      "lundi",
+      "mardi",
+      "mercredi",
+      "jeudi",
+      "vendredi"
+    ]
+  },
+  "weak_validity": {
+    "empty_checks_accepted": true
+  },
+  "null_report_cap": {
+    "exception": "TypeError",
+    "message": "float() argument must be a string or a real number, not 'NoneType'"
+  },
+  "profiles": {
+    "equilibre": {
+      "declared_time_weight": 1.0,
+      "context": {
+        "version": "compact-v1",
+        "horizon": {
+          "start": 480,
+          "end": 1080,
+          "step": 15
+        },
+        "child_targets": {
+          "Lea": 4
+        },
+        "primary_preferences": {},
+        "group_rules": [],
+        "time_rules": [],
+        "weights": {
+          "child_slots": 1,
+          "presence_starts": 12000,
+          "worked_days": 0,
+          "mixed_days": 800,
+          "outside_group_days": 40,
+          "outside_days": 3200,
+          "hour_deviation_slots": 2500,
+          "preferred_primary": -500,
+          "negative_time_slots": 45,
+          "positive_time_slots": -35,
+          "group_rule_slots": 18
+        }
+      }
+    },
+    "preferences_horaires": {
+      "declared_time_weight": 2.5,
+      "context": {
+        "version": "compact-v1",
+        "horizon": {
+          "start": 480,
+          "end": 1080,
+          "step": 15
+        },
+        "child_targets": {
+          "Lea": 4
+        },
+        "primary_preferences": {},
+        "group_rules": [],
+        "time_rules": [],
+        "weights": {
+          "child_slots": 1,
+          "presence_starts": 12000,
+          "worked_days": 0,
+          "mixed_days": 800,
+          "outside_group_days": 40,
+          "outside_days": 3200,
+          "hour_deviation_slots": 2500,
+          "preferred_primary": -500,
+          "negative_time_slots": 45,
+          "positive_time_slots": -35,
+          "group_rule_slots": 18
+        }
+      }
+    }
+  },
+  "generation_budget": {
+    "requested_seconds": 2,
+    "elapsed_seconds": 5.407,
+    "combinations": 531441,
+    "status": "ok"
+  },
+  "current_candidate": {
+    "validator_errors": [],
+    "structural_errors": [],
+    "experimental_score": 626975,
+    "config_workday_score": 829475,
+    "replacements_outside_exact_meeting": [
+      {
+        "name": "A repourvoir",
+        "day": "mardi",
+        "group": "Grands",
+        "start": "13:15",
+        "end": "14:15",
+        "minutes_outside": 15
+      }
+    ],
+    "note": "La tolérance -15/+30 min des remplacements est modélisée dans CP-SAT; sa validation métier reste à préciser."
+  },
+  "morning_split": {
+    "cp_status": "ok",
+    "validator_errors": [],
+    "pattern_status": "infeasible_or_not_solved",
+    "pattern_message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+  },
+  "malformed_cache": {
+    "exception": "KeyError",
+    "message": "'group'"
+  },
+  "non_atomic_write": {
+    "contents_after_failure": "{",
+    "old_content_lost": true,
+    "fault": "Erreur d’écriture injectée; aucune panne réelle revendiquée."
+  },
+  "legacy_wrong_day": {
+    "expected_day_indices": [
+      0,
+      1
+    ],
+    "received_day_indices": [
+      4,
+      4
+    ],
+    "evidence": "Exécution isolée de la boucle AST originale, pas de calcul natif."
+  }
+}

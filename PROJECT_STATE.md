@@ -392,3 +392,24 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Aucun planning actif ni donnée métier modifié. Aucun gain de score ou de vitesse n'est revendiqué : correction d'une restriction erronée, pas nouvel essai d'optimisation. Pas de validation réelle sous Windows.
 - L'écart connu sur les interdictions de groupe et l'audit des pauses restent ouverts. Le bug de minimum de jours CP-SAT lié au THE invisible est corrigé.
 - Prochaine action recommandée : traiter séparément les interdictions de groupe selon les règles métier documentées, en explicitant le cas encore non tranché des remplacements de colloque, avant de multiplier les recherches longues.
+
+
+## Audit global — 18 octobre 2026 (Suisse)
+
+### État vérifié
+- Audit demandé par Frédéric sur l’ensemble du code, sans nouvelle correction ni optimisation globale. Version de départ confirmée sur GitHub : `882209d75cfba2a8ac09eb3ed6a2e788705c6869`.
+- Inventaire : dix modules, trois lanceurs Python, deux lanceurs Windows ; 12 675 lignes Python de production et 253 fonctions, fonctions imbriquées comprises. Revue approfondie du chemin actif et structurelle des chemins historiques.
+- Suite existante exécutée : **60 tests réussis en 7,483 s**. **31 scénarios ciblés** d’audit ajoutés séparément des tests de production ; les résultats caractérisent les comportements observés, y compris les défauts.
+- Rapport : `docs/audits/2026-10-18/AUDIT_GLOBAL_2026-10-18.md`, avec **27 anomalies ou écarts techniques confirmés**, huit prioritaires, quatre questions métier et cinq risques distincts. Scénarios, assertions, résultats et inventaire des sources joints. Ce nombre n’est pas un nombre d’erreurs dans le planning actuel.
+- Candidat conservé : validation actuelle sans erreur, contrôles structurels indépendants sans anomalie, score **626975** avec sa politique expérimentale. La pondération du lanceur pour les jours travaillés porte la note du même candidat à **829475** ; différence de politique, pas régression du planning. Un remplacement en Grands le mardi finit à 14:15 alors que le colloque finit à 14:00 ; l’extension d’exception autour des colloques reste à valider.
+
+### Changements et contrôles
+- Ajout documentaire et scénarios de reproduction seulement. Aucun code de production, donnée métier, paramètre, planning actif ni sortie d’optimisation remplacé.
+- Défauts prioritaires reproduits : interdiction hard de groupe contournée ; ancien employé compté par un cache ; activités de colloque non authentifiées ; groupes principaux absents contournant les contrôles ; candidat moins bon retenu sur le chemin `ortools` ; cache malformé levant une exception ; coupures matinales exclues des patrons ; représentation incompatible des remplacements entre moteurs.
+- Repli patrons inaccessible avec le budget courant de 100 s confirmé par simulation de l’orchestration. Autres écarts : profils/critères soft, colloques multiples ou simultanés, schéma, NaN, THE, alias de types, staffing, ouvertures, éditeur, rapports, dépendances et budget de construction.
+
+### Limites et prochaine action
+- Pas de garantie d’absence d’autres bugs, pas de contrôle réglementaire externe, de test graphique réel ou Windows réel, ni d’équivalence exhaustive des moteurs historiques. Aucun pourcentage de couverture revendiqué.
+- Les règles positives hard sur une plage ne sont pas déclarées erronées : les données actuelles emploient des plages sur la journée entière, compatibles avec une exigence de présence partielle. Pourcentages de qualification instantanés ou hebdomadaires, exceptions de remplacement et pauses/déplacements restent à préciser.
+- Aucun `AGENTS.md` ou `MODEL_GUIDE.md` trouvé dans les emplacements accessibles inspectés ; aucun outil Brain disponible identifié.
+- Prochaine action recommandée : corriger d’abord les garde-fous du validateur et des caches, puis les différences de moteurs et la politique de score, avec tests de régression ; ne pas relancer des optimisations longues pour traiter ces défauts. Les règles métier ambiguës doivent être clarifiées séparément.
