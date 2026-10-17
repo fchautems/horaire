@@ -245,3 +245,19 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 ### Limites et prochaine action
 - Le bug de fragmentation est corrigé ; l'alignement complet avec l'objectif interne CP-SAT reste ouvert, ainsi que les écarts THE et interdictions de groupe déjà documentés.
 - Prochaine action : utiliser ce score corrigé lors du prochain essai autorisé ; ne pas interpréter le seul recalcul comme une nouvelle optimisation.
+
+
+## Essai de cinq minutes avec score corrigé — 17 octobre 2026
+
+### Conditions et résultat vérifié
+- Lancement autorisé par Frédéric, code de production `79d11f2`, budget 300 secondes ; départ du candidat de l’essai précédent, score corrigé 13560, fourni comme indice sans affectations fixées.
+- Mêmes options et pondérations que l’essai précédent. Durée totale 301,053 s ; première solution valide en 8,595 s ; cinq solutions signalées pendant l’optimisation.
+- Objectif interne 650975 → 631977 ; score de sélection final du nouveau candidat 15780, contre 13560 pour le départ (plus bas est meilleur).
+- Le programme a correctement conservé le planning de départ, identique, score 13560. Revalidation indépendante du résultat renvoyé et du candidat optimisé : aucune erreur selon les contrôles actuels.
+- Aucun optimum prouvé (`FEASIBLE`). Aucun code de production, configuration, donnée métier ou planning actif remplacé. Les 50 tests déjà réussis ne sont pas relancés pour cet essai sans modification de code.
+
+### Conclusion, limites et prochaine action
+- Le correctif de fragmentation est opérationnel, mais il ne suffit pas à aligner le score de sélection sur l’objectif CP-SAT : cet essai améliore l’objectif interne et dégrade le score de sélection.
+- Le meilleur planning connu selon le score corrigé reste à 13560, contre 14280 pour la référence historique. Aucun progrès supplémentaire retenu dans cet essai.
+- Prochaine action : décomposer les contributions aux deux scores sur ces candidats, puis aligner les critères selon les priorités métier avant de prolonger les calculs. Les écarts THE et interdictions de groupe restent ouverts.
+- Conditions, script, journaux, résumé et revalidation conservés dans `docs/experiments/2026-10-17-score-fixed-300s/`.

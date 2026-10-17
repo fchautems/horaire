@@ -1,0 +1,18 @@
+3280.307|start educators=13 groups=3 slots=48 time_limit=300.0
+3280.466|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234
+3280.466|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+3280.466|primary_group_candidates=9
+3280.790|model variables=17004 constraints=51523 x=9360 hint=True fixed=False
+3288.421|incumbent phase=faisabilite count=1 message=CP-SAT: candidat realisable 1, note interne 650975, validation en cours
+3288.709|feasibility_attempt=1 strategy=automatic status=FEASIBLE wall=7.914 conflicts=0 branches=11282
+3288.720|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+3288.720|validation hard_errors=0
+3288.722|first_candidate status=ok score=13560
+3296.394|incumbent phase=optimisation count=1 message=CP-SAT: solution 1, note interne 650975 (plus bas = mieux)
+3473.336|incumbent phase=optimisation count=2 message=CP-SAT: solution 2, note interne 648979 (plus bas = mieux)
+3497.734|incumbent phase=optimisation count=3 message=CP-SAT: solution 3, note interne 643977 (plus bas = mieux)
+3511.955|incumbent phase=optimisation count=4 message=CP-SAT: solution 4, note interne 634478 (plus bas = mieux)
+3574.751|incumbent phase=optimisation count=5 message=CP-SAT: solution 5, note interne 631977 (plus bas = mieux)
+3581.159|optimization status=FEASIBLE wall=292.352 conflicts=0 branches=11468
+3581.171|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+3581.171|validation hard_errors=0

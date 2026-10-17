@@ -1,0 +1,20 @@
+0.180|12|Construction du modele CP-SAT
+0.339|20|Contraintes de couverture
+0.355|28|Contraintes educateurs
+0.528|36|Contraintes hard et preferences
+0.567|48|Recherche d'une solution valide
+0.663|48|CP-SAT: 17004 variables, 51523 contraintes
+0.663|50|CP-SAT faisabilite 1/1 (automatic, budget 299 s)
+8.294|55|CP-SAT: candidat realisable 1, note interne 650975, validation en cours
+8.582|55|CP-SAT FEASIBLE: 7.9s, 0 conflits, 11282 branches
+EVALUATED {"elapsed": 8.593, "score": 13560, "internal_objective": 650975.0, "status": "ok", "errors": [], "same_schedule_as_reference": true}
+8.595|60|Solution hard-valide trouvee - note 13560 (plus bas = mieux)
+CHECKPOINT {"elapsed": 8.595, "score": 13560, "errors": []}
+8.669|64|Optimisation de la qualite (budget 292 s)
+16.267|70|CP-SAT: solution 1, note interne 650975 (plus bas = mieux)
+193.209|70|CP-SAT: solution 2, note interne 648979 (plus bas = mieux)
+217.608|70|CP-SAT: solution 3, note interne 643977 (plus bas = mieux)
+231.828|70|CP-SAT: solution 4, note interne 634478 (plus bas = mieux)
+294.624|70|CP-SAT: solution 5, note interne 631977 (plus bas = mieux)
+EVALUATED {"elapsed": 301.044, "score": 15780, "internal_objective": 631977.0, "status": "ok", "errors": [], "same_schedule_as_reference": false}
+SUMMARY {"elapsed_seconds": 301.053, "status": "ok", "solver_message": "OR-Tools CP-SAT FEASIBLE", "statistics": {"feasibility": {"attempt": 1, "strategy": "automatic", "status": "FEASIBLE", "wall_time_seconds": 7.914, "conflicts": 0, "branches": 11282, "solutions": 1, "variables": 17004, "constraints": 51523}, "feasibility_attempts": [{"attempt": 1, "strategy": "automatic", "status": "FEASIBLE", "wall_time_seconds": 7.914, "conflicts": 0, "branches": 11282, "solutions": 1, "variables": 17004, "constraints": 51523}], "optimization": {"status": "FEASIBLE", "wall_time_seconds": 292.352, "conflicts": 0, "branches": 11468, "solutions": 5}}, "reference_score": 13560, "reference_errors": [], "checkpoints": [{"elapsed": 8.595, "score": 13560, "errors": []}], "score_evaluations": [{"elapsed": 8.593, "score": 13560, "internal_objective": 650975.0, "status": "ok", "errors": [], "same_schedule_as_reference": true}, {"elapsed": 301.044, "score": 15780, "internal_objective": 631977.0, "status": "ok", "errors": [], "same_schedule_as_reference": false}], "independent_errors": [], "candidate_score": 13560, "same_schedule_as_reference": true, "retain_candidate": true}

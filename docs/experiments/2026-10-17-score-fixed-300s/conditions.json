@@ -1,0 +1,34 @@
+{
+  "source_commit": "79d11f2ac9a3485f49d51a7a4ea5fe108f0bd3b6",
+  "time_limit": 300,
+  "options": {
+    "min_daily_hours": 2.0,
+    "enforce_min_daily_hours": false,
+    "max_split_gap_minutes": null,
+    "weekly_hours_tolerance_percent": 5.0,
+    "weekly_hours_tolerance_step_minutes": 15,
+    "enforce_absolute_max_weekly_hours": true,
+    "absolute_max_weekly_hours": 40.0,
+    "the_enabled": true,
+    "the_percent": 10.0,
+    "the_colloques_count": true,
+    "half_day_split_time": "12:30",
+    "max_weekly_group_exception_days": 1,
+    "hard_max_work_days": true
+  },
+  "fixed_schedule": null,
+  "hint": "optimized_candidate.json (score 13560)",
+  "weights": {
+    "split_shift_weight": 120.0,
+    "split_gap_weight": 4.0,
+    "group_switch_day_weight": 8.0,
+    "same_group_week_weight": 0.4,
+    "work_day_weight": 0.0
+  },
+  "hashes": {
+    "src/creche_planning/solver.py": "060fc77ec8600e5f4ac5ee975ef6d3e400c68c5017403a0ad2e03c748b4f2be5",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce",
+    "docs/experiments/2026-10-17-group-days-300s/optimized_candidate.json": "76bedebebb3791c775dc6e69c2ed54e26de3c64edcfee65551c3cb7e15fd6131"
+  }
+}
