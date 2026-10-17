@@ -370,3 +370,25 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Script, conditions, journaux, résumé et planning complet regroupés dans `docs/experiments/2026-10-17-global-restart-300s/evidence.json` (dictionnaire de noms de fichiers et contenus UTF-8). Pour une reprise, lire la valeur `result.json`, puis revalider avec les options de `conditions.json` et le code courant.
 - Pas de suite complète relancée : aucun code de production modifié. Limites THE/interdictions de groupe et audit des pauses inchangées ; aucune conformité métier exhaustive déduite de cette validation.
 - Prochaine action : utiliser le nouveau candidat à 626975 comme référence revalidée pour toute suite autorisée ; ne pas poursuivre une restriction Léa ni relancer automatiquement un calcul long. L'essai global a apporté un progrès mesuré, sans suppression de coupure.
+
+
+## Correctif du minimum de jours avec THE invisible — 17 octobre 2026
+
+### Périmètre et changement
+- Correctif explicitement demandé par Frédéric après priorisation du bug connu ; aucun nouveau calcul global d'optimisation lancé.
+- Dans `make_ortools_slot_payload`, la borne inférieure redondante des jours de présence utilise désormais les heures enfants minimales : contrat moins tolérance moins THE, au lieu du contrat moins tolérance.
+- Exemple reproduit : contrat 9 h, THE arrondi à 1 h et 8 h enfants le lundi. Avant correction, le validateur accepte mais CP-SAT impose à tort deux jours ; après correction, CP-SAT accepte cette journée unique.
+- Les colloques visibles restent liés aux variables de présence et aux limites journalières. La borne ne les efface pas : leurs contraintes imposent toujours leur présence effective.
+- Les plafonds de jours, durées journalières, heures contractuelles, règles de groupes et pondérations du score ne sont pas modifiés. Les autres moteurs ne sont pas modifiés dans ce lot.
+
+### Contrôles vérifiés
+- Cinq tests ajoutés dans `tests/test_cp_sat_the_work_days.py` : THE invisible sans jour supplémentaire ; tolérance hebdomadaire ; contrat sans THE ; plafond journalier ; présence obligatoire au colloque.
+- Avant correction : deux tests échouent et reproduisent le refus incorrect de CP-SAT ; les trois contrôles de contraintes conservées passent.
+- Après correction : **60 tests réussis en 7,455 secondes**, Python 3.12 / OR-Tools 9.15.6755, y compris les tests CP-SAT de référence et d'alignement des scores.
+- Meilleur candidat à **626975** extrait des preuves du dernier essai global : revalidation indépendante sans erreur, puis reproduction à affectations fixées dans CP-SAT avec le code corrigé. Objectif et score recalculé égaux à **626975**. Le statut OPTIMAL de cette reproduction fixe ne prouve pas l'optimalité du planning libre.
+- Parité du code et des tests locaux avec la version GitHub de départ contrôlée avant publication, hors correctif ; données et configuration identiques. Contrôle des espaces de fin de ligne et `git diff --no-index --check` réussis.
+
+### Limites et prochaine action
+- Aucun planning actif ni donnée métier modifié. Aucun gain de score ou de vitesse n'est revendiqué : correction d'une restriction erronée, pas nouvel essai d'optimisation. Pas de validation réelle sous Windows.
+- L'écart connu sur les interdictions de groupe et l'audit des pauses restent ouverts. Le bug de minimum de jours CP-SAT lié au THE invisible est corrigé.
+- Prochaine action recommandée : traiter séparément les interdictions de groupe selon les règles métier documentées, en explicitant le cas encore non tranché des remplacements de colloque, avant de multiplier les recherches longues.

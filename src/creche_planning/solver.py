@@ -4510,9 +4510,12 @@ def make_ortools_slot_payload(
         model.AddAbsEquality(deviation, sum(weekly_child_terms) - child_target)
         objective_terms.append(deviation * quality_weights["hour_deviation_slots"])
         if hard_max_work_days:
+            # Invisible THE does not require a presence day. This redundant
+            # lower bound uses only required child hours; visible colloques
+            # still contribute to work/day limits through their own constraints.
             minimum_work_days = int(
                 math.ceil(
-                    max(0, target - tolerance_slots)
+                    max(0, target - tolerance_slots - the_slots)
                     / max(1, max_daily_slots)
                     - 1e-9
                 )
