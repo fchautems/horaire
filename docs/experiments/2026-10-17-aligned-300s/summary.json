@@ -1,0 +1,101 @@
+{
+  "elapsed_seconds": 303.274,
+  "status": "ok",
+  "solver_message": "OR-Tools CP-SAT FEASIBLE",
+  "statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "FEASIBLE",
+      "wall_time_seconds": 14.416,
+      "conflicts": 0,
+      "branches": 8968,
+      "solutions": 1,
+      "variables": 16991,
+      "constraints": 51523
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "FEASIBLE",
+        "wall_time_seconds": 14.416,
+        "conflicts": 0,
+        "branches": 8968,
+        "solutions": 1,
+        "variables": 16991,
+        "constraints": 51523
+      }
+    ],
+    "optimization": {
+      "status": "FEASIBLE",
+      "wall_time_seconds": 286.739,
+      "conflicts": 0,
+      "branches": 15038,
+      "solutions": 2
+    }
+  },
+  "reference_score": 631977.0,
+  "reference_errors": [],
+  "checkpoints": [
+    {
+      "elapsed": 16.247,
+      "score": 631995.0,
+      "errors": []
+    },
+    {
+      "elapsed": 303.246,
+      "score": 631977.0,
+      "errors": []
+    }
+  ],
+  "score_evaluations": [
+    {
+      "elapsed": 16.242,
+      "score": 631995.0,
+      "internal_objective": 631995.0,
+      "status": "ok",
+      "errors": [],
+      "same_schedule_as_reference": false
+    },
+    {
+      "elapsed": 303.242,
+      "score": 631977.0,
+      "internal_objective": 631977.0,
+      "status": "ok",
+      "errors": [],
+      "same_schedule_as_reference": false
+    }
+  ],
+  "independent_errors": [],
+  "candidate_score": 631977.0,
+  "same_schedule_as_reference": false,
+  "retain_candidate": true,
+  "score_matches_internal_objective": true,
+  "reference_breakdown": {
+    "child_slots": 1237,
+    "presence_starts": 624000,
+    "worked_days": 0,
+    "mixed_days": 0,
+    "outside_group_days": 40,
+    "outside_days": 3200,
+    "hour_deviation_slots": 5000,
+    "preferred_primary": -1500,
+    "negative_time_slots": 0,
+    "positive_time_slots": 0,
+    "group_rule_slots": 0
+  },
+  "result_breakdown": {
+    "child_slots": 1237,
+    "presence_starts": 624000,
+    "worked_days": 0,
+    "mixed_days": 0,
+    "outside_group_days": 40,
+    "outside_days": 3200,
+    "hour_deviation_slots": 5000,
+    "preferred_primary": -1500,
+    "negative_time_slots": 0,
+    "positive_time_slots": 0,
+    "group_rule_slots": 0
+  }
+}

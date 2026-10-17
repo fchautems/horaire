@@ -285,3 +285,20 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Alignement couvert : objectif compact CP-SAT et sélection finale dans le lanceur. Les autres moteurs conservent leurs propres objectifs de recherche ; leurs candidats sont toutefois comparés par le score commun du lanceur.
 - Les critères actuels sont conservés, pas déclarés exhaustifs de la spec. En particulier la durée des coupures n'est toujours pas un terme distinct de l'objectif compact (`split_gap_weight` inutilisé auparavant et inchangé). Les écarts THE/interdictions de groupe restent ouverts.
 - Les scores 13560/15780 de l'ancien critère ne sont plus les valeurs du score commun. Prochaine étape possible : essai borné depuis le dernier candidat, score commun 631977, sans figer ses affectations ; aucun lancement long automatique effectué dans ce lot.
+
+
+## Essai de cinq minutes avec scores alignés — 17 octobre 2026
+
+### Conditions et état vérifié
+- Essai autorisé depuis le candidat connu à 631977, code publié `68acb55`, budget de recherche 300 s, `fixed_schedule=None` : aucune affectation figée. Options et pondérations identiques aux essais précédents.
+- Parité locale des fichiers du lot d'alignement contrôlée avant lancement. Aucune modification du code de production, des données métier, des paramètres ou des sorties actives.
+- Durée totale 303,274 s (construction et validation comprises). Première solution valide à 16,247 s, score 631995 ; retour au score 631977 à 32,773 s. Deux candidats signalés pendant l'optimisation.
+- Score commun du résultat **631977**, identique au départ ; objectif interne et score recalculé strictement égaux pour les deux candidats évalués (631995 puis 631977).
+- Revalidation indépendante du départ et du résultat : aucune erreur selon le validateur actuel. Le résultat diffère du planning de départ mais toutes les contributions au score sont identiques. Il s'agit d'une alternative à qualité égale, sans amélioration.
+- Statut `FEASIBLE` : aucune preuve d'optimalité. Le planning actif n'a pas été remplacé. Résultats, script, empreintes des entrées et journaux dans `docs/experiments/2026-10-17-aligned-300s/`.
+
+### Contrôles, limites et prochaine action
+- Assertions de l'essai réussies : absence d'erreur de validation, score final inférieur ou égal au départ, égalité score final/objectif interne. Les 55 tests précédemment réussis ne sont pas relancés : aucun code de production modifié.
+- L'alignement est confirmé sur cette recherche réelle ; cinq minutes supplémentaires n'ont pas donné de progrès. Cela ne prouve pas que le planning est optimal.
+- Les écarts THE/interdictions de groupe et l'absence de pénalité distincte sur la durée des coupures restent ouverts, comme documenté au lot précédent.
+- Prochaine action possible : examiner les critères métier et la décomposition du score avant de décider d'un nouvel essai ; aucun calcul supplémentaire lancé automatiquement.

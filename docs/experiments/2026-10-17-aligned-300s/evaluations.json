@@ -1,0 +1,18 @@
+[
+  {
+    "elapsed": 16.242,
+    "score": 631995.0,
+    "internal_objective": 631995.0,
+    "status": "ok",
+    "errors": [],
+    "same_schedule_as_reference": false
+  },
+  {
+    "elapsed": 303.242,
+    "score": 631977.0,
+    "internal_objective": 631977.0,
+    "status": "ok",
+    "errors": [],
+    "same_schedule_as_reference": false
+  }
+]
