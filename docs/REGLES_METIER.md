@@ -20,7 +20,8 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
 4. Regles de groupe hard
 
-   Une obligation de groupe `hard` impose le groupe principal indique. Une interdiction de groupe `hard` interdit ce groupe principal.
+   Une obligation de groupe `hard` impose le groupe principal indique.
+   Clarification du 17 octobre 2026 : une interdiction de groupe `hard` bloque les affectations ordinaires dans le groupe interdit, meme pour une journee entiere. Elle ne se limite pas au choix du groupe principal. Une preference negative `soft` penalise ces affectations sans les interdire. L'articulation avec les remplacements de colloque reste a preciser ; aucune nouvelle exception n'est decidee ici.
 
 5. Maximum journalier
 
@@ -44,7 +45,9 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
 10. Changements de groupe dans la semaine
 
-   Une personne ne peut avoir qu'un nombre limite de jours avec changement de groupe, configure par `max_weekly_group_exception_days`.
+   Une personne ne peut avoir qu'un nombre limite de jours avec changement de groupe en cours de journee, configure par `max_weekly_group_exception_days`.
+   Clarification du 17 octobre 2026 : travailler toute une journee dans un autre groupe que son groupe principal ne constitue pas, a lui seul, un jour avec changement de groupe. Cette affectation reste possible si aucune regle hard ne s'y oppose, avec les penalites soft applicables et dans le respect des autres contraintes, notamment des colloques.
+   Si un changement dans la journee est necessaire, une matinee dans un groupe puis un apres-midi dans un autre est possible ; les changements au sein d'une demi-journee restent interdits hors exception de remplacement de colloque.
    Les personnes marquees comme ne participant pas aux colloques peuvent etre utilisees plus souplement.
 
 11. Groupes principaux et colloques
@@ -68,3 +71,7 @@ Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire 
 6. Respecter les preferences horaires et de groupe marquees `soft`.
 7. Eviter les changements de site.
 8. Eviter de faire venir une personne uniquement pour un colloque de 45 minutes.
+
+## Etat d'application — 17 octobre 2026
+
+Les clarifications ci-dessus expriment les regles metier confirmees par Frederic. Le code n'a pas encore ete aligne : le moteur CP-SAT limite encore les jours hors groupe principal et les interdictions hard de groupe ne portent actuellement que sur le groupe principal. Voir `PROJECT_STATE.md` pour les constats de revue et les prochaines actions.
