@@ -2800,6 +2800,38 @@ def verify_solution(
         colloque_the_total = 0.0
         worked_days = 0
         for day_key, blocks in schedule[name].items():
+            # Count continuous presence, not JSON records: a colloque or a
+            # group change can split one period into several adjacent records.
+            presence_end: int | None = None
+            presence_periods = 0
+            for block in sorted(blocks, key=lambda item: parse_time(item["start"])):
+                start = parse_time(block["start"])
+                end = parse_time(block["end"])
+                if end <= start:
+                    hard_errors.append(
+                        f"{name} {day_key}: plage horaire invalide "
+                        f"({block['start']}-{block['end']})"
+                    )
+                    continue
+                actual_hours = (end - start) / 60.0
+                # Exported durations are rounded to two decimal places.
+                if abs(float(block["hours"]) - round(actual_hours, 2)) > 1e-6:
+                    hard_errors.append(
+                        f"{name} {day_key}: duree incoherente "
+                        f"({block['start']}-{block['end']}, hours={block['hours']})"
+                    )
+                if presence_end is not None and start < presence_end:
+                    hard_errors.append(
+                        f"{name} {day_key}: chevauchement de periodes "
+                        f"a {block['start']}"
+                    )
+                if presence_end is None or start > presence_end:
+                    presence_periods += 1
+                presence_end = max(presence_end or end, end)
+            if presence_periods > 2:
+                hard_errors.append(
+                    f"{name} {day_key}: {presence_periods} periodes de presence > maximum 2"
+                )
             visible_daily = sum(float(block["hours"]) for block in blocks)
             child_daily = sum(
                 float(block["hours"])

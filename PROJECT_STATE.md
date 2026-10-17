@@ -139,3 +139,23 @@ Cela explique l’absence de progrès du **résultat retenu dans cet essai** mal
 
 ### Prochaine action
 Examiner et aligner les critères de qualité de la recherche et de la sélection, en tenant compte des règles métier clarifiées, avant de consacrer davantage de temps à des calculs longs. Aucune modification d’algorithme n’est encore autorisée dans le périmètre actuel.
+
+## Correctif du validateur — 17 octobre 2026
+
+### Autorisation et périmètre
+Frédéric a demandé de passer aux corrections et laissé le choix de l'ordre. La restriction documentaire précédente (« code inchangé / correction hors périmètre ») est donc levée pour ces corrections ciblées. Premier lot : cohérence des périodes dans `verify_solution`.
+
+### Changements
+- Rejet des chevauchements entre les blocs d'une personne, y compris les colloques.
+- Rejet des durées `hours` différentes de la durée début–fin arrondie à deux décimales, comme les exports existants.
+- Rejet des plages de durée nulle ou négative.
+- Maximum de deux périodes de présence continues par jour, comme CP-SAT. Les enregistrements adjacents sont fusionnés pour ce contrôle : un changement de groupe, un colloque ou un remplacement ne crée pas artificiellement une coupure.
+- Sept tests de régression ajoutés dans `tests/test_validator_presence.py` : trois anomalies reproduites dans la revue, plages inversées, périodes adjacentes non triées, deux périodes permises et colloque au milieu d'une présence continue.
+
+### Contrôles vérifiés
+- `python -m unittest discover -s tests -v` : **35 tests réussis**, en 1,570 seconde, environnement Python isolé avec OR-Tools utilisé pour les essais précédents.
+- Les deux tests CP-SAT reproduisent toujours la référence avec le validateur renforcé, sans erreur.
+- Aucun calcul long relancé ; aucune donnée métier, configuration ou sortie active modifiée. Pas de validation réelle sous Windows.
+
+### Reste à traiter / prochaine action
+Le minimum de jours avec THE invisible, les jours entiers hors groupe principal, les interdictions de groupe et l'écart des objectifs restent ouverts. Prochaine action : corriger le minimum de jours avec THE par un microcas de régression, puis appliquer la clarification métier sur les journées hors groupe principal. L'exception des interdictions lors des remplacements de colloque demeure non précisée. L'alignement des scores doit s'appuyer sur la spec avant une nouvelle optimisation longue.
