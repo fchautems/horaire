@@ -112,3 +112,30 @@ Clarification de Frédéric, consignée dans `docs/REGLES_METIER.md` :
 **État : documentation mise à jour ; code inchangé.** La restriction CP-SAT sur les jours hors groupe principal et le traitement des interdictions de groupe doivent être revus selon cette clarification. Les contrôles manquants du validateur et le calcul du minimum de jours avec THE restent à corriger.
 
 Contrôle : relecture des documents publiés ; aucun nouveau calcul ni test nécessaire pour cette modification documentaire. Prochaine action : poursuivre la revue selon ces règles explicites ; toute correction de code reste hors du périmètre actuel.
+
+## Essai d’optimisation de cinq minutes — 17 octobre 2026
+
+### Conditions
+- Essai demandé par Frédéric : budget de 300 secondes, code inchangé.
+- Planning de référence fourni comme **indice initial** (`hint_payload`), sans figer les affectations (`fixed_schedule=None`).
+- Paramètres de validation identiques à ceux des essais précédents : tolérance hebdomadaire 5 %, THE 10 % avec colloques, plafond 40 h, maximum de jours actif, pas de limite hard de coupure.
+- Les clarifications métier documentées aujourd’hui ne sont pas encore implémentées : cet essai mesure le code existant.
+
+### Résultats vérifiés
+- Durée totale : **300,953 secondes**.
+- Première solution validée en **8,763 secondes**, score de comparaison **15630**, aucune erreur.
+- Optimisation : **292,092 secondes**, statut `FEASIBLE`, 34 solutions signalées par le solveur.
+- Objectif interne : **809618 → 631977**. Les améliorations arrivent par paliers, y compris après plusieurs dizaines de secondes sans progrès.
+- Le candidat final de la phase d’optimisation passe le validateur (`validation hard_errors=0` dans le journal), mais il n’est pas retenu.
+- Résultat renvoyé : **planning identique à la référence**, score **15630**, `status=ok`. Nouvelle vérification indépendante par `verify_solution` : aucune erreur.
+- Aucun optimal global prouvé. Aucun fichier de planning actif remplacé ; aucun code, configuration ou donnée métier modifié.
+
+### Conclusion
+Le solveur sait améliorer son objectif interne à partir de la référence. Cependant, cette amélioration n’est pas alignée avec le score `planning_quality_score` utilisé pour sélectionner le résultat : le programme minimise un objectif pendant la recherche, puis compare les candidats avec un autre critère.
+
+Dans ce lancement, le candidat optimisé est valide mais moins bon selon le second score : c’est déduit de la branche de sélection existante (candidat valide, statut d’optimisation FEASIBLE, pas de remplacement du premier candidat). Sa valeur exacte de `planning_quality_score` n’est pas journalisée : **inconnue**. Le programme conserve donc correctement la première solution, identique à la référence.
+
+Cela explique l’absence de progrès du **résultat retenu dans cet essai** malgré les améliorations internes. Ce n’est pas une preuve de la cause du délai de génération sans référence.
+
+### Prochaine action
+Examiner et aligner les critères de qualité de la recherche et de la sélection, en tenant compte des règles métier clarifiées, avant de consacrer davantage de temps à des calculs longs. Aucune modification d’algorithme n’est encore autorisée dans le périmètre actuel.
