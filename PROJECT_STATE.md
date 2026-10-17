@@ -55,3 +55,47 @@ Sur une copie de travail isolée (idéalement Codex Cloud), reconstruire l'envir
 
 ### Prochaine action
 Reconstituer un environnement avec OR-Tools, relancer les 28 tests puis un calcul borné sur une copie isolée. Vérifier la conservation du score 15630 et des contraintes hard avant toute modification du solveur.
+
+
+## Résultats actualisés — 17 octobre 2026
+
+Cette section remplace les conclusions provisoires ci-dessus sur l’environnement et les prochaines actions. Aucun code, test, donnée métier ou configuration n’a été modifié.
+
+### Vérifications terminées
+- OR-Tools 9.15.6755 installé dans un environnement Python 3.12 isolé.
+- **28 tests sur 28 réussis**, en 1,748 seconde, avec `python -m unittest discover -s tests -v`.
+- Les deux tests CP-SAT fixent le planning de référence : ils vérifient sa faisabilité, pas la génération libre.
+- Référence revalidée : aucune erreur ; score de comparaison 15630.
+- Essai sans indice initial et sans planning fixé, budget 100 secondes : aucune solution trouvée, statut `UNKNOWN`, durée totale 101,016 secondes. **Ce résultat ne prouve pas l’impossibilité de produire un horaire.** L’optimisation n’a pas commencé.
+- Aucun lancement réel sous Windows effectué.
+
+### Revue du solveur et du validateur
+
+Le **solveur** fabrique l’horaire ; le **validateur** contrôle le résultat. La revue porte sur le moteur compact CP-SAT (`make_ortools_slot_payload`) et `verify_solution` dans `src/creche_planning/solver.py`, avec les helpers de `domain.py` et les règles de `docs/REGLES_METIER.md`. Les autres moteurs ne sont pas intégralement audités.
+
+Les règles de couverture utilisent le même calcul des besoins. Les contrôles des groupes principaux, des colloques et des changements ordinaires par demi-journée sont présents des deux côtés. Cela ne constitue pas une preuve d’équivalence complète.
+
+**Écarts confirmés par cinq petits exemples exécutés en mémoire :**
+
+| Sujet | Exemple | Validateur | CP-SAT avec cet horaire fixé |
+| --- | --- | --- | --- |
+| Nombre de périodes | Contrat de 3 h, sans THE : lundi 08–09, 10–11 et 13–14 | Aucune erreur | Refus : au plus deux périodes |
+| Chevauchements | Contrat de 3 h, sans THE : 08–10 et 09–10, durées déclarées 2 h + 1 h | Aucune erreur | Refus : présence unique par créneau et seulement 2 h distinctes |
+| Durée incohérente | Contrat de 3 h, sans THE : 08–12, mais champ `hours=3` | Aucune erreur | Refus : les horaires représentent 4 h |
+| THE et minimum de jours | Contrat de 9 h, THE arrondi à 1 h, sans colloque : lundi 08–16 | Aucune erreur : 8 h enfants + 1 h THE invisible | Refus : le minimum de jours est calculé sur 9 h / 8,5 h, soit deux jours |
+| Jours hors groupe principal | Contrat de 10 h sans THE, groupe principal A imposé : lundi et mardi 08–13 en B ; limite d’exception 1 | Aucune erreur | Refus : deux jours hors groupe principal |
+
+Précisions :
+- Les microcas n’ont pas de besoin de couverture imposé, afin d’isoler les divergences. Tolérance hebdomadaire nulle, maximum journalier 8,5 h et absence de limite hard de coupure.
+- Pour le dernier exemple, la personne participe aux colloques mais aucun colloque n’est défini. Le solveur limite à la fois les jours avec plusieurs groupes et les jours hors groupe principal ; le validateur ne limite que les premiers. **Le sens métier voulu doit être clarifié avant correction.**
+- Le validateur additionne le champ `hours` pour les totaux, sans le recouper avec les heures de début et de fin. Il ne détecte pas non plus les chevauchements ni le dépassement des deux périodes de présence.
+- Le minimum de jours du solveur compte du THE invisible comme s’il nécessitait de la présence. C’est une restriction supplémentaire reproduite sur un temps partiel ; son impact sur les données Gwendo reste à mesurer.
+
+### Conséquences et limites
+- Ces écarts sont reproduits ; **ils ne démontrent pas que le planning actuel est incorrect**.
+- Ils ne démontrent pas non plus la cause du délai de recherche. Aucun diagnostic de performance complet n’a été effectué.
+- Aucun correctif appliqué. Les sondes n’ont pas été ajoutées aux tests du dépôt.
+- L’installation d’OR-Tools reste à déclarer dans les dépendances lors d’une future modification autorisée.
+
+### Prochaine action
+Préparer des corrections ciblées des contrôles de cohérence du validateur et du minimum de jours avec THE. Clarifier la règle des jours hors groupe principal avant de la modifier. Ne pas relancer de calcul long sans hypothèse précise.
