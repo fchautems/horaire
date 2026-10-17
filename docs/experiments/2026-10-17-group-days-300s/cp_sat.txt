@@ -1,0 +1,43 @@
+2405.547|start educators=13 groups=3 slots=48 time_limit=300.0
+2405.710|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234
+2405.710|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+2405.710|primary_group_candidates=9
+2406.078|model variables=17004 constraints=51523 x=9360 hint=True fixed=False
+2413.886|incumbent phase=faisabilite count=1 message=CP-SAT: candidat realisable 1, note interne 809618, validation en cours
+2414.159|feasibility_attempt=1 strategy=automatic status=FEASIBLE wall=8.076 conflicts=0 branches=11672
+2414.169|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+2414.169|validation hard_errors=0
+2414.170|first_candidate status=ok score=15630
+2422.194|incumbent phase=optimisation count=1 message=CP-SAT: solution 1, note interne 809618 (plus bas = mieux)
+2422.603|incumbent phase=optimisation count=2 message=CP-SAT: solution 2, note interne 807101 (plus bas = mieux)
+2423.486|incumbent phase=optimisation count=3 message=CP-SAT: solution 3, note interne 787514 (plus bas = mieux)
+2424.026|incumbent phase=optimisation count=4 message=CP-SAT: solution 4, note interne 779963 (plus bas = mieux)
+2424.485|incumbent phase=optimisation count=5 message=CP-SAT: solution 5, note interne 774961 (plus bas = mieux)
+2425.130|incumbent phase=optimisation count=6 message=CP-SAT: solution 6, note interne 769963 (plus bas = mieux)
+2426.084|incumbent phase=optimisation count=7 message=CP-SAT: solution 7, note interne 767464 (plus bas = mieux)
+2427.135|incumbent phase=optimisation count=8 message=CP-SAT: solution 8, note interne 764965 (plus bas = mieux)
+2427.980|incumbent phase=optimisation count=9 message=CP-SAT: solution 9, note interne 762466 (plus bas = mieux)
+2429.704|incumbent phase=optimisation count=10 message=CP-SAT: solution 10, note interne 759967 (plus bas = mieux)
+2430.928|incumbent phase=optimisation count=11 message=CP-SAT: solution 11, note interne 757468 (plus bas = mieux)
+2431.777|incumbent phase=optimisation count=12 message=CP-SAT: solution 12, note interne 749971 (plus bas = mieux)
+2433.355|incumbent phase=optimisation count=13 message=CP-SAT: solution 13, note interne 744973 (plus bas = mieux)
+2433.434|incumbent phase=optimisation count=14 message=CP-SAT: solution 14, note interne 742474 (plus bas = mieux)
+2433.446|incumbent phase=optimisation count=15 message=CP-SAT: solution 15, note interne 737476 (plus bas = mieux)
+2434.008|incumbent phase=optimisation count=16 message=CP-SAT: solution 16, note interne 734975 (plus bas = mieux)
+2442.537|incumbent phase=optimisation count=17 message=CP-SAT: solution 17, note interne 730494 (plus bas = mieux)
+2443.261|incumbent phase=optimisation count=18 message=CP-SAT: solution 18, note interne 727993 (plus bas = mieux)
+2444.401|incumbent phase=optimisation count=19 message=CP-SAT: solution 19, note interne 725492 (plus bas = mieux)
+2445.007|incumbent phase=optimisation count=20 message=CP-SAT: solution 20, note interne 725474 (plus bas = mieux)
+2445.561|incumbent phase=optimisation count=21 message=CP-SAT: solution 21, note interne 722975 (plus bas = mieux)
+2449.877|incumbent phase=optimisation count=22 message=CP-SAT: solution 22, note interne 710975 (plus bas = mieux)
+2453.048|incumbent phase=optimisation count=23 message=CP-SAT: solution 23, note interne 707055 (plus bas = mieux)
+2456.497|incumbent phase=optimisation count=24 message=CP-SAT: solution 24, note interne 695055 (plus bas = mieux)
+2457.989|incumbent phase=optimisation count=25 message=CP-SAT: solution 25, note interne 683055 (plus bas = mieux)
+2460.625|incumbent phase=optimisation count=26 message=CP-SAT: solution 26, note interne 682255 (plus bas = mieux)
+2467.739|incumbent phase=optimisation count=27 message=CP-SAT: solution 27, note interne 670255 (plus bas = mieux)
+2468.068|incumbent phase=optimisation count=28 message=CP-SAT: solution 28, note interne 662975 (plus bas = mieux)
+2475.943|incumbent phase=optimisation count=29 message=CP-SAT: solution 29, note interne 653476 (plus bas = mieux)
+2610.145|incumbent phase=optimisation count=30 message=CP-SAT: solution 30, note interne 650975 (plus bas = mieux)
+2706.430|optimization status=FEASIBLE wall=292.153 conflicts=0 branches=10636
+2706.445|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+2706.445|validation hard_errors=0

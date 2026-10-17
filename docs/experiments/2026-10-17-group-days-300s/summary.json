@@ -1,0 +1,69 @@
+{
+  "elapsed_seconds": 301.093,
+  "status": "ok",
+  "solver_message": "OR-Tools CP-SAT FEASIBLE",
+  "statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "FEASIBLE",
+      "wall_time_seconds": 8.076,
+      "conflicts": 0,
+      "branches": 11672,
+      "solutions": 1,
+      "variables": 17004,
+      "constraints": 51523
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "FEASIBLE",
+        "wall_time_seconds": 8.076,
+        "conflicts": 0,
+        "branches": 11672,
+        "solutions": 1,
+        "variables": 17004,
+        "constraints": 51523
+      }
+    ],
+    "optimization": {
+      "status": "FEASIBLE",
+      "wall_time_seconds": 292.153,
+      "conflicts": 0,
+      "branches": 10636,
+      "solutions": 30
+    }
+  },
+  "reference_score": 15630,
+  "reference_errors": [],
+  "checkpoints": [
+    {
+      "elapsed": 8.806,
+      "score": 15630,
+      "errors": []
+    }
+  ],
+  "score_evaluations": [
+    {
+      "elapsed": 8.805,
+      "score": 15630,
+      "internal_objective": 809618.0,
+      "status": "ok",
+      "errors": [],
+      "same_schedule_as_reference": true
+    },
+    {
+      "elapsed": 301.081,
+      "score": 25720,
+      "internal_objective": 650975.0,
+      "status": "ok",
+      "errors": [],
+      "same_schedule_as_reference": false
+    }
+  ],
+  "independent_errors": [],
+  "candidate_score": 15630,
+  "same_schedule_as_reference": true,
+  "retain_candidate": true
+}

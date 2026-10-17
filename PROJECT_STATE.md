@@ -192,3 +192,37 @@ Ce lot corrige les contrôles des périodes ; il ne démontre pas l'équivalence
 
 ### Points ouverts et prochaine action
 Ce correctif retire une restriction indue ; son effet sur la vitesse ou la qualité d'un calcul libre n'a pas été mesuré. Restent le minimum de jours avec THE invisible, les interdictions hard de groupe appliquées aux affectations ordinaires, et l'alignement des scores. Prochaine action proposée : corriger le calcul des jours avec THE par un microcas ciblé. L'exception éventuelle des interdictions de groupe pendant les remplacements de colloque reste à clarifier avant de modifier ce cas.
+
+## Nouvel essai de cinq minutes après correctifs — 17 octobre 2026
+
+### Conditions et contrôles
+- Essai demandé par Frédéric sur le code publié `8d676ba`, budget 300 secondes, référence comme indice initial et `fixed_schedule=None`.
+- Même référence et mêmes paramètres de validation que l'essai précédent : tolérance 5 %, THE 10 % avec colloques, plafond 40 h, maximum de jours actif, pas de limite hard de coupure. Pondérations du moteur compact conservées ; aucun changement de code de production pour cet essai.
+- Le script observe les deux appels de `planning_quality_score` pour enregistrer les scores exacts et conserver les candidats évalués. Les fichiers d'essai sont séparés des sorties actives.
+- Référence revalidée avant lancement. Résultat renvoyé et candidat optimisé revalidés indépendamment après le calcul : aucune erreur détectée par le validateur actuel.
+
+### Résultats mesurés
+| Mesure | Essai précédent | Après correctifs |
+| --- | --- | --- |
+| Durée totale (secondes) | 300,953 | 301,093 |
+| Première solution validée (secondes depuis lancement) | 8,763 | 8,806 |
+| Candidats signalés pendant l'optimisation | 34 | 30 |
+| Objectif interne initial → final | 809618 → 631977 | 809618 → 650975 |
+| Score de sélection du candidat optimisé | inconnu | 25720 |
+| Score du planning renvoyé | 15630 | 15630 |
+| Planning renvoyé identique à la référence | oui | oui |
+
+- Statut final CP-SAT : `FEASIBLE`, pas de preuve d'optimalité. Phase de faisabilité : 8,076 s ; optimisation : 292,153 s.
+- 17004 variables et 51523 contraintes contre 51534 contraintes précédemment.
+- Les corrections n'ont pas amélioré le planning retenu dans cet essai. La recherche utilise plusieurs workers et un seul lancement par version : ces valeurs ne prouvent ni un gain ni une régression de performance.
+
+### Écart de score désormais expliqué sur ce candidat
+Le score de sélection augmente exactement de **10090** : une journée à plus de trois enregistrements ajoute 10000 points, un enregistrement supplémentaire ajoute 10 points et un enregistrement au-delà du premier dans la journée ajoute 80 points. Les nombres de groupes et de sites distincts restent identiques.
+
+Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–18:00. La seconde période se décompose en Nurserie 13:00–13:15, remplacement de colloque chez les Grands 13:15–14:00, puis Nurserie 14:00–18:00. Cela représente **deux périodes de présence, mais quatre enregistrements**. Le validateur accepte cette structure ; `planning_quality_score` la pénalise comme une journée à plus de trois blocs. L'absence d'alignement des objectifs est donc constatée avec ses valeurs exactes, et cette pénalité de représentation explique la différence de score pour ce candidat. Son caractère souhaitable doit être confronté aux priorités métier avant correction.
+
+### Trace, limites et prochaine action
+- Conditions avec empreintes des entrées, résumé, journal et candidat optimisé sauvegardés dans `docs/experiments/2026-10-17-group-days-300s/`.
+- Aucun planning actif, donnée métier ou paramètre remplacé. Le planning renvoyé reste la référence. Les 44 tests précédemment réussis n'ont pas été relancés : aucun code de production n'a changé pendant l'essai.
+- Les écarts connus sur le THE et les interdictions de groupe restent ouverts ; « aucune erreur » désigne les contrôles actuels, pas une preuve d'application complète de la spec.
+- Prochaine action recommandée : aligner les critères de qualité, en distinguant les périodes de présence des enregistrements d'activité, avant de prolonger l'optimisation. Aucune correction des scores appliquée dans cet essai.
