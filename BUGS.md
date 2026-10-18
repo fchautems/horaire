@@ -1,3 +1,9 @@
+# État de reprise — 18 octobre 2026
+
+Les éléments ci-dessous décrivent principalement l’historique de juin. Pour l’état vérifié actuel, lire [PROJECT_STATE.md](PROJECT_STATE.md) puis [le suivi des corrections de l’audit](docs/audits/2026-10-18/CORRECTIONS.md). Les anciennes notes ne doivent pas servir de liste de bugs encore ouverts.
+
+---
+
 # Bugs et risques connus
 
 ## Ouverts

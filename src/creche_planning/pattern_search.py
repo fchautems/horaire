@@ -22,7 +22,7 @@ def payload_is_hard_valid(payload: dict[str, Any]) -> bool:
     checks = payload.get("checks")
     if not isinstance(checks, dict):
         return False
-    return not checks.get("errors") and not checks.get("hard_errors")
+    return isinstance(checks.get("errors"), list) and isinstance(checks.get("hard_errors"), list) and not checks["errors"] and not checks["hard_errors"]
 
 
 def payload_is_retryable(payload: dict[str, Any]) -> bool:
@@ -35,7 +35,10 @@ def payload_is_retryable(payload: dict[str, Any]) -> bool:
 def ensure_verified_status(payload: dict[str, Any]) -> dict[str, Any]:
     if payload.get("status") != "ok" or payload_is_hard_valid(payload):
         return payload
-    checks = payload.setdefault("checks", {})
+    checks = payload.get("checks")
+    if not isinstance(checks, dict):
+        checks = {}
+        payload["checks"] = checks
     errors = list(checks.get("errors", []))
     errors.append("Planning refuse: les controles hard finaux ne sont pas tous valides.")
     checks["errors"] = sorted(set(errors))

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import itertools
@@ -41,6 +41,9 @@ from .domain import (
     weekly_tolerance_slots,
 )
 from .scoring import compact_quality_context, compact_quality_breakdown
+from .validation import data_errors, schedule_errors, require_valid_data
+from .domain import build_staffing_limits
+
 from .quality import (
     attach_quality_profile,
     build_quality_summary,
@@ -270,6 +273,7 @@ def solve_schedule(
     preferred_groups: dict[int, int] | None = None,
     preferred_sites: dict[int, int] | None = None,
 ) -> SolveBundle:
+    require_valid_data(data)
     aliases = dict(DEFAULT_TYPE_ALIASES)
     if type_aliases:
         aliases.update(type_aliases)
@@ -905,6 +909,7 @@ def solve_schedule_patterns(
     min_shift_hours: float = 2.0,
     weekly_mode: str = "exact",
 ) -> PatternSolveBundle:
+    require_valid_data(data)
     aliases = dict(DEFAULT_TYPE_ALIASES)
     if type_aliases:
         aliases.update(type_aliases)
@@ -2611,7 +2616,7 @@ def smooth_schedule(
     group_solution = solve_group_assignment_global(task_records)
     if group_solution is None:
         bundle.warnings.append("Affectation globale des groupes introuvable: lissage par jour conserve.")
-        for task_i, (_, day_key, site, local_educators, chosen_work) in enumerate(
+        for task_i, (d_i, day_key, site, local_educators, chosen_work) in enumerate(
             (record[0], record[1], record[2], record[4], record[5]) for record in task_records
         ):
             group_solution_local = solve_group_assignment(local_educators, site, d_i, chosen_work)
@@ -2653,7 +2658,7 @@ def smooth_schedule(
         return schedule
 
     result, y = group_solution
-    for task_i, (_, day_key, site, _, local_educators, _) in enumerate(task_records):
+    for task_i, (d_i, day_key, site, _, local_educators, _) in enumerate(task_records):
         local_groups = group_by_site[site]
         for e_i, _ in local_educators:
             schedule[bundle.educators[e_i]["name"]][day_key] = []
@@ -2776,9 +2781,33 @@ def verify_solution(
     primary_group_report_enabled: bool = True,
     primary_group_warning_outside_hours: float = 4.0,
     primary_group_warning_outside_days: int = 1,
+    type_aliases: dict[str, str] | None = None,
+    max_blocks_per_day: int = 2,
 ) -> dict[str, Any]:
     data = bundle.data
+    structural = data_errors(data)
+    if not structural:
+        structural = schedule_errors(data, schedule, bundle.horizon)
+    if structural:
+        return {"errors": structural, "hard_errors": structural}
+    if primary_groups_by_educator is not None and not isinstance(primary_groups_by_educator, dict):
+        errors = ['Groupes principaux: objet attendu.']
+        return {'errors': errors, 'hard_errors': errors}
     primary_groups_by_educator = dict(primary_groups_by_educator or {})
+    # Legacy payloads may omit this metadata; reconstruct, then check every rule.
+    for educator in bundle.educators:
+        name = educator['name']
+        if name not in primary_groups_by_educator:
+            explicit = [r[3] for r in data.get('rules_group', [])
+                        if r[2] == name and normalize_flag(r[1]) == 'hard'
+                        and normalize_flag(r[0]) not in {'negatif', 'negative', 'neg'}]
+            totals = {}
+            for blocks in schedule[name].values():
+                for block in blocks:
+                    totals[block['group']] = totals.get(block['group'], 0) + block['hours']
+            if explicit or totals:
+                primary_groups_by_educator[name] = explicit[0] if explicit else max(totals, key=totals.get)
+
     by_educator: dict[str, float] = {}
     child_hours_by_educator: dict[str, float] = {}
     colloque_the_hours_by_educator: dict[str, float] = {}
@@ -2789,6 +2818,35 @@ def verify_solution(
     by_site_type: dict[str, dict[str, float]] = {site: {} for site in bundle.sites}
     hard_errors: list[str] = []
     soft_warnings: list[str] = []
+    meetings = parse_colloques(data, bundle.horizon, bundle.groups)
+    for person, days in schedule.items():
+        primary = primary_groups_by_educator.get(person)
+        educator = next(e for e in bundle.educators if e['name'] == person)
+        if meetings and educator_attends_colloque(educator) and primary is None:
+            hard_errors.append(f"{person}: aucun groupe principal choisi.")
+        if primary is not None and primary not in {g['name'] for g in bundle.groups}:
+            hard_errors.append(f"{person}: groupe principal inconnu {primary}.")
+        for day, blocks in days.items():
+            for block in blocks:
+                slots = set(slot_range(bundle.horizon, block['start'], block['end']))
+                # Opening hours remain descriptive (Q/A19); no new rule invented.
+                activity = block.get('activity', 'children')
+                matches = [m for m in meetings if m['group'] == block['group'] and m['day'] == day]
+                if activity == 'colloque':
+                    valid = set().union(*(m['slots'] for m in matches)) if matches else set()
+                    educator = next(e for e in bundle.educators if e['name'] == person)
+                    if block['group'] != primary or not educator_attends_colloque(educator) or not slots <= valid:
+                        hard_errors.append(f"{person} {day}: colloque non authentifie.")
+                elif activity == 'remplacement_colloque':
+                    valid = set().union(*(set(range(max(0, m['start_slot']-1), min(bundle.horizon.slots, m['end_slot']+2))) for m in matches)) if matches else set()
+                    if block['group'] == primary or not slots <= valid:
+                        hard_errors.append(f"{person} {day}: remplacement de colloque non authentifie.")
+                for rule in data.get('rules_group', []):
+                    if (rule[2] == person and rule[3] == block['group']
+                        and normalize_flag(rule[1]) == 'hard'
+                        and normalize_flag(rule[0]) in {'negatif','negative','neg'}
+                        and activity not in {'colloque', 'remplacement_colloque'}):
+                        hard_errors.append(f"{person} {day}: affectation ordinaire dans un groupe interdit {block['group']}.")
 
     type_by_name = {educator["name"]: educator.get("type", "") for educator in bundle.educators}
     weekly_base = float(data.get("rules_global", {}).get("max_weekly_hours", 40.0))
@@ -2829,9 +2887,9 @@ def verify_solution(
                 if presence_end is None or start > presence_end:
                     presence_periods += 1
                 presence_end = max(presence_end or end, end)
-            if presence_periods > 2:
+            if presence_periods > max_blocks_per_day:
                 hard_errors.append(
-                    f"{name} {day_key}: {presence_periods} periodes de presence > maximum 2"
+                    f"{name} {day_key}: {presence_periods} periodes de presence > maximum {max_blocks_per_day}"
                 )
             visible_daily = sum(float(block["hours"]) for block in blocks)
             child_daily = sum(
@@ -2887,6 +2945,8 @@ def verify_solution(
         the_slots = the_target_slots(target_slots, the_percent, enabled=the_enabled)
         the_target = the_slots * bundle.horizon.step / 60.0
         visible_the = colloque_the_hours_by_educator.get(name, 0.0)
+        if the_enabled and the_colloques_count and visible_the > the_target + 1e-6:
+            hard_errors.append(f"{name}: colloques visibles {visible_the:.2f}h > budget THE {the_target:.2f}h.")
         invisible_the = max(0.0, the_target - visible_the)
         total_the = visible_the + invisible_the
         total = child_hours_by_educator.get(name, 0.0) + total_the
@@ -2940,7 +3000,8 @@ def verify_solution(
         ]
 
     percentage_report: list[dict[str, Any]] = []
-    aliases = DEFAULT_TYPE_ALIASES
+    aliases = dict(DEFAULT_TYPE_ALIASES)
+    aliases.update(type_aliases or getattr(bundle, "type_aliases", {}) or {})
     known_types = {item["name"] for item in data.get("educator_types", [])}
     for raw_rule in data.get("rules_percentage", []):
         raw_types, minmax, value, site = raw_rule[:4]
@@ -2961,6 +3022,7 @@ def verify_solution(
         )
 
     group_demand, site_demand = build_demands_by_day(data, bundle.groups, bundle.horizon)
+    group_limits, site_limits = build_staffing_limits(data, bundle.groups, bundle.horizon)
     group_by_name = {group["name"]: i for i, group in enumerate(bundle.groups)}
     coverage_errors: list[str] = []
     for d_i, (day_key, day_label) in enumerate(DAYS):
@@ -2982,7 +3044,7 @@ def verify_solution(
             for t_i in range(bundle.horizon.slots):
                 actual = counts[(g_i, t_i)]
                 demand = group_demand[(d_i, g_i, t_i)]
-                maximum = max(3, demand)
+                maximum = group_limits[(d_i, g_i, t_i)]
                 if actual < demand:
                     when = format_time(bundle.horizon.start + t_i * bundle.horizon.step)
                     coverage_errors.append(f"{day_label} {group['name']} {when}: {actual} < {demand}")
@@ -3000,6 +3062,12 @@ def verify_solution(
             if actual < demand:
                 when = format_time(bundle.horizon.start + t_i * bundle.horizon.step)
                 coverage_errors.append(f"{day_label} {site} {when}: {actual} < {demand}")
+
+        for (limit_day, site, t_i), maximum in site_limits.items():
+            if limit_day == d_i:
+                actual = sum(counts[(g_i, t_i)] for g_i, group in enumerate(bundle.groups) if group['site'] == site)
+                if actual > maximum:
+                    coverage_errors.append(f"{day_label} {site}: {actual} > maximum {maximum}")
 
     hard_rule_errors: list[str] = []
     group_structure_errors: list[str] = []
@@ -3069,10 +3137,7 @@ def verify_solution(
 
     if primary_groups_by_educator:
         colloque_warnings: list[str] = []
-        colloque_by_group_name = {
-            str(colloque["group"]): colloque
-            for colloque in parse_colloques(data, bundle.horizon, bundle.groups, colloque_warnings)
-        }
+        all_colloques = parse_colloques(data, bundle.horizon, bundle.groups, colloque_warnings)
         soft_warnings.extend(colloque_warnings)
         for educator in bundle.educators:
             educator_name = educator["name"]
@@ -3082,34 +3147,35 @@ def verify_solution(
             if not primary_group_name:
                 primary_group_errors.append(f"{educator_name}: aucun groupe principal choisi.")
                 continue
-            colloque = colloque_by_group_name.get(primary_group_name)
-            if not colloque:
+            matching_colloques = [m for m in all_colloques if m["group"] == primary_group_name]
+            if not matching_colloques:
                 soft_warnings.append(
                     f"{educator_name}: groupe principal {primary_group_name} sans colloque defini."
                 )
                 continue
-            day_key = str(colloque["day"])
-            required_slots = set(colloque["slots"])
-            present_slots: set[int] = set()
-            for block in schedule.get(educator_name, {}).get(day_key, []):
-                if block.get("activity") not in {"colloque", "remplacement_colloque"}:
-                    if block.get("group") != primary_group_name:
-                        primary_group_errors.append(
-                            f"{educator_name}: le jour du colloque {day_key}, travaille en "
-                            f"{block.get('group')} au lieu de {primary_group_name}."
-                        )
-                    continue
-                if block.get("activity") != "colloque" or block.get("group") != primary_group_name:
-                    continue
-                start_slot = (parse_time(block["start"]) - bundle.horizon.start) // bundle.horizon.step
-                end_slot = (parse_time(block["end"]) - bundle.horizon.start) // bundle.horizon.step
-                present_slots.update(range(start_slot, end_slot))
-            if not required_slots.issubset(present_slots):
-                primary_group_errors.append(
-                    f"{educator_name}: colloque incomplet pour {primary_group_name} "
-                    f"({colloque['day']} {format_time(bundle.horizon.start + int(colloque['start_slot']) * bundle.horizon.step)}-"
-                    f"{format_time(bundle.horizon.start + int(colloque['end_slot']) * bundle.horizon.step)})."
-                )
+            for colloque in matching_colloques:
+                day_key = str(colloque["day"])
+                required_slots = set(colloque["slots"])
+                present_slots: set[int] = set()
+                for block in schedule.get(educator_name, {}).get(day_key, []):
+                    if block.get("activity") not in {"colloque", "remplacement_colloque"}:
+                        if block.get("group") != primary_group_name:
+                            primary_group_errors.append(
+                                f"{educator_name}: le jour du colloque {day_key}, travaille en "
+                                f"{block.get('group')} au lieu de {primary_group_name}."
+                            )
+                        continue
+                    if block.get("activity") != "colloque" or block.get("group") != primary_group_name:
+                        continue
+                    start_slot = (parse_time(block["start"]) - bundle.horizon.start) // bundle.horizon.step
+                    end_slot = (parse_time(block["end"]) - bundle.horizon.start) // bundle.horizon.step
+                    present_slots.update(range(start_slot, end_slot))
+                if not required_slots.issubset(present_slots):
+                    primary_group_errors.append(
+                        f"{educator_name}: colloque incomplet pour {primary_group_name} "
+                        f"({colloque['day']} {format_time(bundle.horizon.start + int(colloque['start_slot']) * bundle.horizon.step)}-"
+                        f"{format_time(bundle.horizon.start + int(colloque['end_slot']) * bundle.horizon.step)})."
+                    )
 
     percentage_errors = [
         f"Pourcentage invalide: {item}"
@@ -3859,8 +3925,21 @@ def make_ortools_slot_payload(
     fixed_schedule: dict[str, dict[str, list[dict[str, Any]]]] | None = None,
     debug_log_path: Path | None = None,
     candidate_callback: Callable[[dict[str, Any], Any], None] | None = None,
+    soft_time_rule_weight: float = 1.0,
+    soft_group_rule_weight: float = 1.0,
+    short_day_penalty_weight: float = 30.0,
+    compact_part_time_priority: bool = False,
+    max_blocks_per_day: int = 2,
+    mip_gap: float = .05,
+    main_group_day_weight: float | None = None,
+    main_group_slot_weight: float = 0.0,
+    main_site_day_weight: float = 0.0,
     accept_invalid_for_hint: bool = False,
 ) -> tuple[dict[str, Any], Any]:
+    if max_blocks_per_day not in {1, 2}:
+        raise ValueError('Le modele compact supporte une ou deux periodes de presence par jour.')
+    require_valid_data(data)
+    solve_started_at = time.monotonic()
     try:
         from ortools.sat.python import cp_model
     except Exception as exc:
@@ -3923,6 +4002,11 @@ def make_ortools_slot_payload(
             "sites": sites,
         },
     )()
+    bundle.type_aliases = aliases
+    if fixed_schedule is not None:
+        errors = schedule_errors(data, fixed_schedule, horizon)
+        if errors:
+            return {"status": "invalid", "solver_message": "Planning fixe invalide", "checks": {"errors": errors, "hard_errors": errors}, "diagnostics": errors}, bundle
     if not groups or not educators or not sites:
         return (
             {
@@ -3939,6 +4023,7 @@ def make_ortools_slot_payload(
 
     model = cp_model.CpModel()
     group_demand, site_demand = build_demands_by_day(data, groups, horizon)
+    group_limits, site_limits = build_staffing_limits(data, groups, horizon)
     site_index = {site: i for i, site in enumerate(sites)}
     group_site = {g_i: group["site"] for g_i, group in enumerate(groups)}
     group_by_name = {group["name"]: i for i, group in enumerate(groups)}
@@ -3957,7 +4042,7 @@ def make_ortools_slot_payload(
     split_slot = split_slot_for_horizon(horizon, half_day_split_time)
     max_gap_slots = None if max_split_gap_minutes is None else int(round(max_split_gap_minutes / horizon.step))
     colloques = parse_colloques(data, horizon, groups, warnings)
-    colloque_by_group = {int(colloque["group_i"]): colloque for colloque in colloques}
+    colloque_entries = [(int(m["group_i"]), m) for m in colloques]
 
     hard_main_groups: dict[int, int] = {}
     soft_groups: dict[int, int] = {}
@@ -4108,7 +4193,7 @@ def make_ortools_slot_payload(
             )
 
         scored: list[tuple[float, tuple[int, ...]]] = []
-        for choices in itertools.product(*allowed_by_educator):
+        for choices in itertools.islice(itertools.product(*allowed_by_educator), 512):
             assignment = dict(provisional_fixed)
             assignment.update(zip(free_educators, choices))
             group_capacity = {g_i: 0 for g_i in range(len(groups))}
@@ -4202,6 +4287,12 @@ def make_ortools_slot_payload(
         group_switch_day_weight=group_switch_day_weight,
         same_group_week_weight=same_group_week_weight, work_day_weight=work_day_weight,
         the_enabled=the_enabled, the_percent=the_percent,
+        split_gap_weight=split_gap_weight, min_daily_hours=min_daily_hours,
+        short_day_penalty_weight=short_day_penalty_weight,
+        soft_time_rule_weight=soft_time_rule_weight, soft_group_rule_weight=soft_group_rule_weight,
+        compact_part_time_priority=compact_part_time_priority,
+        main_group_day_weight=main_group_day_weight,
+        main_group_slot_weight=main_group_slot_weight, main_site_day_weight=main_site_day_weight,
     )
     quality_weights = quality_context["weights"]
 
@@ -4227,7 +4318,7 @@ def make_ortools_slot_payload(
             if work_day_weight:
                 objective_terms.append(
                     work_day[(e_i, d_i)]
-                    * quality_weights["worked_days"]
+                    * quality_context["day_coefficients"][educators[e_i]["name"]]
                 )
             mixed_day[(e_i, d_i)] = model.NewBoolVar(f"mix_{e_i}_{d_i}")
             outside_primary_day[(e_i, d_i)] = model.NewBoolVar(f"outside_{e_i}_{d_i}")
@@ -4247,18 +4338,26 @@ def make_ortools_slot_payload(
                     assignment = model.NewBoolVar(f"x_{e_i}_{d_i}_{g_i}_{t_i}")
                     x[(e_i, d_i, g_i, t_i)] = assignment
                     objective_terms.append(assignment * quality_weights["child_slots"])
+                    if quality_weights['outside_slots']:
+                        outside_slot = model.NewBoolVar(f'outside_slot_{e_i}_{d_i}_{g_i}_{t_i}')
+                        model.Add(outside_slot <= assignment)
+                        model.Add(outside_slot + primary_group[(e_i,g_i)] <= 1)
+                        model.Add(outside_slot >= assignment-primary_group[(e_i,g_i)])
+                        objective_terms.append(outside_slot * quality_weights['outside_slots'])
 
     replacement_windows: set[tuple[int, int, int, int]] = set()
     colloque_group_by_slot: dict[tuple[int, int], int] = {}
-    for target_g, target_colloque in colloque_by_group.items():
+    for target_g, target_colloque in colloque_entries:
         d_i = int(target_colloque["day_i"])
         for t_i in target_colloque["slots"]:
-            colloque_group_by_slot[(d_i, int(t_i))] = target_g
+            colloque_group_by_slot.setdefault((d_i, int(t_i)), set()).add(target_g)
         start = max(0, int(target_colloque["start_slot"]) - 1)
         end = min(horizon.slots, int(target_colloque["end_slot"]) + 2)
         for e_i in range(len(educators)):
             for t_i in range(start, end):
                 key = (e_i, d_i, target_g, t_i)
+                if key in replacement_windows:
+                    continue
                 replacement_windows.add(key)
                 replacement = model.NewBoolVar(
                     f"replacement_{e_i}_{d_i}_{target_g}_{t_i}"
@@ -4291,7 +4390,7 @@ def make_ortools_slot_payload(
                 terms = [x[(e_i, d_i, g_i, t_i)] for e_i in range(len(educators))]
                 demand = group_demand[(d_i, g_i, t_i)]
                 model.Add(sum(terms) >= demand)
-                model.Add(sum(terms) <= max(3, demand))
+                model.Add(sum(terms) <= group_limits[(d_i, g_i, t_i)])
         for (demand_d_i, site, t_i), demand in site_demand.items():
             if demand_d_i != d_i:
                 continue
@@ -4303,6 +4402,9 @@ def make_ortools_slot_payload(
             ]
             model.Add(sum(terms) >= demand)
 
+    for (d_i, site, t_i), maximum in site_limits.items():
+        model.Add(sum(x[(e_i, d_i, g_i, t_i)] for e_i in range(len(educators))
+                      for g_i, group in enumerate(groups) if group['site'] == site) <= maximum)
     if progress_callback:
         progress_callback(28, "Contraintes educateurs")
 
@@ -4333,7 +4435,7 @@ def make_ortools_slot_payload(
     for e_i, educator in enumerate(educators):
         if not educator_attends_colloque(educator):
             continue
-        for primary_g, colloque in colloque_by_group.items():
+        for primary_g, colloque in colloque_entries:
             colloque_day = int(colloque["day_i"])
             for assigned_g in range(len(groups)):
                 if assigned_g == primary_g:
@@ -4367,10 +4469,10 @@ def make_ortools_slot_payload(
             day_work_terms = []
             for t_i in range(horizon.slots):
                 group_terms = [x[(e_i, d_i, g_i, t_i)] for g_i in range(len(groups))]
-                colloque_group = colloque_group_by_slot.get((d_i, t_i))
+                colloque_group = colloque_group_by_slot.get((d_i, t_i), set())
                 if colloque_group is not None and educator_attends_colloque(educator):
                     model.Add(
-                        sum(group_terms) + primary_group[(e_i, colloque_group)]
+                        sum(group_terms) + sum(primary_group[(e_i, g)] for g in colloque_group)
                         == work[(e_i, d_i, t_i)]
                     )
                 else:
@@ -4386,6 +4488,16 @@ def make_ortools_slot_payload(
                     model.Add(start_var[(e_i, d_i, t_i)] <= work[(e_i, d_i, t_i)])
                     model.Add(start_var[(e_i, d_i, t_i)] <= 1 - work[(e_i, d_i, t_i - 1)])
                 objective_terms.append(start_var[(e_i, d_i, t_i)] * quality_weights["presence_starts"])
+            first_slot = model.NewIntVar(0, horizon.slots, f'first_{e_i}_{d_i}')
+            last_slot = model.NewIntVar(-1, horizon.slots-1, f'last_{e_i}_{d_i}')
+            model.AddMinEquality(first_slot, [t * work[(e_i,d_i,t)] + horizon.slots * (1-work[(e_i,d_i,t)]) for t in range(horizon.slots)])
+            model.AddMaxEquality(last_slot, [t * work[(e_i,d_i,t)] - (1-work[(e_i,d_i,t)]) for t in range(horizon.slots)])
+            gap_slots = model.NewIntVar(0, horizon.slots, f'gaps_{e_i}_{d_i}')
+            model.AddMaxEquality(gap_slots, [0, last_slot-first_slot+1-sum(day_work_terms)])
+            short_slots = model.NewIntVar(0, max(0,min_daily_slots), f'short_{e_i}_{d_i}')
+            model.AddMaxEquality(short_slots, [0, min_daily_slots * work_day[(e_i,d_i)]-sum(day_work_terms)])
+            objective_terms.extend([gap_slots * quality_weights['gap_slots'], short_slots * quality_weights['short_day_slots']])
+            model.Add(sum(start_var[(e_i,d_i,t)] for t in range(horizon.slots)) <= max_blocks_per_day)
             if enforce_daily_hours:
                 model.Add(sum(day_work_terms) <= max_daily_slots)
             minimum_worked_slots = min_daily_slots if enforce_min_daily_hours else 1
@@ -4440,6 +4552,13 @@ def make_ortools_slot_payload(
                     model.Add(site_day[(e_i, d_i, s_i)] <= sum(site_terms_for_day))
                 else:
                     model.Add(site_day[(e_i, d_i, s_i)] == 0)
+                if quality_weights['outside_site_days']:
+                    primary_here = sum(primary_group[(e_i,g_i)] for g_i, g in enumerate(groups) if g['site'] == site_name)
+                    outside_site = model.NewBoolVar(f'outside_site_{e_i}_{d_i}_{s_i}')
+                    model.Add(outside_site <= site_day[(e_i,d_i,s_i)])
+                    model.Add(outside_site + primary_here <= 1)
+                    model.Add(outside_site >= site_day[(e_i,d_i,s_i)]-primary_here)
+                    objective_terms.append(outside_site * quality_weights['outside_site_days'])
             for half_i in range(2):
                 half_slots = (
                     range(0, split_slot)
@@ -4490,19 +4609,16 @@ def make_ortools_slot_payload(
                 outside_var * quality_weights["outside_days"]
             )
         if enforce_weekly_hours:
-            upper_visible = target + tolerance_slots
+            upper_contract = target + tolerance_slots
             if absolute_max_slots is not None:
-                upper_visible = min(upper_visible, absolute_max_slots)
-            child_target = max(0, target - the_slots)
-            model.Add(
-                sum(weekly_child_terms)
-                >= max(0, target - tolerance_slots - the_slots)
-            )
-            model.Add(
-                sum(weekly_child_terms)
-                <= max(0, upper_visible - the_slots)
-            )
-            model.Add(sum(weekly_visible_terms) <= upper_visible)
+                upper_contract = min(upper_contract, absolute_max_slots)
+            meeting_terms = sum(weekly_visible_terms) - sum(weekly_child_terms)
+            if the_enabled and the_colloques_count:
+                model.Add(meeting_terms <= the_slots)
+            contract_terms = (sum(weekly_visible_terms) if not the_enabled and the_colloques_count
+                              else sum(weekly_child_terms) + the_slots)
+            model.Add(contract_terms >= max(0, target - tolerance_slots))
+            model.Add(contract_terms <= upper_contract)
         child_target = max(0, target - the_slots)
         deviation = model.NewIntVar(
             0, max(child_target, len(DAYS) * horizon.slots), f"deviation_{e_i}"
@@ -4585,8 +4701,10 @@ def make_ortools_slot_payload(
         is_negative = normalize_flag(pref_type) in {"negatif", "negative", "neg"}
         is_hard = normalize_flag(strength) == "hard"
         if is_hard:
-            # Hard group rules select the educator's primary group. Temporary
-            # coverage and colloque replacements remain allowed.
+            if is_negative:
+                for d_i in range(len(DAYS)):
+                    for t_i in range(horizon.slots):
+                        model.Add(regular_assignment(e_i, d_i, target_g, t_i) == 0)
             continue
         for d_i in range(len(DAYS)):
             for g_i in range(len(groups)):
@@ -4784,7 +4902,7 @@ def make_ortools_slot_payload(
                     if t_i < horizon.slots:
                         colloque_group = colloque_group_by_slot.get((d_i, t_i))
                         if (
-                            colloque_group == selected_main_group
+                            selected_main_group in (colloque_group or set())
                             and educator_attends_colloque(educator)
                         ):
                             active_state = (selected_main_group, "colloque")
@@ -4841,12 +4959,13 @@ def make_ortools_slot_payload(
             the_percent=the_percent,
             the_colloques_count=the_colloques_count,
             primary_groups_by_educator=primary_groups_by_educator,
+            max_blocks_per_day=max_blocks_per_day,
         )
-        objective = 0.0
-        try:
-            objective = float(solution_solver.ObjectiveValue())
-        except Exception:
-            objective = 0.0
+        # Evaluate the original objective expression on the actual assignment.
+        # Keep the solver's scalar separately for diagnostics; checkpoints must
+        # never depend on a stale/rounded reported incumbent value.
+        objective = float(solution_solver.Value(sum(objective_terms)))
+        reported_objective = float(solution_solver.ObjectiveValue())
         debug(
             "selected_primary_groups="
             + ",".join(
@@ -4858,6 +4977,7 @@ def make_ortools_slot_payload(
         return {
             "status": "ok" if not checks["errors"] else "invalid",
             "objective": round(objective, 4),
+            "solver_reported_objective": reported_objective,
             "quality_scoring": quality_context,
             "solver_message": solver_message,
             "warnings": sorted(set(warnings)),
@@ -4897,9 +5017,12 @@ def make_ortools_slot_payload(
             debug(f"incumbent phase={self.phase} count={self.solution_count} message={message}")
             if progress_callback:
                 progress_callback(self.progress_percent, message)
+            if self.phase != 'faisabilite' and candidate_callback is not None:
+                candidate = build_candidate(self, cp_model.FEASIBLE, 'CP-SAT incumbent valide')
+                if payload_is_hard_valid(candidate):
+                    candidate_callback(candidate, bundle)
 
     total_limit = max(1.0, float(time_limit))
-    solve_started_at = time.monotonic()
     feasibility_limit = total_limit
     if fixed_schedule is not None or has_schedule_hint or feasibility_limit < 90.0:
         attempt_specs = [("automatic", cp_model.AUTOMATIC_SEARCH, 1, 1.0)]
@@ -5134,7 +5257,7 @@ def make_ortools_slot_payload(
         optimizer = cp_model.CpSolver()
         optimizer.parameters.max_time_in_seconds = remaining_for_optimization
         optimizer.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
-        optimizer.parameters.relative_gap_limit = 0.05
+        optimizer.parameters.relative_gap_limit = max(0.0, float(mip_gap))
         optimizer.parameters.use_optimization_hints = True
         if os.environ.get("CRECHE_CP_LOG"):
             optimizer.parameters.log_search_progress = True
@@ -5243,6 +5366,7 @@ def make_pattern_mip_payload(
     primary_group_warning_outside_days: int = 1,
     progress_callback: Callable[[int, str], None] | None = None,
 ) -> tuple[dict[str, Any], Any]:
+    require_valid_data(data)
     from .pattern_mip import PatternTimeLimitError, solve_pattern_mip
 
     try:
@@ -5355,13 +5479,13 @@ def infer_preferred_groups_from_payload(
     data: dict[str, Any],
     payload: dict[str, Any] | None,
 ) -> dict[int, int]:
-    if not payload or not isinstance(payload.get("schedule"), dict):
+    if not isinstance(payload, dict) or not isinstance(payload.get("schedule"), dict):
         return {}
     educators = list(data.get("educators", []))
     groups = list(data.get("groups", []))
     educator_by_name = {educator["name"]: e_i for e_i, educator in enumerate(educators)}
     group_by_name = {group["name"]: g_i for g_i, group in enumerate(groups)}
-    explicit = payload.get("checks", {}).get("primary_groups_by_educator", {})
+    explicit = (payload.get("checks") if isinstance(payload.get("checks"), dict) else {}).get("primary_groups_by_educator", {})
     if isinstance(explicit, dict):
         mapped = {
             educator_by_name[educator_name]: group_by_name[group_name]
@@ -5408,7 +5532,7 @@ def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
             payload = load_json(candidate)
         except Exception:
             continue
-        if payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
+        if isinstance(payload, dict) and payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
             return payload
 
     fallback_candidates: list[Path] = []
@@ -5433,7 +5557,7 @@ def load_latest_valid_payload(*paths: Path | None) -> dict[str, Any] | None:
             payload = load_json(candidate)
         except Exception:
             continue
-        if payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
+        if isinstance(payload, dict) and payload.get("status") == "ok" and isinstance(payload.get("schedule"), dict):
             return payload
     return None
 
@@ -5444,8 +5568,11 @@ def revalidate_cached_payload(
     *, quality_context: dict[str, Any] | None = None,
     **verification_options: Any,
 ) -> tuple[dict[str, Any], Any] | None:
-    if not payload or not isinstance(payload.get("schedule"), dict):
+    if not isinstance(payload, dict) or not isinstance(payload.get("schedule"), dict):
         return None
+    errors = data_errors(data)
+    if errors:
+        return dict(payload, status='invalid', checks={'errors': errors, 'hard_errors': errors}), None
     groups = list(data.get("groups", []))
     educators = list(data.get("educators", []))
     sites = [site["name"] for site in data.get("sites", [])]
@@ -5479,7 +5606,11 @@ def revalidate_cached_payload(
             "sites": sites,
         },
     )()
-    primary_groups = payload.get("checks", {}).get("primary_groups_by_educator", {})
+    structural = schedule_errors(data, schedule, bundle.horizon)
+    if structural:
+        return dict(payload, status="invalid", checks={"errors": structural, "hard_errors": structural}), bundle
+    cached_checks = payload.get("checks")
+    primary_groups = (cached_checks if isinstance(cached_checks, dict) else {}).get("primary_groups_by_educator", {})
     if not isinstance(primary_groups, dict) or not primary_groups:
         preferred = infer_preferred_groups_from_payload(data, payload)
         primary_groups = {
@@ -5573,7 +5704,7 @@ def infer_majority_primary_groups_from_payload(
                     allowed_groups[e_i].discard(g_i)
                     break
 
-    explicit = payload.get("checks", {}).get("primary_groups_by_educator", {})
+    explicit = (payload.get("checks") if isinstance(payload.get("checks"), dict) else {}).get("primary_groups_by_educator", {})
     previous_primary: dict[int, int] = {}
     if isinstance(explicit, dict):
         previous_primary = {
@@ -6037,13 +6168,26 @@ def main() -> int:
     if max_blocks_per_day is not None:
         max_blocks_per_day = int(max_blocks_per_day)
 
+    if not compact_work_days:
+        compact_work_day_weight = 0.0
+    if not weekly_stability:
+        group_switch_day_weight = 0.0
+        same_group_week_weight = 0.0
+        main_group_day_weight = main_group_slot_weight = main_site_day_weight = 0.0
     emit_progress(3, "Lecture des donnees")
     data = load_json(json_path)
+    require_valid_data(data)
     quality_context = compact_quality_context(
         data, split_shift_weight=split_shift_weight,
         group_switch_day_weight=group_switch_day_weight,
         same_group_week_weight=same_group_week_weight, work_day_weight=compact_work_day_weight,
         the_enabled=the_enabled, the_percent=the_percent,
+        split_gap_weight=split_gap_weight, min_daily_hours=min_daily_hours,
+        short_day_penalty_weight=short_day_penalty_weight,
+        soft_time_rule_weight=soft_time_rule_weight, soft_group_rule_weight=soft_group_rule_weight,
+        compact_part_time_priority=compact_part_time_priority,
+        main_group_day_weight=main_group_day_weight,
+        main_group_slot_weight=main_group_slot_weight, main_site_day_weight=main_site_day_weight,
     )
 
     def quality_score(candidate: dict[str, Any]) -> float:
@@ -6056,6 +6200,7 @@ def main() -> int:
         data,
         latest_payload,
         quality_context=quality_context,
+        type_aliases=aliases, max_blocks_per_day=max_blocks_per_day or 2,
         half_day_split_time=half_day_split_time,
         max_weekly_group_exception_days=max_weekly_group_exception_days,
         max_split_gap_minutes=hard_max_split_gap_minutes,
@@ -6094,6 +6239,8 @@ def main() -> int:
                 data,
                 initial_payload,
                 quality_context=quality_context,
+                type_aliases=aliases,
+                max_blocks_per_day=max_blocks_per_day or 2,
                 half_day_split_time=half_day_split_time,
                 max_weekly_group_exception_days=max_weekly_group_exception_days,
                 max_split_gap_minutes=hard_max_split_gap_minutes,
@@ -6144,7 +6291,25 @@ def main() -> int:
     checkpoint_score = protected_score
 
     def finish_payload(payload: dict[str, Any], output_bundle: Any) -> int:
+        if payload.get('status') == 'ok':
+            verified = revalidate_cached_payload(data, payload, quality_context=quality_context,
+                type_aliases=aliases, max_blocks_per_day=max_blocks_per_day or 2, half_day_split_time=half_day_split_time,
+                max_split_gap_minutes=hard_max_split_gap_minutes,
+                max_weekly_group_exception_days=max_weekly_group_exception_days,
+                hard_max_work_days=hard_max_work_days,
+                weekly_hours_tolerance_percent=weekly_hours_tolerance_percent,
+                weekly_hours_tolerance_minutes=weekly_hours_tolerance_minutes,
+                weekly_hours_tolerance_step_minutes=weekly_hours_tolerance_step_minutes,
+                enforce_absolute_max_weekly_hours=enforce_absolute_max_weekly_hours,
+                absolute_max_weekly_hours=absolute_max_weekly_hours,
+                the_enabled=the_enabled, the_percent=the_percent,
+                the_colloques_count=the_colloques_count)
+            if verified is not None:
+                payload = dict(payload, checks=verified[0]["checks"], quality_scoring=quality_context)
+                output_bundle = verified[1]
         ensure_verified_status(payload)
+        if protected_valid is not None and (not payload_is_hard_valid(payload) or quality_score(payload) > protected_score):
+            payload, output_bundle = protected_valid
         payload["quality_scoring"] = quality_context
         if profile_warnings:
             warnings = list(payload.get("warnings", []))
@@ -6198,6 +6363,8 @@ def main() -> int:
         save_valid_checkpoint(protected_valid[0], protected_valid[1])
 
     def run_compact_candidate(budget_seconds: float) -> tuple[dict[str, Any], Any]:
+        if structured or smooth or fast_feasible:
+            profile_warnings.append('Les options historiques structured/smooth/fast_feasible ne pilotent pas le moteur compact; ses contraintes et sa recherche en deux phases sont appliquees.')
         return make_ortools_slot_payload(
             data,
             time_limit=max(1.0, budget_seconds),
@@ -6220,6 +6387,15 @@ def main() -> int:
             group_switch_day_weight=group_switch_day_weight,
             same_group_week_weight=same_group_week_weight,
             work_day_weight=compact_work_day_weight,
+            soft_time_rule_weight=soft_time_rule_weight,
+            soft_group_rule_weight=soft_group_rule_weight,
+            short_day_penalty_weight=short_day_penalty_weight,
+            compact_part_time_priority=compact_part_time_priority,
+            main_group_day_weight=main_group_day_weight,
+            main_group_slot_weight=main_group_slot_weight,
+            main_site_day_weight=main_site_day_weight,
+            max_blocks_per_day=max_blocks_per_day if max_blocks_per_day is not None else 2,
+            mip_gap=mip_gap,
             hard_max_work_days=hard_max_work_days,
             progress_callback=emit_progress,
             hint_payload=latest_payload,
@@ -6243,7 +6419,7 @@ def main() -> int:
         if bool(config.get("compact_candidate_first", True)) and remaining_time_limit() >= 30.0:
             fallback_reserve = min(
                 pattern_fallback_time,
-                max(0.0, time_limit * 0.10),
+                max(0.0, time_limit * 0.30),
                 remaining_time_limit(),
             )
             if compact_candidate_time is None:
@@ -6287,7 +6463,7 @@ def main() -> int:
 
         pattern_budget = min(
             pattern_fallback_time,
-            max(0.0, time_limit * 0.10),
+            max(0.0, time_limit * 0.30),
             remaining_time_limit(),
         )
         pattern_started_at = time.monotonic()
@@ -6428,7 +6604,7 @@ def main() -> int:
                 attempt_index,
                 reserve_fraction=0.10,
             )
-            if budget < 30.0:
+            if budget < 1.0:
                 search_history.append("Temps global insuffisant pour lancer les essais restants.")
                 break
             stage_start = 5 + int(65 * attempt_index / max(1, len(attempts)))

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import math
+import os
+import tempfile
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -235,8 +238,11 @@ class PatternSolveBundle:
 
 
 def parse_time(value: str) -> int:
-    hour, minute = value.split(":")
-    return int(hour) * 60 + int(minute)
+    hour, minute = str(value).split(":")
+    h, m = int(hour), int(minute)
+    if h < 0 or h > 24 or m < 0 or m > 59 or (h == 24 and m != 0):
+        raise ValueError(f"Heure invalide: {value}.")
+    return h * 60 + m
 
 
 def format_time(minutes: int) -> str:
@@ -294,19 +300,30 @@ def normalize_day_list(value: Any) -> list[int]:
 
 
 def normalize_flag(value: str) -> str:
-    return value.strip().lower().replace("Ã©", "e")
+    return "".join(c for c in unicodedata.normalize("NFKD", value.strip().lower().replace("Ã©", "e")) if not unicodedata.combining(c))
 
 
 def load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+        return json.load(handle, parse_constant=lambda value: (_ for _ in ()).throw(ValueError("Valeur JSON non finie: " + value)))
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def save_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2, ensure_ascii=False)
-        handle.write("\n")
+    atomic_write_text(path, json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def weekly_tolerance_slots(
@@ -575,3 +592,31 @@ def split_slot_for_horizon(horizon: Horizon, split_time: str) -> int:
     if split_min <= horizon.start or split_min >= horizon.end:
         return horizon.slots // 2
     return int(round((split_min - horizon.start) / horizon.step))
+
+
+def build_staffing_limits(data, groups, horizon):
+    """Explicit maxima intersect; absent group maxima retain the existing cap."""
+    minimums, _ = build_demands_by_day(data, groups, horizon)
+    group_limits = {k: max(3, v) for k, v in minimums.items()}
+    site_limits = {}
+    explicit = {}
+    group_index = {g['name']: i for i, g in enumerate(groups)}
+    for rule in data.get('rules_site_schedule', []):
+        for row in rule.get('time_intervals', []):
+            maximum = row.get('max_staff')
+            if maximum in (None, ''):
+                continue
+            group = row.get('group', 'tous')
+            for day in normalize_day_list(row.get('days', rule.get('days'))):
+                for slot in slot_range(horizon, row['start'], row['end']):
+                    key = (day, rule['site'] if group == 'tous' else group_index[group], slot)
+                    limits = site_limits if group == 'tous' else explicit
+                    limits[key] = min(limits.get(key, int(float(maximum))), int(float(maximum)))
+    group_limits.update(explicit)
+    return group_limits, site_limits
+
+
+def site_open_slots(data, horizon):
+    return {s['name']: set(slot_range(horizon, s.get('open', format_time(horizon.start)),
+                                                    s.get('close', format_time(horizon.end))))
+            for s in data.get('sites', [])}

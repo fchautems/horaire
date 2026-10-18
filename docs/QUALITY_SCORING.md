@@ -55,3 +55,8 @@ reste inutilisé. Aucun poids ni contrainte métier n'a été ajouté pour ce su
 L'écart aux heures cibles est désormais représenté par une valeur absolue exacte,
 également pour la première solution de faisabilité. Cette modification porte sur
 une variable auxiliaire et ne réduit pas l'ensemble des horaires autorisés.
+
+
+## Politique compact-v2 — 18 octobre 2026
+
+Le contexte courant inclut les créneaux de coupure, les petites journées, les poids des préférences et du groupe/site principal ainsi que les coefficients de jours propres aux temps partiels. Le modèle et la sélection lisent la même politique. Les anciens contextes compact-v1 restent lisibles pour les comparaisons historiques ; les caches sont toujours renotés avec la politique courante du lanceur. Les notes calculées selon ces politiques ne sont pas directement comparables. Le champ objective est évalué sur l’expression originale du modèle, solver_reported_objective garde sa valeur scalaire brute pour diagnostic.

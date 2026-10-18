@@ -25,6 +25,7 @@ class QualityAlignmentTests(unittest.TestCase):
                     data, time_limit=10, hint_payload=reference,
                     fixed_schedule=reference['schedule'],
                     weekly_hours_tolerance_percent=5, max_split_gap_minutes=None,
+                    split_gap_weight=0, short_day_penalty_weight=0,
                 )
                 self.assertEqual(result['status'], 'ok')
                 # Independent recomputation from the JSON schedule, not objective.
@@ -82,6 +83,32 @@ class QualityAlignmentTests(unittest.TestCase):
         altered['schedule']['Lea']['lundi'].append(
             dict(first, start='09:00', end='10:00', hours=1))
         self.assertEqual(solver.planning_quality_score(altered), solver.planning_quality_score(result))
+
+    def test_gap_short_day_and_profile_coefficients_match_model(self):
+        _, result = self.microcase(split_gap_weight=7, short_day_penalty_weight=19,
+                                  min_daily_hours=6, soft_time_rule_weight=2.5,
+                                  soft_group_rule_weight=3, compact_part_time_priority=True,
+                                  main_group_day_weight=17, main_group_slot_weight=2,
+                                  main_site_day_weight=11, work_day_weight=3)
+        parts = compact_quality_breakdown(result, result['quality_scoring'])
+        self.assertEqual(result['objective'], sum(parts.values()))
+        self.assertGreater(parts['gap_slots'], 0)
+        self.assertGreater(parts['short_day_slots'], 0)
+        self.assertEqual(parts['negative_time_slots'], 4 * round(45 * 2.5))
+
+    def test_primary_site_penalty_matches_model(self):
+        from test_audit_regressions import p
+        d = p.data(1, groups=('A', 'B'))
+        d['sites'].append(dict(name='haut', open='08:00', close='18:00'))
+        d['groups'][1]['site'] = 'haut'
+        d['rules_group'] = [['positif', 'hard', 'Lea', 'A']]
+        schedule = p.schedule([p.block(group='B', site='haut')])
+        result, _ = solver.make_ortools_slot_payload(d, time_limit=3, fixed_schedule=schedule,
+                                                    main_site_day_weight=9, **p.OPTIONS)
+        self.assertEqual(result['status'], 'ok', result)
+        parts = compact_quality_breakdown(result, result['quality_scoring'])
+        self.assertEqual(parts['outside_site_days'], 900)
+        self.assertEqual(sum(parts.values()), result['objective'])
 
     def test_cache_uses_current_policy_and_ignores_stale_objective(self):
         data, result = self.microcase()

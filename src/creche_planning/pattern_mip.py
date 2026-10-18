@@ -10,6 +10,7 @@ import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
 from scipy.sparse import csr_matrix
 
+from .domain import build_staffing_limits
 from .domain import (
     DAYS,
     DEFAULT_TYPE_ALIASES,
@@ -171,6 +172,7 @@ def solve_pattern_mip(
         (),
         {"data": data, "horizon": horizon, "groups": groups, "educators": educators, "sites": sites},
     )()
+    bundle.type_aliases = aliases
     restricted_mode = normalize_flag(restricted_pattern_mode)
     restricted_primary_only = restricted_patterns and restricted_mode in {
         "primary_only",
@@ -271,9 +273,19 @@ def solve_pattern_mip(
         else int(round(generated_gap_minutes / horizon.step))
     )
     generation_max_gap_slots = max_gap_slots if max_gap_slots is not None else horizon.slots
-    min_segment_slots = 4
+    min_segment_slots = 4 if restricted_patterns else 1
     scale = 100.0
     colloques = parse_colloques(data, horizon, groups, warnings)
+    if colloques and (not the_enabled or not the_colloques_count):
+        return ({'status': 'infeasible_or_not_solved',
+                 'solver_message': 'Options THE/colloques non applicables au modele par patrons; utiliser CP-SAT compact.',
+                 'warnings': warnings, 'diagnostics': []}, bundle)
+
+    if len({m['group_i'] for m in colloques}) != len(colloques):
+        return ({'status': 'infeasible_or_not_solved',
+                 'solver_message': 'Modele par patrons non applicable: plusieurs colloques par groupe; utiliser CP-SAT compact.',
+                 'warnings': warnings, 'diagnostics': []}, bundle)
+
     colloques_by_day: dict[int, list[dict[str, Any]]] = {}
     colloque_by_group: dict[int, dict[str, Any]] = {}
     for colloque in colloques:
@@ -604,8 +616,9 @@ def solve_pattern_mip(
             if not affected:
                 continue
             if normalize_flag(strength) == "hard":
-                # Hard group rules select the primary group. Daily assignments
-                # may still cover another group when the other hard rules allow it.
+                if is_negative:
+                    group_cost_cache[cache_key] = None
+                    return None
                 continue
             cost += slots * 18.0 * soft_group_rule_weight
         group_cost_cache[cache_key] = cost
@@ -1107,46 +1120,48 @@ def solve_pattern_mip(
                         for first_len in range(min_segment_slots, duration - min_segment_slots + 1):
                             second_len = duration - first_len
                             for gap in range(1, generation_max_gap_slots + 1):
-                                first_end = split_slot
-                                first_start = first_end - first_len
-                                second_start = first_end + gap
-                                second_end = second_start + second_len
-                                if first_start < 0 or second_end > horizon.slots:
-                                    continue
-                                if (
-                                    generation_step_slots > 1
-                                    and (
-                                        first_start not in start_candidates
-                                        or second_end not in end_candidates
+                                for first_end in range(first_len, horizon.slots - second_len - gap + 1):
+                                    if remaining_seconds() <= 1.0:
+                                        return generation_time_limit_result()
+                                    first_start = first_end - first_len
+                                    second_start = first_end + gap
+                                    second_end = second_start + second_len
+                                    if first_start < 0 or second_end > horizon.slots:
+                                        continue
+                                    if (
+                                        generation_step_slots > 1
+                                        and (
+                                            first_start not in start_candidates
+                                            or second_end not in end_candidates
+                                        )
+                                    ):
+                                        continue
+                                    segments = ((first_start, first_end), (second_start, second_end))
+                                    worked = {
+                                        slot
+                                        for seg_start, seg_end in segments
+                                        for slot in range(seg_start, seg_end)
+                                    }
+                                    if not colloque_slots.issubset(worked):
+                                        continue
+                                    base_cost = work_cost_or_none(e_i, day_key, segments)
+                                    if base_cost is None:
+                                        continue
+                                    child_slots = duration - colloque_duration
+                                    group_cost = group_cost_or_none(e_i, primary_g, primary_g, child_slots)
+                                    if group_cost is None:
+                                        continue
+                                    add_pattern(
+                                        e_i,
+                                        d_i,
+                                        primary_g,
+                                        primary_site,
+                                        segments,
+                                        {0: primary_g, 1: primary_g},
+                                        duration,
+                                        base_cost + group_cost,
                                     )
-                                ):
-                                    continue
-                                segments = ((first_start, first_end), (second_start, second_end))
-                                worked = {
-                                    slot
-                                    for seg_start, seg_end in segments
-                                    for slot in range(seg_start, seg_end)
-                                }
-                                if not colloque_slots.issubset(worked):
-                                    continue
-                                base_cost = work_cost_or_none(e_i, day_key, segments)
-                                if base_cost is None:
-                                    continue
-                                child_slots = duration - colloque_duration
-                                group_cost = group_cost_or_none(e_i, primary_g, primary_g, child_slots)
-                                if group_cost is None:
-                                    continue
-                                add_pattern(
-                                    e_i,
-                                    d_i,
-                                    primary_g,
-                                    primary_site,
-                                    segments,
-                                    {0: primary_g, 1: primary_g},
-                                    duration,
-                                    base_cost + group_cost,
-                                )
-                    continue
+                        continue
 
                 for site in sites:
                     if restricted_primary_only and site != primary_site:
@@ -1240,47 +1255,49 @@ def solve_pattern_mip(
                         for first_len in range(min_segment_slots, duration - min_segment_slots + 1):
                             second_len = duration - first_len
                             for gap in range(1, generation_max_gap_slots + 1):
-                                first_end = split_slot
-                                first_start = first_end - first_len
-                                second_start = first_end + gap
-                                second_end = second_start + second_len
-                                if first_start < 0 or second_end > horizon.slots:
-                                    continue
-                                if (
-                                    generation_step_slots > 1
-                                    and (
-                                        first_start not in start_candidates
-                                        or second_end not in end_candidates
-                                    )
-                                ):
-                                    continue
-                                segments = ((first_start, first_end), (second_start, second_end))
-                                base_cost = work_cost_or_none(e_i, day_key, segments)
-                                if base_cost is None:
-                                    continue
-                                for g_morning in range(len(groups)):
-                                    morning_cost = group_cost_or_none(e_i, primary_g, g_morning, first_len)
-                                    if morning_cost is None:
+                                for first_end in range(first_len, horizon.slots - second_len - gap + 1):
+                                    if remaining_seconds() <= 1.0:
+                                        return generation_time_limit_result()
+                                    first_start = first_end - first_len
+                                    second_start = first_end + gap
+                                    second_end = second_start + second_len
+                                    if first_start < 0 or second_end > horizon.slots:
                                         continue
-                                    for g_afternoon in range(len(groups)):
-                                        afternoon_cost = group_cost_or_none(
-                                            e_i,
-                                            primary_g,
-                                            g_afternoon,
-                                            second_len,
+                                    if (
+                                        generation_step_slots > 1
+                                        and (
+                                            first_start not in start_candidates
+                                            or second_end not in end_candidates
                                         )
-                                        if afternoon_cost is None:
+                                    ):
+                                        continue
+                                    segments = ((first_start, first_end), (second_start, second_end))
+                                    base_cost = work_cost_or_none(e_i, day_key, segments)
+                                    if base_cost is None:
+                                        continue
+                                    for g_morning in range(len(groups)):
+                                        morning_cost = group_cost_or_none(e_i, primary_g, g_morning, first_len)
+                                        if morning_cost is None:
                                             continue
-                                        add_pattern(
-                                            e_i,
-                                            d_i,
-                                            primary_g,
-                                            None,
-                                            segments,
-                                            {0: g_morning, 1: g_afternoon},
-                                            duration,
-                                            base_cost + morning_cost + afternoon_cost,
-                                        )
+                                        for g_afternoon in range(len(groups)):
+                                            afternoon_cost = group_cost_or_none(
+                                                e_i,
+                                                primary_g,
+                                                g_afternoon,
+                                                second_len,
+                                            )
+                                            if afternoon_cost is None:
+                                                continue
+                                            add_pattern(
+                                                e_i,
+                                                d_i,
+                                                primary_g,
+                                                None,
+                                                segments,
+                                                {0: g_morning, 1: g_afternoon},
+                                                duration,
+                                                base_cost + morning_cost + afternoon_cost,
+                                            )
 
     bundle.pattern_stats = dict(pattern_stats)
     bundle.pattern_count = len(costs)
@@ -1416,6 +1433,7 @@ def solve_pattern_mip(
                 float(max_work_days_by_educator[e_i]),
             )
 
+    group_limits, site_limits = build_staffing_limits(data, groups, horizon)
     for d_i in range(len(DAYS)):
         for g_i in range(len(groups)):
             for slot in range(horizon.slots):
@@ -1424,7 +1442,7 @@ def solve_pattern_mip(
                     for p_i in coverage_terms.get((d_i, g_i, slot), ())
                 )
                 demand = group_demand[(d_i, g_i, slot)]
-                add_model_row(terms, demand, max(3, demand))
+                add_model_row(terms, demand, group_limits[(d_i, g_i, slot)])
         for (demand_d_i, site, slot), demand in site_demand.items():
             if demand_d_i != d_i:
                 continue
@@ -1434,16 +1452,10 @@ def solve_pattern_mip(
             )
             add_model_row(terms, demand, math.inf)
 
-    for colloque in colloques:
-        target_g = int(colloque["group_i"])
-        for source_g in range(len(groups)):
-            if source_g == target_g:
-                continue
-            terms = (
-                (p_i, 1.0)
-                for p_i in replacement_terms.get((int(colloque["id"]), source_g), ())
-            )
-            add_model_row(terms, 1.0, 1.0)
+    for (d_i, site, slot), maximum in site_limits.items():
+        add_model_row(((p_i, 1.0) for p_i in site_terms.get((d_i, site, slot), ())), 0, maximum)
+
+    # Coverage constraints determine replacement needs; no quota by source group.
 
     if max_weekly_group_exception_days is not None:
         for e_i in range(len(educators)):

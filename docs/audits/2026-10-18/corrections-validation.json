@@ -1,0 +1,33 @@
+{
+  "tests": 93,
+  "elapsed_seconds": 11.428,
+  "status": "OK",
+  "best_candidate": {
+    "errors": [],
+    "legacy_score": 626975,
+    "corrected_score": 646975.0,
+    "breakdown": {
+      "child_slots": 1235,
+      "presence_starts": 624000,
+      "worked_days": 0,
+      "gap_slots": 20000,
+      "short_day_slots": 0,
+      "mixed_days": 0,
+      "outside_group_days": 40,
+      "outside_days": 3200,
+      "outside_slots": 0,
+      "outside_site_days": 0,
+      "hour_deviation_slots": 0,
+      "preferred_primary": -1500,
+      "negative_time_slots": 0,
+      "positive_time_slots": 0,
+      "group_rule_slots": 0
+    }
+  },
+  "limits": [
+    "A19: decision metier non tranchee",
+    "Pas de lancement Windows ou GUI reel",
+    "Patrons: plusieurs colloques par groupe et options THE non standard refuses explicitement",
+    "Exports atomiques par fichier, sans transaction commune"
+  ]
+}

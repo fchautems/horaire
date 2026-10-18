@@ -1,6 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import csv
+import io
+from contextlib import contextmanager
+from .domain import atomic_write_text
 import html
 from pathlib import Path
 from typing import Any
@@ -52,7 +55,7 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
         },
         {
             "code": "absolute_weekly_cap",
-            "rule": f"Ne jamais depasser {float(absolute_max):g}h de travail par semaine.",
+            "rule": (f"Ne jamais depasser {float(absolute_max):g}h de travail par semaine." if absolute_max is not None else "Plafond absolu hebdomadaire desactive."),
             "source": "solveur_config.json / absolute_max_weekly_hours",
         },
         {
@@ -163,12 +166,29 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             },
         )
         soft = [item for item in soft if item["code"] != "avoid_long_split_gaps"]
+    if not config.get('enforce_absolute_max_weekly_hours', True) or absolute_max is None:
+        hard = [item for item in hard if item['code'] != 'absolute_weekly_cap']
+    if not config.get('the_enabled', True):
+        hard = [item for item in hard if item['code'] != 'the']
+    if not hard_max_work_days:
+        hard = [item for item in hard if item['code'] != 'max_work_days']
     return {"hard": hard, "soft": soft}
+
+
+@contextmanager
+def atomic_csv(path):
+    buffer = io.StringIO(newline='')
+    yield buffer
+    atomic_write_text(path, buffer.getvalue())
+
+
+def _write_text(path, text, encoding='utf-8'):
+    atomic_write_text(path, text)
 
 
 def write_csv(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8") as handle:
+    with atomic_csv(path) as handle:
         writer = csv.writer(handle, delimiter=";")
         writer.writerow(["educator", "day", "site", "group", "start", "end", "hours", "activity"])
         schedule = payload.get("schedule")
@@ -221,7 +241,7 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
             f"<li><strong>{esc(item.get('code', ''))}</strong> - {esc(item.get('rule', ''))}</li>"
             for item in hard_rules
         )
-        path.write_text(
+        _write_text(path,
             f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -477,7 +497,7 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
 </body>
 </html>
 """
-    path.write_text(content, encoding="utf-8")
+    _write_text(path, content, encoding="utf-8")
 
 
 def print_report(payload: dict[str, Any]) -> None:

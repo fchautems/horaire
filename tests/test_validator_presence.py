@@ -19,6 +19,10 @@ class ValidatorPresenceTests(unittest.TestCase):
             'educator_types': [{'name': 'EDE'}],
             'rules_global': {'max_weekly_hours': 40, 'max_daily_hours': 8.5},
         }
+        if any(b.get('activity') == 'colloque' for b in blocks):
+            data['educators'][0]['attends_colloque'] = True
+            data['rules_colloques'] = [['A', 'lundi', b['start'], b['end']]
+                                      for b in blocks if b.get('activity') == 'colloque']
         schedule = {'Lea': {day: [] for day in
                            ('lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi')}}
         schedule['Lea']['lundi'] = blocks

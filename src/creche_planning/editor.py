@@ -210,9 +210,10 @@ def load_json(path: Path) -> dict:
 
 
 def save_json(path: Path, data: dict) -> None:
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=4, ensure_ascii=False)
-        handle.write("\n")
+    from .domain import save_json as atomic_save
+    from .validation import require_valid_data
+    require_valid_data(data)
+    atomic_save(path, data)
 
 
 def split_types(value: str) -> list[str]:
@@ -262,7 +263,9 @@ def parse_days_value(value: object) -> tuple[list[str], list[str]]:
 
 
 def days_from_value(value: object) -> list[str]:
-    days, _unknown = parse_days_value(value)
+    days, unknown = parse_days_value(value)
+    if unknown:
+        raise ValueError("Jours inconnus: " + ", ".join(unknown))
     return days
 
 
@@ -1370,7 +1373,20 @@ def find_latest_planning(data_path: Path | None) -> Path | None:
 
     if not candidates:
         return None
-    return max(candidates, key=lambda path: path.stat().st_mtime)
+    from .solver import revalidate_cached_payload
+    data = load_json(data_path)
+    ordered = ([latest_path] if latest_path in candidates else []) + sorted(
+        [p for p in candidates if p != latest_path], key=lambda p: p.stat().st_mtime, reverse=True)
+    for path in ordered:
+        try:
+            result = revalidate_cached_payload(data, load_json_any(path),
+                weekly_hours_tolerance_percent=config.get('weekly_hours_tolerance_percent', 3),
+                max_split_gap_minutes=effective_max_split_gap_minutes(config) if config.get('enforce_max_pause_between_blocks') else None)
+            if result and result[0]['status'] == 'ok':
+                return path
+        except (ValueError, TypeError, KeyError, OSError):
+            continue
+    return None
 
 
 def timestamped_path(path: Path, timestamp: str | None) -> Path:
@@ -2062,21 +2078,33 @@ class CrecheEditor(tk.Tk):
                 ),
             )
             assert process.stdout is not None
-            line_queue: queue.Queue[str | None] = queue.Queue()
+            line_queue: queue.Queue[str | None] = queue.Queue(maxsize=2048)
 
             def read_output() -> None:
                 assert process.stdout is not None
                 try:
                     for reader_line in process.stdout:
-                        line_queue.put(reader_line)
+                        try:
+                            line_queue.put(reader_line, timeout=.1)
+                        except queue.Full:
+                            if process.poll() is not None:
+                                break
                 finally:
-                    line_queue.put(None)
+                    try:
+                        line_queue.put(None, timeout=.2)
+                    except queue.Full:
+                        pass
 
             reader = threading.Thread(target=read_output, daemon=True)
             reader.start()
             deadline = time.monotonic() + max(1.0, time_limit_seconds) + 5.0
             output_done = False
             while True:
+                if time.monotonic() > deadline:
+                    terminate_solver_process(process)
+                    returncode = process.returncode
+                    lines.append("Temps limite depasse: processus arrete.")
+                    break
                 try:
                     raw_line = line_queue.get(timeout=0.2)
                 except queue.Empty:
@@ -2117,11 +2145,13 @@ class CrecheEditor(tk.Tk):
                             self.after(0, lambda p=percent, m=message: dialog.update_progress(p, m))
                         continue
                     lines.append(line)
+                    if len(lines) > 4000:
+                        del lines[:-4000]
                     if line.startswith("Status:") or line.startswith("Verification:") or line.startswith("Erreurs"):
                         self.after(0, lambda m=line: dialog.append_log(m))
                     continue
                 returncode = process.poll()
-                if returncode is not None and output_done:
+                if returncode is not None and (output_done or line_queue.empty()):
                     break
                 if time.monotonic() > deadline:
                     terminate_solver_process(process)
@@ -2132,8 +2162,8 @@ class CrecheEditor(tk.Tk):
                     break
                 time.sleep(0.2)
         except Exception as exc:
-            self.after(0, lambda: dialog.finish(False, f"Erreur: {exc}"))
-            self.after(0, lambda: messagebox.showerror("Solveur", str(exc)))
+            self.after(0, lambda message=str(exc): dialog.finish(False, f"Erreur: {message}"))
+            self.after(0, lambda message=str(exc): messagebox.showerror("Solveur", message))
             self.after(0, lambda: self.set_status())
             return
 

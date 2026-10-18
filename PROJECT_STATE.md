@@ -413,3 +413,22 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Les règles positives hard sur une plage ne sont pas déclarées erronées : les données actuelles emploient des plages sur la journée entière, compatibles avec une exigence de présence partielle. Pourcentages de qualification instantanés ou hebdomadaires, exceptions de remplacement et pauses/déplacements restent à préciser.
 - Aucun `AGENTS.md` ou `MODEL_GUIDE.md` trouvé dans les emplacements accessibles inspectés ; aucun outil Brain disponible identifié.
 - Prochaine action recommandée : corriger d’abord les garde-fous du validateur et des caches, puis les différences de moteurs et la politique de score, avec tests de régression ; ne pas relancer des optimisations longues pour traiter ces défauts. Les règles métier ambiguës doivent être clarifiées séparément.
+
+## Corrections de l’audit — 18 octobre 2026, en cours
+
+- Autorisation : Frédéric demande de corriger tous les bugs identifiés et de poursuivre jusqu’aux vérifications finales.
+- Base : `b036113`, copie isolée `fix/audit-2026-10-18`, audit A01–A27 et risques R01–R05 relus.
+- Données métier et plannings de référence conservés. Questions Q01–Q04 séparées des défauts techniques ; conventions existantes conservées tant qu’aucune décision contraire n’est donnée.
+- Aucun AGENTS.md / MODEL_GUIDE.md trouvé dans les emplacements accessibles ; aucun outil Brain disponible.
+- Environnement rétabli avec OR-Tools 9.15.6755 ; contrôle initial en cours.
+- Prochaine action : fermer les trous du validateur et des caches, puis traiter moteurs, qualité, interface et sauvegardes.
+
+
+### Avancement vérifié des corrections — 18 octobre 2026
+
+- Les 27 constats ont été traités en code ou consignés avec leur limite de support dans docs/audits/2026-10-18/CORRECTIONS.md. A19 reste en attente d’une décision métier sur les horaires d’ouverture ; aucune fermeture exhaustive n’est revendiquée.
+- Validation renforcée des identités, blocs, groupes, activités et caches ; garde-fou commun aux moteurs ; quotas artificiels de remplacement retirés ; domaine des coupures élargi ; budgets et paramètres de qualité corrigés ; sauvegardes atomiques par fichier et garde-fous interface.
+- **93 tests réussis en 11.428 secondes** lors du contrôle final, avec OR-Tools 9.15.6755 et Python 3.12. Les sondes historiques d’audit ne sont pas réécrites en tests de succès.
+- Meilleur candidat revalidé : aucune erreur, score historique 626975 ; reproduction fixe avec critères corrigés 646975, dont 20000 de durée de coupure. Aucun changement d’affectation ou de planning actif ; pas d’optimisation globale.
+- Limites : certains cas/options sont refusés explicitement par les patrons et pris en charge par le compact ; exports atomiques individuellement, sans transaction commune ; appels natifs et interface non validés en situation réelle Windows.
+- Contrôles finaux : compilation des modules et git diff --check réussis. Prochaine action : demander la règle manquante A19 ; conserver les conventions Q01–Q04 et ne pas lancer d’optimisation globale pour cette clarification.
