@@ -2697,6 +2697,30 @@ def smooth_schedule(
     return schedule
 
 
+def hard_site_travel_errors(schedule: dict[str, Any]) -> list[str]:
+    """Require ten free minutes between sites, including meetings/replacements."""
+    errors: list[str] = []
+    for name, by_day in schedule.items():
+        for day, blocks in by_day.items():
+            ordered = sorted(blocks, key=lambda block: parse_time(block["start"]))
+            for previous, current in zip(ordered, ordered[1:]):
+                gap = parse_time(current["start"]) - parse_time(previous["end"])
+                if previous.get("site") != current.get("site") and gap < 10:
+                    errors.append(
+                        f"Deplacement intersites insuffisant: {name} {day} "
+                        f"{previous.get('site')} -> {current.get('site')}: {gap} min < 10 min."
+                    )
+    return errors
+
+
+def site_sequence_has_travel_time(slot_sites: list[tuple[int, str]], step: int) -> bool:
+    """A slot occupies its full duration; same-site group changes need no gap."""
+    return all(
+        site == next_site or (next_slot - slot - 1) * step >= 10
+        for (slot, site), (next_slot, next_site) in zip(slot_sites, slot_sites[1:])
+    )
+
+
 def hard_half_day_group_errors(
     schedule: dict[str, dict[str, list[dict[str, Any]]]],
     horizon: Horizon,
@@ -3069,7 +3093,7 @@ def verify_solution(
                 if actual > maximum:
                     coverage_errors.append(f"{day_label} {site}: {actual} > maximum {maximum}")
 
-    hard_rule_errors: list[str] = []
+    hard_rule_errors: list[str] = hard_site_travel_errors(schedule)
     group_structure_errors: list[str] = []
     primary_group_errors: list[str] = []
     attends_colloque_by_name = {
@@ -4380,6 +4404,31 @@ def make_ortools_slot_payload(
         )
     )
     debug(f"primary_group_candidates={len(primary_group_candidates)}")
+
+    # The fifteen-minute grid needs one empty slot for a ten-minute journey.
+    # Work at meetings is located at the primary group's site as well.
+    travel_distance = math.ceil(10 / horizon.step)
+    for e_i, educator in enumerate(educators):
+        for d_i in range(len(DAYS)):
+            located = {}
+            for s_i, site in enumerate(sites):
+                for t_i in range(horizon.slots):
+                    terms = [x[(e_i, d_i, g_i, t_i)]
+                             for g_i, group in enumerate(groups) if group["site"] == site]
+                    if educator_attends_colloque(educator):
+                        terms.extend(primary_group[(e_i, g_i)]
+                                     for g_i in colloque_group_by_slot.get((d_i, t_i), set())
+                                     if groups[g_i]["site"] == site)
+                    located[(s_i, t_i)] = model.NewBoolVar(f"located_{e_i}_{d_i}_{s_i}_{t_i}")
+                    model.Add(located[(s_i, t_i)] == sum(terms))
+            for s_i in range(len(sites)):
+                for other_s in range(len(sites)):
+                    if s_i == other_s:
+                        continue
+                    for t_i in range(horizon.slots):
+                        for delta in range(1, travel_distance + 1):
+                            if t_i + delta < horizon.slots:
+                                model.Add(located[(s_i, t_i)] + located[(other_s, t_i + delta)] <= 1)
 
     if progress_callback:
         progress_callback(20, "Contraintes de couverture")

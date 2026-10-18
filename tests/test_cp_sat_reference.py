@@ -16,7 +16,7 @@ from creche_planning.solver import make_ortools_slot_payload  # noqa: E402
 
 
 class CpSatReferenceTests(unittest.TestCase):
-    def test_valid_reference_schedule_is_feasible_in_cp_sat(self) -> None:
+    def test_historical_reference_with_instant_site_moves_is_rejected(self) -> None:
         data = json.loads((ROOT / "data" / "gwendo.json").read_text(encoding="utf-8"))
         reference = json.loads(
             (ROOT / "tests" / "fixtures" / "planning_gwendo_reference_valid.json").read_text(
@@ -47,37 +47,16 @@ class CpSatReferenceTests(unittest.TestCase):
                 candidate_callback=lambda candidate, _bundle: checkpoints.append(candidate),
             )
 
-        self.assertEqual(payload["status"], "ok")
-        self.assertEqual(payload["checks"]["errors"], [])
-        self.assertEqual(payload["cp_sat_statistics"]["feasibility"]["status"], "OPTIMAL")
-        self.assertEqual(len(checkpoints), 1)
-        self.assertTrue(
-            any("Solution hard-valide trouvee - note" in message for message in progress_messages)
-        )
+        self.assertEqual(payload["solver_message"], "INFEASIBLE")
+        self.assertEqual(len(checkpoints), 0)
+        # The immutable historical reference has instantaneous intersite moves.
+        from creche_planning.solver import revalidate_cached_payload
+        checked, _ = revalidate_cached_payload(data, reference,
+            weekly_hours_tolerance_percent=5, max_split_gap_minutes=None)
+        self.assertEqual(checked["status"], "invalid")
+        self.assertTrue(any("Deplacement intersites" in e for e in checked["checks"]["errors"]))
 
-        schedule = payload["schedule"]
-        self.assertEqual(
-            {block["site"] for block in schedule["Léa"]["mardi"]},
-            {"bas", "haut"},
-        )
-        self.assertTrue(
-            any(
-                block.get("activity") == "remplacement_colloque"
-                for by_day in schedule.values()
-                for blocks in by_day.values()
-                for block in blocks
-            )
-        )
-        self.assertTrue(
-            any(
-                block.get("activity") == "colloque"
-                for by_day in schedule.values()
-                for blocks in by_day.values()
-                for block in blocks
-            )
-        )
-
-    def test_primary_groups_and_colloques_are_resolved_without_hint(self) -> None:
+    def test_instant_site_moves_are_rejected_without_hint_too(self) -> None:
         data = json.loads((ROOT / "data" / "gwendo.json").read_text(encoding="utf-8"))
         reference = json.loads(
             (ROOT / "tests" / "fixtures" / "planning_gwendo_reference_valid.json").read_text(
@@ -104,21 +83,8 @@ class CpSatReferenceTests(unittest.TestCase):
                 debug_log_path=Path(directory) / "cp_sat_no_hint.log",
             )
 
-        self.assertEqual(payload["status"], "ok")
-        self.assertEqual(payload["checks"]["errors"], [])
-        primary_groups = payload["checks"]["primary_groups_by_educator"]
-        self.assertEqual(len(primary_groups), len(data["educators"]))
-        self.assertEqual(primary_groups["Emilie"], "Nurserie")
-        self.assertEqual(primary_groups["Priscila"], "Nurserie")
-        self.assertEqual(primary_groups["Natacha"], "Trotteur")
-        self.assertTrue(
-            any(
-                block.get("activity") == "remplacement_colloque"
-                for by_day in payload["schedule"].values()
-                for blocks in by_day.values()
-                for block in blocks
-            )
-        )
+        self.assertEqual(payload["solver_message"], "INFEASIBLE")
+        self.assertNotEqual(payload["status"], "ok")
 
 
 if __name__ == "__main__":

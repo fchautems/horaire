@@ -16,7 +16,7 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
 3. Regles horaires hard
 
-   Une interdiction horaire `hard` interdit toute presence sur la plage. Une obligation horaire `hard` impose une presence sur la plage.
+   Une interdiction horaire `hard` interdit toute presence sur la plage. Une obligation horaire positive `hard` impose une presence pendant au moins une partie de la plage. Si elle couvre toute la journee, elle exige de travailler ce jour-la, pas pendant toute la journee.
 
 4. Regles de groupe hard
 
@@ -89,5 +89,5 @@ Frédéric confirme qu'une éducatrice peut travailler sur un site avant l'ouver
 - Qualifications : calcul des proportions par site sur les heures enfants cumulées de la semaine.
 - Remplacements de colloque : fenêtre autorisée de quinze minutes avant et trente minutes après ; toute personne peut remplacer, sans condition de groupe d'origine, sous réserve des autres contraintes de présence et de contrat. Les interdictions de groupe ne s'appliquent pas à ces remplacements authentifiés ; elles restent obligatoires pour les affectations ordinaires.
 - Repos entre deux journées : aucun minimum interjournalier demandé dans le modèle. Cette précision ne définit pas les pauses au sein d'une journée.
-- Déplacements entre sites : prévoir au moins dix minutes entre deux affectations sur des sites différents. Cette nouvelle contrainte est à implémenter et les plannings doivent ensuite être revalidés. La grille actuelle de quinze minutes ne doit pas conduire à réduire silencieusement ce délai.
-- Le sens d'une obligation horaire positive reste à préciser : présence pendant toute la fenêtre ou présence partielle dans cette fenêtre. Aucun changement de ce comportement avant clarification.
+- Déplacements entre sites : prévoir au moins dix minutes entre deux affectations sur des sites différents. Le validateur, le moteur compact CP-SAT et les patrons imposent ce délai, y compris pour les colloques et remplacements. Aucun délai entre groupes sur le même site. Sur la grille de quinze minutes, un déplacement de dix minutes nécessite un créneau libre de quinze minutes.
+- Obligation horaire positive : Frédéric confirme la présence pendant une partie de la fenêtre, comme le documente déjà le manuel utilisateur. Les règles et données existantes sont conservées.

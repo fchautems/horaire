@@ -458,3 +458,13 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - L’essai est interrompu sans résultat final exploitable ; ni la consommation complète des 600 secondes ni l’infaisabilité du problème ne sont établies. Cause de terminaison inconnue.
 - Aucun nouveau calcul lancé lors du contrôle, aucun planning remplacé. Les modifications locales liées aux déplacements ne sont pas déclarées publiées dans cette note.
 - Prochaine action : diagnostiquer la terminaison et la persistance du processus avant une relance identique. La clarification ultérieure Q01 du dialogue confirme une présence partielle dans la fenêtre : la règle positive hard actuelle doit être conservée.
+
+
+## Déplacements corrigés et nouvel essai — 18 octobre 2026
+
+- Q01 confirmé : une obligation horaire positive hard exige une présence partielle dans la fenêtre, pas la fenêtre entière. Comportement existant conservé.
+- Dix minutes minimum entre sites, zéro minute entre groupes du même site, colloques et remplacements compris : ajout au validateur, au CP-SAT compact et aux patrons. Sur la grille de quinze minutes, un créneau vide est nécessaire entre sites.
+- **103 tests réussis en 12,157 secondes**, Python 3.12 / OR-Tools 9.15.6755 ; git diff --check réussi. Les références historiques avec déplacements instantanés sont désormais rejetées ; elles sont conservées pour traçabilité.
+- Relance explicite demandée : recherche de 600 secondes sans ancien planning fourni comme hint et sans planning fixé. Les heuristiques internes de groupes restent actives, sans fixation permanente des groupes principaux.
+- Essai démarré le 18 octobre à 12:24:20 UTC ; suivi du processus avec battement toutes les quinze secondes et enregistrement du code de sortie. Dossier : docs/experiments/2026-10-18-from-zero-600s-retry/. Aucun nouveau résultat au contrôle à 150 secondes ; l'ancien essai interrompu reste distinct.
+- État temporaire : recherche en cours. Aucun planning actif remplacé. La note de résultat finale doit être ajoutée à la fin réelle de cet essai.

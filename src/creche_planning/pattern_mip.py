@@ -135,6 +135,7 @@ def solve_pattern_mip(
         diagnose_basic_conflicts,
         diagnose_the_capacity,
         educator_attends_colloque,
+        site_sequence_has_travel_time,
         verify_solution,
     )
 
@@ -722,6 +723,12 @@ def solve_pattern_mip(
                         display_overrides[slot] = target_g
                         activities[slot] = "remplacement_colloque"
         if invalid_pattern:
+            return
+        slot_sites = [
+            (slot, str(groups[display_overrides.get(slot, half_groups[0 if slot < split_slot else 1])]["site"]))
+            for slot in sorted(worked)
+        ]
+        if not site_sequence_has_travel_time(slot_sites, horizon.step):
             return
         used_groups = {
             half_groups[0 if slot < split_slot else 1]

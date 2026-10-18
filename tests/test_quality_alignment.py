@@ -12,7 +12,7 @@ from creche_planning.scoring import compact_quality_context, compact_quality_bre
 
 
 class QualityAlignmentTests(unittest.TestCase):
-    def test_saved_candidates_have_same_cp_sat_and_selection_score(self):
+    def test_historical_scores_are_preserved_but_travel_is_now_invalid(self):
         data = json.loads((ROOT / 'data/gwendo.json').read_text())
         paths = ['tests/fixtures/planning_gwendo_reference_valid.json',
                  'docs/experiments/2026-10-17-group-days-300s/optimized_candidate.json',
@@ -27,10 +27,12 @@ class QualityAlignmentTests(unittest.TestCase):
                     weekly_hours_tolerance_percent=5, max_split_gap_minutes=None,
                     split_gap_weight=0, short_day_penalty_weight=0,
                 )
-                self.assertEqual(result['status'], 'ok')
-                # Independent recomputation from the JSON schedule, not objective.
-                self.assertEqual(result['objective'], solver.planning_quality_score(result))
-                scores.append(solver.planning_quality_score(result))
+                self.assertEqual(result['solver_message'], 'INFEASIBLE')
+                self.assertTrue(solver.hard_site_travel_errors(reference['schedule']))
+                # Scores are historical measures, not certificates of feasibility.
+                context = compact_quality_context(data, split_gap_weight=0,
+                                                  short_day_penalty_weight=0)
+                scores.append(solver.planning_quality_score(reference, context=context))
         self.assertEqual(scores, [809618, 650975, 631977])
         self.assertLess(scores[2], scores[1])
 
