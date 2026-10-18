@@ -449,3 +449,12 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Ces décisions sont consignées dans docs/REGLES_METIER.md. Q01 reste ouvert et est réexpliqué avec une présence 9–10 dans une fenêtre 8–12. Les pauses au sein d’une journée ne sont pas définies par la réponse sur le repos entre journées.
 - Aucun code, donnée ou planning modifié, aucun test relancé pour cette documentation. Les 93 tests précédents ne valident pas encore la nouvelle règle des déplacements.
 - Prochaine action technique : imposer les dix minutes entre sites, harmoniser le contrôle final et les moteurs concernés, puis revalider les candidats. La grille de quinze minutes doit être traitée explicitement sans arrondir le minimum à zéro. Ne pas déclarer le meilleur candidat conforme à cette nouvelle règle avant contrôle.
+
+
+## Contrôle de l’essai depuis zéro — 18 octobre 2026
+
+- Recherche autorisée de 600 secondes : lors du précédent contrôle, le processus 3471 était actif à environ 136 secondes et utilisait le CPU.
+- Lors du contrôle suivant, le processus n’est plus visible et aucun result.json, summary.json ou checkpoint n’est présent dans le dossier local de l’essai. Dernière étape journalisée : recherche générale commencée à 91,150 secondes, sans fin enregistrée.
+- L’essai est interrompu sans résultat final exploitable ; ni la consommation complète des 600 secondes ni l’infaisabilité du problème ne sont établies. Cause de terminaison inconnue.
+- Aucun nouveau calcul lancé lors du contrôle, aucun planning remplacé. Les modifications locales liées aux déplacements ne sont pas déclarées publiées dans cette note.
+- Prochaine action : diagnostiquer la terminaison et la persistance du processus avant une relance identique. La clarification ultérieure Q01 du dialogue confirme une présence partielle dans la fenêtre : la règle positive hard actuelle doit être conservée.
