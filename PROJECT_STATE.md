@@ -441,3 +441,11 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Documentation métier actualisée également pour les correctifs déjà publiés : interdictions hard appliquées aux affectations ordinaires ; remplacement selon la couverture effectivement perdue, sans quota par groupe source, conformément aux décisions existantes.
 - Aucun code, donnée, horizon de calcul ou planning modifié ; aucun test ni calcul relancé pour cette clarification documentaire. La dernière suite reste à 93 tests réussis. L’autorisation de présence hors ouverture n’élargit pas automatiquement l’horizon global du programme.
 - Les conventions Q01–Q04 et les limites techniques décrites dans le suivi restent distinctes ; aucune garantie exhaustive ou réglementaire nouvelle. Prochaine action : reprendre le suivi publié si une nouvelle étape est demandée.
+
+
+## Précisions métier Q02–Q04 — 18 octobre 2026
+
+- Réponses explicites de Frédéric : Q02 = semaine ; Q03 = oui à la fenêtre -15/+30 minutes, n’importe qui peut remplacer, non à l’application des interdictions de groupe pendant un remplacement ; Q04 = pas de repos minimum entre deux jours, dix minutes de déplacement entre sites.
+- Ces décisions sont consignées dans docs/REGLES_METIER.md. Q01 reste ouvert et est réexpliqué avec une présence 9–10 dans une fenêtre 8–12. Les pauses au sein d’une journée ne sont pas définies par la réponse sur le repos entre journées.
+- Aucun code, donnée ou planning modifié, aucun test relancé pour cette documentation. Les 93 tests précédents ne valident pas encore la nouvelle règle des déplacements.
+- Prochaine action technique : imposer les dix minutes entre sites, harmoniser le contrôle final et les moteurs concernés, puis revalider les candidats. La grille de quinze minutes doit être traitée explicitement sans arrondir le minimum à zéro. Ne pas déclarer le meilleur candidat conforme à cette nouvelle règle avant contrôle.

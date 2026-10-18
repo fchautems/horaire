@@ -51,3 +51,8 @@ La suite de production comprend les tests existants et les régressions de l’a
 Le candidat de l’essai global du 17 octobre est revalidé sans erreur puis reproduit à affectations fixées. Sa politique historique donne toujours **626975**. Avec les mêmes paramètres expérimentaux et le terme de coupure désormais actif, il donne **646975**, dont 20000 pour la durée des coupures ; objectif du modèle et calcul indépendant concordent. Les affectations et le planning actif ne sont pas modifiés. Une reproduction fixe ne prouve aucune optimalité globale.
 
 Résultat final : **93 tests réussis en 11.428 secondes** ; compilation des modules et git diff --check réussis. Journal : [corrections-tests.log](corrections-tests.log) ; synthèse : [corrections-validation.json](corrections-validation.json). Les limites de publication sont consignées dans PROJECT_STATE.md. Pas de nouvelle optimisation globale, ni de validation Windows ou graphique réelle, ni de garantie d’absence d’autres bugs.
+
+
+## Décisions complémentaires — 18 octobre 2026
+
+Q02 confirmé : pourcentages sur la semaine. Q03 confirmé : fenêtre de remplacement -15/+30 minutes, tout remplaçant admissible sous les autres contraintes, interdictions de groupe non applicables pendant le remplacement. Q04 précisé : aucun repos minimum entre deux jours dans le modèle, dix minutes de déplacement entre sites. Les pauses dans une journée restent à définir ; Q01 reste ouvert. La contrainte des dix minutes est nouvellement spécifiée et n’est pas encore implémentée ni couverte par les 93 tests du lot ci-dessus. Aucun nouveau code ou planning modifié lors de cet enregistrement.

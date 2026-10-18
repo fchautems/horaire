@@ -12,7 +12,7 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
 2. Pourcentages de qualification par site
 
-   Les proportions `EDE`, `ASE` et `APE` definies dans `rules_percentage` doivent etre respectees sur chaque site.
+   Les proportions `EDE`, `ASE` et `APE` definies dans `rules_percentage` doivent etre respectees sur chaque site sur les heures enfants cumulees de la semaine (confirmation du 18 octobre 2026), et non a chaque instant.
 
 3. Regles horaires hard
 
@@ -21,7 +21,7 @@ Un planning marque `OK` doit respecter toutes ces regles.
 4. Regles de groupe hard
 
    Une obligation de groupe `hard` impose le groupe principal indique.
-   Clarification du 17 octobre 2026 : une interdiction de groupe `hard` bloque les affectations ordinaires dans le groupe interdit, meme pour une journee entiere. Elle ne se limite pas au choix du groupe principal. Une preference negative `soft` penalise ces affectations sans les interdire. L'articulation avec les remplacements de colloque reste a preciser ; aucune nouvelle exception n'est decidee ici.
+   Clarification du 17 octobre 2026 : une interdiction de groupe `hard` bloque les affectations ordinaires dans le groupe interdit, meme pour une journee entiere. Elle ne se limite pas au choix du groupe principal. Une preference negative `soft` penalise ces affectations sans les interdire. Confirmation du 18 octobre 2026 : les interdictions de groupe ne s'appliquent pas pendant un remplacement de colloque authentifie.
 
 5. Maximum journalier
 
@@ -76,9 +76,18 @@ Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire 
 
 Les clarifications ci-dessus expriment les regles metier confirmees par Frederic. La limite hebdomadaire du moteur compact CP-SAT est maintenant alignee : seules les journees avec changement de groupe en cours de journee consomment la limite. Une journee entiere hors groupe principal reste possible, avec les penalites soft existantes et les autres contraintes applicables.
 
-Les interdictions hard de groupe sont appliquees aux affectations ordinaires dans le moteur compact, le moteur par patrons et le validateur. L'articulation avec les remplacements de colloque reste a preciser. Voir `PROJECT_STATE.md` pour les controles, limites et prochaines actions.
+Les interdictions hard de groupe sont appliquees aux affectations ordinaires dans le moteur compact, le moteur par patrons et le validateur. L'exception pendant un remplacement de colloque authentifie est confirmee le 18 octobre 2026. Voir `PROJECT_STATE.md` pour les controles, limites et prochaines actions.
 
 
 ## Présence avant l'ouverture et après la fermeture — décision du 18 octobre 2026
 
 Frédéric confirme qu'une éducatrice peut travailler sur un site avant l'ouverture ou après la fermeture, notamment pour préparer l'accueil ou ranger. Les heures d'ouverture et de fermeture du site ne constituent donc pas, à elles seules, une interdiction hard de présence. Les autres contraintes du planning restent applicables.
+
+
+## Précisions métier du 18 octobre 2026 — qualifications, remplacements et déplacements
+
+- Qualifications : calcul des proportions par site sur les heures enfants cumulées de la semaine.
+- Remplacements de colloque : fenêtre autorisée de quinze minutes avant et trente minutes après ; toute personne peut remplacer, sans condition de groupe d'origine, sous réserve des autres contraintes de présence et de contrat. Les interdictions de groupe ne s'appliquent pas à ces remplacements authentifiés ; elles restent obligatoires pour les affectations ordinaires.
+- Repos entre deux journées : aucun minimum interjournalier demandé dans le modèle. Cette précision ne définit pas les pauses au sein d'une journée.
+- Déplacements entre sites : prévoir au moins dix minutes entre deux affectations sur des sites différents. Cette nouvelle contrainte est à implémenter et les plannings doivent ensuite être revalidés. La grille actuelle de quinze minutes ne doit pas conduire à réduire silencieusement ce délai.
+- Le sens d'une obligation horaire positive reste à préciser : présence pendant toute la fenêtre ou présence partielle dans cette fenêtre. Aucun changement de ce comportement avant clarification.
