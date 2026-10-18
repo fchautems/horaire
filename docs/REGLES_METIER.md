@@ -57,7 +57,7 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
 12. Remplacements de colloque
 
-   Pendant un colloque, les personnes du groupe concerne ne couvrent plus les enfants. Une personne de chaque autre groupe vient remplacer. Ces remplacements ne comptent pas comme changements de groupe, mais comptent bien pour la couverture et les pourcentages du site.
+   Pendant un colloque, les personnes du groupe concerne ne couvrent plus les enfants. Les remplacements sont determines par la couverture enfants effectivement perdue ; il n'y a pas de quota automatique d'une personne de chaque autre groupe. Ces remplacements ne comptent pas comme changements de groupe, mais comptent bien pour la couverture et les pourcentages du site.
 
 ## Regles soft
 
@@ -72,8 +72,13 @@ Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire 
 7. Eviter les changements de site.
 8. Eviter de faire venir une personne uniquement pour un colloque de 45 minutes.
 
-## Etat d'application — 17 octobre 2026
+## Etat d'application — 18 octobre 2026
 
 Les clarifications ci-dessus expriment les regles metier confirmees par Frederic. La limite hebdomadaire du moteur compact CP-SAT est maintenant alignee : seules les journees avec changement de groupe en cours de journee consomment la limite. Une journee entiere hors groupe principal reste possible, avec les penalites soft existantes et les autres contraintes applicables.
 
-Les interdictions hard de groupe ne portent encore que sur le groupe principal dans le code : leur application aux affectations ordinaires reste a corriger. L'articulation avec les remplacements de colloque reste a preciser. Voir `PROJECT_STATE.md` pour les controles, limites et prochaines actions.
+Les interdictions hard de groupe sont appliquees aux affectations ordinaires dans le moteur compact, le moteur par patrons et le validateur. L'articulation avec les remplacements de colloque reste a preciser. Voir `PROJECT_STATE.md` pour les controles, limites et prochaines actions.
+
+
+## Présence avant l'ouverture et après la fermeture — décision du 18 octobre 2026
+
+Frédéric confirme qu'une éducatrice peut travailler sur un site avant l'ouverture ou après la fermeture, notamment pour préparer l'accueil ou ranger. Les heures d'ouverture et de fermeture du site ne constituent donc pas, à elles seules, une interdiction hard de présence. Les autres contraintes du planning restent applicables.

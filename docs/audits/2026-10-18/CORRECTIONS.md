@@ -24,7 +24,7 @@ Base : `b036113`. Ce document donne l’état après correction ; le rapport d�
 | A16 | Budget THE visible contrôlé ; comptabilité des options de colloque alignée dans compact/validateur. Les options non standard non prises en charge par les patrons sont refusées avec orientation vers le compact. La règle des très petits contrats n’a pas été assouplie : la réunion ne peut pas dépasser le budget THE dans le mode courant. |
 | A17 | Alias transmis au validateur par les bundles du compact/des patrons et par la revalidation du lanceur. Microcas qualification accepté de bout en bout. |
 | A18 | Plafonds explicites par groupe et par site appliqués dans compact, patrons et validateur. Hors plafond explicite, conservation du plafond historique max(3, besoin). |
-| A19 | **Décision métier encore nécessaire.** Les horaires des sites restent descriptifs du domaine global, comme avant. Leur transformation en interdictions d’affectation propres à chaque site changerait les horaires autorisés. Aucune contrainte nouvelle inventée. |
+| A19 | **Clarifié par Frédéric le 18 octobre 2026.** Une éducatrice peut travailler avant l’ouverture ou après la fermeture pour préparer ou ranger. Les horaires propres au site ne doivent pas interdire cette présence : aucune nouvelle contrainte hard ajoutée. Le constat est clos par décision métier ; ce comportement n’est pas un bug. L’horizon global de calcul reste inchangé. |
 | A20 | Un jour inconnu provoque une erreur explicite ; il ne devient plus une demande sur tous les jours après un aller-retour éditeur. |
 | A21 | Le bouton « dernier planning » revalide les candidats et privilégie le fichier latest configuré. |
 | A22 | Les callbacks différés capturent le texte de l’exception avant la sortie du bloc except. |

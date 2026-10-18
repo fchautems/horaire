@@ -426,9 +426,18 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 
 ### Avancement vérifié des corrections — 18 octobre 2026
 
-- Les 27 constats ont été traités en code ou consignés avec leur limite de support dans docs/audits/2026-10-18/CORRECTIONS.md. A19 reste en attente d’une décision métier sur les horaires d’ouverture ; aucune fermeture exhaustive n’est revendiquée.
+- Les 27 constats ont été traités en code ou consignés avec leur limite de support dans docs/audits/2026-10-18/CORRECTIONS.md. A19 est désormais clarifié par la décision métier du 18 octobre ci-dessous. Les limites de support et de validation restent documentées.
 - Validation renforcée des identités, blocs, groupes, activités et caches ; garde-fou commun aux moteurs ; quotas artificiels de remplacement retirés ; domaine des coupures élargi ; budgets et paramètres de qualité corrigés ; sauvegardes atomiques par fichier et garde-fous interface.
 - **93 tests réussis en 11.428 secondes** lors du contrôle final, avec OR-Tools 9.15.6755 et Python 3.12. Les sondes historiques d’audit ne sont pas réécrites en tests de succès.
 - Meilleur candidat revalidé : aucune erreur, score historique 626975 ; reproduction fixe avec critères corrigés 646975, dont 20000 de durée de coupure. Aucun changement d’affectation ou de planning actif ; pas d’optimisation globale.
 - Limites : certains cas/options sont refusés explicitement par les patrons et pris en charge par le compact ; exports atomiques individuellement, sans transaction commune ; appels natifs et interface non validés en situation réelle Windows.
-- Contrôles finaux : compilation des modules et git diff --check réussis. Prochaine action : demander la règle manquante A19 ; conserver les conventions Q01–Q04 et ne pas lancer d’optimisation globale pour cette clarification.
+- Contrôles finaux : compilation des modules et git diff --check réussis. La décision A19 est consignée ci-dessous ; conserver les conventions Q01–Q04.
+
+
+## Décision métier sur les heures d’ouverture — 18 octobre 2026
+
+- Frédéric confirme explicitement qu’une éducatrice peut travailler avant l’ouverture ou après la fermeture, pour préparer l’accueil ou ranger. Les horaires d’un site ne sont donc pas des bornes hard de présence.
+- A19 clos par clarification métier : ne pas ajouter l’interdiction envisagée. Règle ajoutée à docs/REGLES_METIER.md et suivi mis à jour dans docs/audits/2026-10-18/CORRECTIONS.md.
+- Documentation métier actualisée également pour les correctifs déjà publiés : interdictions hard appliquées aux affectations ordinaires ; remplacement selon la couverture effectivement perdue, sans quota par groupe source, conformément aux décisions existantes.
+- Aucun code, donnée, horizon de calcul ou planning modifié ; aucun test ni calcul relancé pour cette clarification documentaire. La dernière suite reste à 93 tests réussis. L’autorisation de présence hors ouverture n’élargit pas automatiquement l’horizon global du programme.
+- Les conventions Q01–Q04 et les limites techniques décrites dans le suivi restent distinctes ; aucune garantie exhaustive ou réglementaire nouvelle. Prochaine action : reprendre le suivi publié si une nouvelle étape est demandée.
