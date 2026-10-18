@@ -1,0 +1,120 @@
+{
+  "elapsed_seconds": 600.622,
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "statistics": {
+    "feasibility": {
+      "attempt": 2,
+      "strategy": "portfolio",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 149.165,
+      "conflicts": 880,
+      "branches": 96551,
+      "solutions": 0,
+      "variables": 23491,
+      "constraints": 64198
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "primary_candidate_1",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.146,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 2,
+        "strategy": "primary_candidate_2",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.164,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 3,
+        "strategy": "primary_candidate_3",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.03,
+        "conflicts": 0,
+        "branches": 23112,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 4,
+        "strategy": "primary_candidate_4",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.025,
+        "conflicts": 79,
+        "branches": 140740,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 5,
+        "strategy": "primary_candidate_5",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.024,
+        "conflicts": 49,
+        "branches": 140793,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 6,
+        "strategy": "primary_candidate_6",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.151,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 360.295,
+        "conflicts": 1616,
+        "branches": 38965,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      },
+      {
+        "attempt": 2,
+        "strategy": "portfolio",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 149.165,
+        "conflicts": 880,
+        "branches": 96551,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      }
+    ],
+    "optimization": null
+  },
+  "reference_status": "invalid",
+  "reference_errors": [
+    "Deplacement intersites insuffisant: A repourvoir mardi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: A repourvoir mardi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Fanny lundi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Fanny lundi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Priscila mardi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Priscila mardi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Valérie jeudi haut -> bas: 0 min < 10 min."
+  ],
+  "selected": null
+}

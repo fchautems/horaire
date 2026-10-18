@@ -468,3 +468,13 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Relance explicite demandée : recherche de 600 secondes sans ancien planning fourni comme hint et sans planning fixé. Les heuristiques internes de groupes restent actives, sans fixation permanente des groupes principaux.
 - Essai démarré le 18 octobre à 12:24:20 UTC ; suivi du processus avec battement toutes les quinze secondes et enregistrement du code de sortie. Dossier : docs/experiments/2026-10-18-from-zero-600s-retry/. Aucun nouveau résultat au contrôle à 150 secondes ; l'ancien essai interrompu reste distinct.
 - État temporaire : recherche en cours. Aucun planning actif remplacé. La note de résultat finale doit être ajoutée à la fin réelle de cet essai.
+
+
+## Résultat final de la relance de dix minutes — 18 octobre 2026
+
+- Recherche terminée normalement : **600,622 secondes**, code de sortie **0**, statut CP-SAT **UNKNOWN**, aucune solution ni checkpoint. L'infaisabilité n'est pas démontrée. La note temporaire « recherche en cours » ci-dessus est close.
+- Recherche réellement suivie jusqu'à la fin : six essais de groupes, recherche générale automatique (360,295 s), portfolio (149,165 s). Aucun planning ancien fourni en hint et aucun planning fixé ; heuristiques internes de groupes conservées, hypothèses libérées avant recherche générale.
+- Ancien planning revalidé : **sept déplacements intersites sans délai**, donc référence invalide sous la nouvelle règle, conservée séparément. Aucun planning actif remplacé.
+- Corrections publiées dans bdb9e01878b901941ec53bf2637887b724d884b8. Les 103 tests passent ; empreintes des sources, données et configuration identiques avant/après calcul.
+- Résumé et preuves : docs/experiments/2026-10-18-from-zero-600s-retry/README.md, summary.json et evidence.json. Premier essai interrompu conservé séparément dans le dossier voisin sans suffixe.
+- Prochaine piste technique : réparation ciblée de la référence historique ou diagnostic des contraintes de déplacements pour obtenir un premier candidat valide. Aucun nouveau calcul lancé après cet essai demandé.
