@@ -1,0 +1,43 @@
+{
+  "elapsed_seconds": 600.518,
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 599.703,
+      "conflicts": 3891,
+      "branches": 394253,
+      "solutions": 0,
+      "variables": 23491,
+      "constraints": 64198
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 599.703,
+        "conflicts": 3891,
+        "branches": 394253,
+        "solutions": 0,
+        "variables": 23491,
+        "constraints": 64198
+      }
+    ],
+    "optimization": null
+  },
+  "reference_status": "invalid",
+  "reference_errors": [
+    "Deplacement intersites insuffisant: A repourvoir mardi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: A repourvoir mardi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Fanny lundi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Fanny lundi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Priscila mardi bas -> haut: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Priscila mardi haut -> bas: 0 min < 10 min.",
+    "Deplacement intersites insuffisant: Valérie jeudi haut -> bas: 0 min < 10 min."
+  ],
+  "selected": null
+}

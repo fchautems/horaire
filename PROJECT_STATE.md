@@ -478,3 +478,22 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Corrections publiées dans bdb9e01878b901941ec53bf2637887b724d884b8. Les 103 tests passent ; empreintes des sources, données et configuration identiques avant/après calcul.
 - Résumé et preuves : docs/experiments/2026-10-18-from-zero-600s-retry/README.md, summary.json et evidence.json. Premier essai interrompu conservé séparément dans le dossier voisin sans suffixe.
 - Prochaine piste technique : réparation ciblée de la référence historique ou diagnostic des contraintes de déplacements pour obtenir un premier candidat valide. Aucun nouveau calcul lancé après cet essai demandé.
+
+
+## Recherche guidée autorisée — 18 octobre 2026
+
+- Frédéric demande le lancement après clarification : l'ancien planning sert de point de départ, sans fixer les horaires ni les affectations ; les contraintes métier restent inchangées.
+- Budget : 600 secondes, même moteur compact CP-SAT et mêmes options que l'essai depuis zéro. Seule différence de recherche : hint_payload reçoit le candidat historique ; fixed_schedule reste None. Aucune modification du code de production ni de la configuration.
+- Dossier distinct : docs/experiments/2026-10-18-guided-600s/. Suivi du processus jusqu'au résultat avec enregistrement du code de sortie et conservation de chaque candidat validé.
+- Environnement vérifié : OR-Tools 9.15.6755 disponible dans une cible isolée. Aucun MODEL_GUIDE.md ou AGENTS.md trouvé dans /workspace ; aucun outil Brain disponible identifié.
+- État temporaire : essai prêt à lancer. Prochaine action : exécuter, revalider tout candidat, puis consigner le résultat réel.
+
+
+## Résultat final de la recherche guidée — 18 octobre 2026
+
+- Essai demandé par Frédéric terminé normalement : **600,518 secondes**, code de sortie **0**, statut **UNKNOWN**, zéro solution et aucun checkpoint. La note temporaire de préparation ci-dessus est close. L'infaisabilité et l'existence d'un nouveau bug ne sont pas démontrées.
+- Ancien planning effectivement fourni comme hint ; fixed_schedule=None. Horaires, affectations et groupes principaux libres sous les mêmes règles métier que l'essai depuis zéro. Une seule recherche automatique : 599,703 s, 3 891 conflits, 394 253 branches.
+- Dix minutes entre sites conservées ; aucun assouplissement. Historique toujours invalide pour sept déplacements sans délai ; aucun planning actif remplacé.
+- Empreintes des sources de production, données et configuration identiques avant/après. Aucun changement de production ni nouveau test de production ; dernier contrôle publié : 103 tests réussis.
+- Résultats conservés dans docs/experiments/2026-10-18-guided-600s/README.md, summary.json et evidence.json (scripts, conditions, logs, résultat, contrôle de sortie et revalidation historique).
+- Blocage : aucun premier candidat conforme trouvé, malgré les deux essais complets depuis zéro puis guidé. Prochaine piste : diagnostic ciblé des contraintes autour des remplacements/déplacements. Aucun nouveau calcul lancé après cet essai et aucune nouvelle règle décidée.
