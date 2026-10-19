@@ -1,0 +1,6 @@
+travel_prefilter 1.894 seconds
+replacement_window 0.717 seconds
+travel_report 0.022 seconds
+travel_soft_cost 3.616 seconds
+contract_and_coverage 1.16 seconds
+Observed-behavior assertions: PASS

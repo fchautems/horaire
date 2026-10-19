@@ -530,3 +530,24 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Sources modifiées : domain.py, solver.py, pattern_mip.py ; tests de régression et documentation métier/utilisateur ajoutés. Données et configuration inchangées. Résultats : docs/experiments/2026-10-19-travel-interruptions/.
 - Limites : anciens refus explicites des patrons conservés ; pas de garantie d'équivalence exhaustive ni de mesure de performance sur la semaine réelle. Le diagnostic précédent reste une trace de l'ancienne règle.
 - Prochaine action : rechercher une réorganisation autour des cinq créneaux en sous-effectif avec les interruptions de trajet désormais autorisées. Aucun nouveau calcul global lancé pendant cette correction.
+
+
+## Seconde revue indépendante — 19 octobre 2026
+
+### État vérifié
+- Revue de `main` au commit `748acbb3a4c96250f8659bc7683a0222a78072f2`, incluant l'autorisation des interruptions minimales de trajet ; tête distante revérifiée avant publication.
+- Lecture de l'état, des règles métier, du suivi des corrections et du dernier diff. Aucun AGENTS.md / MODEL_GUIDE.md trouvé dans le dépôt et les emplacements /workspace inspectés ; aucun outil Brain disponible identifié.
+- **117 tests existants réussis en 13,369 s**. Diagnostics indépendants : **29 appels de micro-résolution**, environ 7,4 s au total, assertions du comportement observé réussies. Aucun calcul global long.
+
+### Résultats confirmés et changements
+- Rapport et preuves : `docs/audits/2026-10-19-second-review/README.md`, `probes.py`, `results.json`, journaux, empreintes et exports synthétiques.
+- R1 : filtres/coûts horaires des patrons appliqués avant retrait des trajets. Un aller-retour respectant deux interdictions sur les créneaux vides passe le validateur, CP-SAT et les patrons fixés, mais est absent du domaine libre ; les préférences soft sur ces mêmes créneaux ajoutent aussi une pénalité sans présence.
+- R2 : les patrons tronquent la fenêtre de remplacement au colloque strict. Un planning fixé voit 45 minutes de remplacement transférées à un autre groupe, avec status=ok si aucune demande discriminante ne l'interdit ; avec la couverture du témoin, faux échec des patrons alors que CP-SAT et validateur l'acceptent.
+- R3 : le bilan qualité/HTML annonce deux violations de coupure pour deux trajets minimaux exemptés, malgré zéro erreur hard.
+- R4 : le résumé des règles exporté annonce encore l'ancien quota d'une personne de chaque autre groupe, contrairement à la règle et aux moteurs corrigés.
+- Aucun code de production, donnée métier, configuration ou planning actif modifié. Empreintes des sources/données/configuration/fixtures/sorties identiques avant et après les sondes.
+
+### Contrôles, limites et prochaine action
+- Contrat/THE non nul contrôlé : 2,5 h enfants + 0,75 h THE invisible = 3,25 h ; aucune heure de trajet ajoutée. Aucune couverture pendant les trajets. Score compact identique au recalcul ; pénalités soft des interruptions conservées intentionnellement.
+- Aucun lien démontré entre ces défauts et les anciens UNKNOWN ; aucun nouveau planning complet conforme obtenu ou recherché. Limites explicites des patrons, Windows et interface restent distinctes des bugs. Pas de nouvelle décision métier prise.
+- Prochaine action utile : corriger R1/R2 par les cas minimaux conservés, puis R3/R4 ; rejouer diagnostics et tests avant une nouvelle optimisation globale. Cette revue seule n'autorise ni n'applique ces corrections de production.

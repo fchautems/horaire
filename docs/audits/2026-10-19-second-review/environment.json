@@ -1,0 +1,53 @@
+{
+  "base_commit": "748acbb3a4c96250f8659bc7683a0222a78072f2",
+  "default_probe_options": {
+    "the_enabled": true,
+    "the_percent": 0,
+    "weekly_hours_tolerance_percent": 0,
+    "min_daily_hours": 0,
+    "max_split_gap_minutes": null
+  },
+  "cp_time_limit_seconds": 3,
+  "patterns_time_limit_seconds": 12,
+  "python": "3.12.14",
+  "ortools": "9.15.6755",
+  "numpy": "2.5.4",
+  "scipy": "1.17.0",
+  "protected_files_before": {
+    "src/creche_planning/__init__.py": "59520e5c97705fdc9cd9f8a0f3121d5b833f987a13100ce0b7a119e2118d1356",
+    "src/creche_planning/domain.py": "0e6c4e80334fec596aedb9904022a3732258709ed99ad88805dffa13df6d0212",
+    "src/creche_planning/editor.py": "e5d42bb6598a898aceceb3d6c69bd544eb0e8e732a1c942cfc89995163854f58",
+    "src/creche_planning/pattern_mip.py": "bce90ab89ee6d6e17b95bc25f6b928c07081e7c4679c841ab8a5d7fa68f4d81b",
+    "src/creche_planning/pattern_search.py": "4e6590bc95e522b299752121826d1e62fb2fae51fc78ea26e9d9d34e5ac833f9",
+    "src/creche_planning/quality.py": "4be9cfd0dd0e57c507fcef9c2a3b2e0d0839e538ba8aaf03f74dd7de3358c7f7",
+    "src/creche_planning/reports.py": "2b4278807a7765dcc5bc7d585cc562dfcf0b18ed063249a01edbfa74a06629c5",
+    "src/creche_planning/runtime.py": "acaabca3ad9fb42eb9ee8f76d600eb8f960d7dda7cc787c602e913c426312379",
+    "src/creche_planning/scoring.py": "ff1ec4cdc19f37b0e319127d17cf255e0a099d85156e210d4af0ffb21d2c9fc6",
+    "src/creche_planning/solver.py": "bffbba447f128779dff148ced0eb97e3b1340b2a902be0d56336d3c17681a22a",
+    "src/creche_planning/validation.py": "8f3e0216cc245fcbf650364f261f7a866517e71e20fad55b38b86becb7594f4d",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce",
+    "data/gwendo.example.json": "3e4c88eb6cf161106774a585038baae58233d0887dbde977a51c7c50806a5deb",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "tests/fixtures/planning_gwendo_reference_valid.json": "58d3333951539e757e260e5af997e850c9418c058f83fc46d64feeaf778576ed",
+    "outputs/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "protected_files_after": {
+    "src/creche_planning/__init__.py": "59520e5c97705fdc9cd9f8a0f3121d5b833f987a13100ce0b7a119e2118d1356",
+    "src/creche_planning/domain.py": "0e6c4e80334fec596aedb9904022a3732258709ed99ad88805dffa13df6d0212",
+    "src/creche_planning/editor.py": "e5d42bb6598a898aceceb3d6c69bd544eb0e8e732a1c942cfc89995163854f58",
+    "src/creche_planning/pattern_mip.py": "bce90ab89ee6d6e17b95bc25f6b928c07081e7c4679c841ab8a5d7fa68f4d81b",
+    "src/creche_planning/pattern_search.py": "4e6590bc95e522b299752121826d1e62fb2fae51fc78ea26e9d9d34e5ac833f9",
+    "src/creche_planning/quality.py": "4be9cfd0dd0e57c507fcef9c2a3b2e0d0839e538ba8aaf03f74dd7de3358c7f7",
+    "src/creche_planning/reports.py": "2b4278807a7765dcc5bc7d585cc562dfcf0b18ed063249a01edbfa74a06629c5",
+    "src/creche_planning/runtime.py": "acaabca3ad9fb42eb9ee8f76d600eb8f960d7dda7cc787c602e913c426312379",
+    "src/creche_planning/scoring.py": "ff1ec4cdc19f37b0e319127d17cf255e0a099d85156e210d4af0ffb21d2c9fc6",
+    "src/creche_planning/solver.py": "bffbba447f128779dff148ced0eb97e3b1340b2a902be0d56336d3c17681a22a",
+    "src/creche_planning/validation.py": "8f3e0216cc245fcbf650364f261f7a866517e71e20fad55b38b86becb7594f4d",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce",
+    "data/gwendo.example.json": "3e4c88eb6cf161106774a585038baae58233d0887dbde977a51c7c50806a5deb",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "tests/fixtures/planning_gwendo_reference_valid.json": "58d3333951539e757e260e5af997e850c9418c058f83fc46d64feeaf778576ed",
+    "outputs/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "protected_files_unchanged": true
+}
