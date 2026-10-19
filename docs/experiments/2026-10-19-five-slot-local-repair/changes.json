@@ -1,0 +1,162 @@
+[
+  {
+    "educator": "X",
+    "day": "lundi",
+    "before": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "13:15",
+      "end": "18:45",
+      "hours": 5.5,
+      "activity": "children"
+    },
+    "after": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "13:00",
+      "end": "18:45",
+      "hours": 5.75,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Natacha",
+    "day": "mardi",
+    "before": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "13:15",
+      "end": "18:00",
+      "hours": 4.75,
+      "activity": "children"
+    },
+    "after": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "13:00",
+      "end": "18:00",
+      "hours": 5.0,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Natacha",
+    "day": "mardi",
+    "before": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "08:00",
+      "end": "11:45",
+      "hours": 3.75,
+      "activity": "children"
+    },
+    "after": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "08:00",
+      "end": "11:30",
+      "hours": 3.5,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "A repourvoir",
+    "day": "mardi",
+    "before": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "11:45",
+      "end": "13:00",
+      "hours": 1.25,
+      "activity": "children"
+    },
+    "after": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "11:30",
+      "end": "13:00",
+      "hours": 1.5,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Emilie",
+    "day": "mardi",
+    "before": {
+      "site": "bas",
+      "group": "Nurserie",
+      "start": "06:45",
+      "end": "14:00",
+      "hours": 7.25,
+      "activity": "children"
+    },
+    "after": {
+      "site": "bas",
+      "group": "Nurserie",
+      "start": "06:45",
+      "end": "14:15",
+      "hours": 7.5,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Léa",
+    "day": "mardi",
+    "before": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "07:00",
+      "end": "14:15",
+      "hours": 7.25,
+      "activity": "children"
+    },
+    "after": {
+      "site": "bas",
+      "group": "Trotteur",
+      "start": "07:00",
+      "end": "14:30",
+      "hours": 7.5,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Tara",
+    "day": "jeudi",
+    "before": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "13:15",
+      "end": "18:45",
+      "hours": 5.5,
+      "activity": "children"
+    },
+    "after": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "13:00",
+      "end": "18:45",
+      "hours": 5.75,
+      "activity": "children"
+    }
+  },
+  {
+    "educator": "Tara",
+    "day": "jeudi",
+    "before": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "07:45",
+      "end": "10:45",
+      "hours": 3.0,
+      "activity": "children"
+    },
+    "after": {
+      "site": "haut",
+      "group": "Grands",
+      "start": "08:00",
+      "end": "10:45",
+      "hours": 2.75,
+      "activity": "children"
+    }
+  }
+]

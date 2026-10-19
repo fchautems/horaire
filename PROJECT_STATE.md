@@ -585,3 +585,13 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Aucun planning à revalider ou sélectionner. Aucun planning actif remplacé. Les sources de production, données, configuration et sorties actives ont des empreintes identiques avant/après.
 - Preuves : `docs/experiments/2026-10-19-from-zero-600s-after-review/README.md`, `conditions.json`, `run.log`, `cp_sat.log`, `result.json`, `summary.json`, `integrity.json`, `process_status.json` et `evidence.json`.
 - Dernière validation fonctionnelle inchangée : **133 tests réussis en 31,546 s** avant cette relance. Prochaine action utile : diagnostic court ou recherche guidée autour des cinq créneaux de couverture déjà isolés ; une relance strictement identique a peu de valeur informative.
+
+
+## Réparation locale des cinq créneaux — 19 octobre 2026
+
+- Diagnostic court exécuté à la demande de Frédéric, sans recherche globale. Le témoin avec délais de trajet reproduit exactement les cinq déficits connus puis une réorganisation de huit bornes horaires les supprime tous.
+- **Planning complet valide trouvé** : validateur `ok`, zéro erreur hard et zéro erreur de déplacement. CP-SAT fixé : `OPTIMAL` en 1,270 s. Patrons fixés : `Optimal` en 0,047 s. Les affectations par créneau sont identiques dans les trois contrôles.
+- Changements : X lundi +15 min ; mardi Natacha déplace 15 min de 11:30–11:45 vers 13:00–13:15, « A repourvoir » reprend 11:30–11:45, Emilie et Léa prolongent chacune de 15 min ; jeudi Tara déplace 15 min de 07:45–08:00 vers 13:00–13:15.
+- Score commun recalculé : **743 872** pour le candidat, CP-SAT et les patrons. Exports CSV/HTML générés ; l'HTML annonce les règles hard OK et exclut correctement les trajets minimaux des coupures classiques.
+- Aucun bug nouveau démontré. Aucun code de production, donnée, configuration ou planning actif modifié ; empreintes identiques avant/après. Le candidat reste uniquement dans `docs/experiments/2026-10-19-five-slot-local-repair/`.
+- Limite : témoin de faisabilité locale, sans garantie que la recherche libre le retrouve. Prochaine décision utile : conserver ce candidat comme preuve seulement ou l'utiliser comme hint d'une optimisation courte ; aucune activation de planning n'est faite ici.

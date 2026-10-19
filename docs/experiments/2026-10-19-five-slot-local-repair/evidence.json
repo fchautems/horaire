@@ -1,0 +1,27 @@
+{
+  "checks": {
+    "five_initial_deficits_reproduced": true,
+    "candidate_valid": true,
+    "travel_errors_absent": true,
+    "cp_sat_fixed_optimal": true,
+    "patterns_fixed_optimal": true,
+    "slot_assignments_match": true,
+    "common_score_matches": true,
+    "protected_files_unchanged": true,
+    "active_planning_replaced": false
+  },
+  "artifact_sha256": {
+    "README.md": "3b09fecf7768f2b1475acc530356a8b1255aaf502343b1d20c28d11b2c0aced1",
+    "run.py": "345479544ffe34d80e6570e856ef935988f58a80964a03656164a948abb65f29",
+    "run.log": "97c9403521b9099b712c1e4770b5e0bcbd3155405579c2614888c581b3ce7a20",
+    "conditions.json": "1f0ed9f5544ec64d34c1ad5fbb68f5f08a497704e193c8940916dbfd7f0251e0",
+    "integrity.json": "d826c98fb57442e45d5fe7e93ac5000d626db58740fe9bc9490bd9507f7a1ec8",
+    "summary.json": "97c9403521b9099b712c1e4770b5e0bcbd3155405579c2614888c581b3ce7a20",
+    "changes.json": "29d2e15303f10c5df5882b1c0959d04bf144d68e4a5ee13f98f0ba61059d222a",
+    "candidate.json": "ddf125c73cbda872500324776bc523adadb8da7c1e45b17840faf015e2bc214b",
+    "candidate.csv": "f6a1eb2f27c4680a688b3d312a4c4216210f4cf4ac2f3e0266ee84cbe5767fa7",
+    "candidate.html": "02b21af1ead3453493957e42bb75efd764562ad807b3a6ab1b11730d89a34989",
+    "cp-fixed.json": "72265a9d700b6d9d9e9e2507846cf28e8aeabe413c68e18f8e17a34e5c7dd3ea",
+    "patterns-fixed.json": "dff89889fa5decd3dd022cb36e0e11ab854641dd2adbcef30757fd1bc342e503"
+  }
+}
