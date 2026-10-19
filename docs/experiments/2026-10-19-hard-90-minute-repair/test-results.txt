@@ -1,0 +1,6 @@
+Commande :
+PYTHONPATH=/workspace/scratch/8546a608cc32/deps:src:tests python -m unittest discover -s tests -v
+
+Résultat :
+Ran 134 tests in 31.396s
+OK

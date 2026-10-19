@@ -133,7 +133,7 @@ DEFAULT_RUN_CONFIG = {
     "smooth_split_shift_weight": 120.0,
     "smooth_split_gap_weight": 4.0,
     "max_pause_between_blocks_minutes": 90,
-    "enforce_max_pause_between_blocks": False,
+    "enforce_max_pause_between_blocks": True,
     "smooth_max_split_gap_minutes": 90,
     "smooth_group_switch_day_weight": 8.0,
     "smooth_same_group_week_weight": 0.4,

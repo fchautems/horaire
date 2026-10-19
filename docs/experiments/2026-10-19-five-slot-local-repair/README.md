@@ -1,8 +1,10 @@
 # Réparation locale des cinq créneaux — 19 octobre 2026
 
+> **Résultat historique invalidé par la décision métier ultérieure du 19 octobre 2026.** Cette expérience autorisait les coupures sans limite hard. Léa a une coupure de 180 minutes le jeudi ; le candidat est donc refusé dès que le maximum métier de 90 minutes est appliqué. Les preuves ci-dessous restent la trace exacte de l'essai sous ses anciens paramètres.
+
 ## Résultat
 
-Une réorganisation locale du planning historique avec délais de trajet produit un **planning complet valide** selon les règles actuelles. Les cinq déficits de couverture disparaissent, sans erreur de déplacement ni autre erreur hard.
+Une réorganisation locale du planning historique avec délais de trajet produisait un **planning complet valide** selon les règles appliquées lors de cet essai. Les cinq déficits de couverture disparaissaient, sans erreur de déplacement ni autre erreur hard à cette date.
 
 Ce résultat est confirmé indépendamment par les trois chemins de contrôle :
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -14,10 +15,17 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from creche_planning.editor import terminate_solver_process  # noqa: E402
+from creche_planning.domain import DEFAULT_RUN_CONFIG  # noqa: E402
 from creche_planning.runtime import emit_stage  # noqa: E402
 
 
 class RuntimeAndEditorTests(unittest.TestCase):
+    def test_ninety_minute_pause_limit_is_hard_by_default_and_in_project_config(self) -> None:
+        config = json.loads((ROOT / "config" / "solveur_config.json").read_text())
+        for actual in (DEFAULT_RUN_CONFIG, config):
+            self.assertEqual(actual["max_pause_between_blocks_minutes"], 90)
+            self.assertIs(actual["enforce_max_pause_between_blocks"], True)
+
     def test_stage_protocol_contains_index_total_and_budget(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):

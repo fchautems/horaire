@@ -595,3 +595,16 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Score commun recalculé : **743 872** pour le candidat, CP-SAT et les patrons. Exports CSV/HTML générés ; l'HTML annonce les règles hard OK et exclut correctement les trajets minimaux des coupures classiques.
 - Aucun bug nouveau démontré. Aucun code de production, donnée, configuration ou planning actif modifié ; empreintes identiques avant/après. Le candidat reste uniquement dans `docs/experiments/2026-10-19-five-slot-local-repair/`.
 - Limite : témoin de faisabilité locale, sans garantie que la recherche libre le retrouve. Prochaine décision utile : conserver ce candidat comme preuve seulement ou l'utiliser comme hint d'une optimisation courte ; aucune activation de planning n'est faite ici.
+
+
+## Maximum hard de coupure fixé à 90 minutes — 19 octobre 2026
+
+- Frédéric confirme qu'une coupure de 90 minutes est acceptable mais qu'une coupure de trois heures ne l'est pas. La limite devient une règle hard : `max_pause_between_blocks_minutes=90` et `enforce_max_pause_between_blocks=true`, dans la configuration du projet et ses valeurs par défaut.
+- Le candidat de réparation locale précédent est désormais explicitement historique et invalide sous cette règle : Léa a une coupure de 180 minutes le jeudi, de 10:00 à 13:00. Sa documentation porte un avertissement ; aucun planning actif n'avait été remplacé.
+- Documentation métier et utilisateur alignée. Un test vérifie la valeur et son activation dans les valeurs par défaut comme dans `config/solveur_config.json`.
+- Réparation complète construite sans assouplissement : Tara, Léa, Céline et Emilie ont des coupures de 90 minutes au maximum ; l'horaire de Fanny jeudi est décalé pour préserver la couverture.
+- Résultat exécuté : validateur `ok`, aucune erreur hard ni de déplacement ; CP-SAT fixé `OPTIMAL` en 1,092 s et patrons fixés `Optimal` en 0,022 s, mêmes affectations et score commun 760979.
+- Suite complète après activation de la règle : **134 tests réussis en 31,396 s**.
+- Preuves : `docs/experiments/2026-10-19-hard-90-minute-repair/README.md`, candidat JSON/CSV/HTML, sorties des deux moteurs, synthèse, empreintes et script reproductible. Aucun planning actif remplacé.
+- Limite : la faisabilité du candidat fixé est démontrée, pas sa redécouverte ni son optimalité en recherche libre. Les recherches courtes arrivées à leur limite restent `UNKNOWN`/sans solution primale et ne prouvent pas l'infaisabilité.
+- Prochaine action utile : décider explicitement si ce candidat doit rester une preuve ou devenir la nouvelle référence/hint ; aucune activation n'est faite ici.

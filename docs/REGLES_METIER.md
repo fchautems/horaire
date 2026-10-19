@@ -65,12 +65,16 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
    L'exception couvre seulement le delai minimum de dix minutes, arrondi a la grille : quinze minutes avec la grille actuelle. Une interruption plus longue, ou entre groupes du meme site, reste une coupure classique. Les dix minutes minimum entre sites restent obligatoires. Les trajets ne couvrent jamais les enfants ni les colloques et n'ajoutent pas de nouvelles heures au calcul contractuel actuel. Les preferences qui evitent les interruptions et les changements de site restent actives.
 
+14. Duree maximale d'une coupure
+
+   Decision du 19 octobre 2026 : une coupure classique ne doit pas depasser 90 minutes. `max_pause_between_blocks_minutes` vaut `90` et `enforce_max_pause_between_blocks` est active. Les seules interruptions exclues de ce calcul sont les quinze minutes strictement necessaires a un trajet intersites sur la grille actuelle.
+
 ## Regles soft
 
 Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire pour respecter les regles hard.
 
 1. Eviter les horaires coupes.
-2. Si une coupure est necessaire, la garder aussi courte que possible; `max_pause_between_blocks_minutes` sert de seuil de reference.
+2. Si une coupure est necessaire, la garder aussi courte que possible, sans jamais depasser la limite hard de 90 minutes.
 3. Eviter les journees de moins de `min_daily_hours`, actuellement `2 heures`, sans les interdire.
 4. Garder les personnes dans le meme groupe sur la semaine.
 5. Regrouper les temps partiels sur le moins de jours possible.

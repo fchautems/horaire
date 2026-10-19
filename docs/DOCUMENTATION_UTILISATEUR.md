@@ -619,10 +619,10 @@ Seuil de reference pour une coupure longue.
 Valeur actuelle :
 
 ```json
-"max_pause_between_blocks_minutes": 120
+"max_pause_between_blocks_minutes": 90
 ```
 
-Avec la configuration actuelle, une coupure de plus de 2h reste possible, mais elle est fortement penalisee. Le solveur ne doit l'utiliser que si elle aide a respecter les contraintes hard et le nombre maximal de jours.
+Avec la configuration actuelle, une coupure de plus de 90 minutes est interdite.
 
 L'ancien nom `smooth_max_split_gap_minutes` est encore accepte, mais `max_pause_between_blocks_minutes` est le reglage prioritaire quand il est present.
 
@@ -633,10 +633,10 @@ Transforme le seuil precedent en interdiction stricte.
 Valeur actuelle :
 
 ```json
-"enforce_max_pause_between_blocks": false
+"enforce_max_pause_between_blocks": true
 ```
 
-Avec `false`, les coupures longues sont autorisees mais couteuses. Avec `true`, toute coupure depassant `max_pause_between_blocks_minutes` rend le planning invalide.
+Avec `true`, toute coupure depassant `max_pause_between_blocks_minutes` rend le planning invalide. La configuration actuelle applique donc strictement le maximum de 90 minutes.
 
 ### `smooth_group_switch_day_weight`
 

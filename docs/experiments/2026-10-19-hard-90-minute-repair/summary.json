@@ -1,0 +1,38 @@
+{
+  "elapsed_seconds": 1.1587,
+  "base_errors_under_90_minutes": [
+    "Tara jeudi: coupure de 135 minutes > 90 minutes (10:45-13:00)",
+    "Léa jeudi: coupure de 180 minutes > 90 minutes (10:00-13:00)",
+    "Emilie vendredi: coupure de 135 minutes > 90 minutes (12:00-14:15)"
+  ],
+  "candidate_status": "ok",
+  "candidate_errors": [],
+  "travel_errors": [],
+  "changed_days": [
+    "Tara jeudi",
+    "Fanny jeudi",
+    "Léa jeudi",
+    "Céline jeudi",
+    "Emilie vendredi"
+  ],
+  "cp_sat_fixed": {
+    "status": "ok",
+    "message": "OR-Tools CP-SAT OPTIMAL",
+    "elapsed_seconds": 1.0916,
+    "same_slot_assignments": true
+  },
+  "patterns_fixed": {
+    "status": "ok",
+    "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+    "elapsed_seconds": 0.0218,
+    "same_slot_assignments": true
+  },
+  "scores": {
+    "candidate": 760979.0,
+    "cp_sat_fixed": 760979.0,
+    "patterns_fixed": 760979.0
+  },
+  "protected_files_unchanged": true,
+  "protected_files_changed": [],
+  "active_planning_replaced": false
+}

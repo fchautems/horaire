@@ -1,0 +1,200 @@
+{
+  "Tara jeudi": {
+    "before": [
+      {
+        "site": "haut",
+        "group": "Grands",
+        "start": "08:00",
+        "end": "10:45",
+        "hours": 2.75,
+        "activity": "children"
+      },
+      {
+        "site": "haut",
+        "group": "Grands",
+        "start": "13:00",
+        "end": "18:45",
+        "hours": 5.75,
+        "activity": "children"
+      }
+    ],
+    "after": [
+      {
+        "start": "08:00",
+        "end": "10:45",
+        "group": "Grands",
+        "site": "haut",
+        "activity": "children",
+        "hours": 2.75
+      },
+      {
+        "start": "12:15",
+        "end": "18:00",
+        "group": "Grands",
+        "site": "haut",
+        "activity": "children",
+        "hours": 5.75
+      }
+    ]
+  },
+  "Fanny jeudi": {
+    "before": [
+      {
+        "site": "haut",
+        "group": "Grands",
+        "start": "10:30",
+        "end": "18:00",
+        "hours": 7.5,
+        "activity": "children"
+      }
+    ],
+    "after": [
+      {
+        "start": "10:45",
+        "end": "18:45",
+        "group": "Grands",
+        "site": "haut",
+        "activity": "children",
+        "hours": 8.0
+      }
+    ]
+  },
+  "Léa jeudi": {
+    "before": [
+      {
+        "site": "bas",
+        "group": "Trotteur",
+        "start": "07:45",
+        "end": "10:00",
+        "hours": 2.25,
+        "activity": "children"
+      },
+      {
+        "site": "bas",
+        "group": "Trotteur",
+        "start": "13:00",
+        "end": "18:45",
+        "hours": 5.75,
+        "activity": "children"
+      }
+    ],
+    "after": [
+      {
+        "start": "08:45",
+        "end": "10:45",
+        "group": "Trotteur",
+        "site": "bas",
+        "activity": "children",
+        "hours": 2.0
+      },
+      {
+        "start": "12:15",
+        "end": "18:45",
+        "group": "Trotteur",
+        "site": "bas",
+        "activity": "children",
+        "hours": 6.5
+      }
+    ]
+  },
+  "Céline jeudi": {
+    "before": [
+      {
+        "site": "bas",
+        "group": "Trotteur",
+        "start": "10:00",
+        "end": "13:15",
+        "hours": 3.25,
+        "activity": "children"
+      },
+      {
+        "site": "bas",
+        "group": "Nurserie",
+        "start": "13:15",
+        "end": "14:00",
+        "hours": 0.75,
+        "activity": "remplacement_colloque"
+      },
+      {
+        "site": "bas",
+        "group": "Trotteur",
+        "start": "14:00",
+        "end": "18:30",
+        "hours": 4.5,
+        "activity": "children"
+      }
+    ],
+    "after": [
+      {
+        "start": "08:00",
+        "end": "09:15",
+        "group": "Trotteur",
+        "site": "bas",
+        "activity": "children",
+        "hours": 1.25
+      },
+      {
+        "start": "10:45",
+        "end": "13:15",
+        "group": "Trotteur",
+        "site": "bas",
+        "activity": "children",
+        "hours": 2.5
+      },
+      {
+        "start": "13:15",
+        "end": "14:00",
+        "group": "Nurserie",
+        "site": "bas",
+        "activity": "remplacement_colloque",
+        "hours": 0.75
+      },
+      {
+        "start": "14:00",
+        "end": "18:00",
+        "group": "Trotteur",
+        "site": "bas",
+        "activity": "children",
+        "hours": 4.0
+      }
+    ]
+  },
+  "Emilie vendredi": {
+    "before": [
+      {
+        "site": "bas",
+        "group": "Nurserie",
+        "start": "08:30",
+        "end": "12:00",
+        "hours": 3.5,
+        "activity": "children"
+      },
+      {
+        "site": "bas",
+        "group": "Nurserie",
+        "start": "14:15",
+        "end": "18:00",
+        "hours": 3.75,
+        "activity": "children"
+      }
+    ],
+    "after": [
+      {
+        "start": "08:30",
+        "end": "12:45",
+        "group": "Nurserie",
+        "site": "bas",
+        "activity": "children",
+        "hours": 4.25
+      },
+      {
+        "start": "14:15",
+        "end": "18:00",
+        "group": "Nurserie",
+        "site": "bas",
+        "activity": "children",
+        "hours": 3.75
+      }
+    ]
+  }
+}
