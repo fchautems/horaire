@@ -1,0 +1,125 @@
+{
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "warnings": [],
+  "diagnostics": [
+    "213.287|start educators=13 groups=3 slots=48 time_limit=600.0",
+    "213.356|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234",
+    "213.356|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Nurserie,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Grands",
+    "213.356|primary_group_candidates=8",
+    "213.864|model variables=35711 constraints=82398 x=9360 hint=True fixed=False",
+    "214.076|primary_candidate=1 status=INFEASIBLE wall=0.211 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Grands,Magali:Trotteur,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Grands,X:Grands",
+    "214.270|primary_candidate=2 status=INFEASIBLE wall=0.193 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Grands,Magali:Grands,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Trotteur",
+    "244.308|primary_candidate=3 status=UNKNOWN wall=30.037 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Trotteur,Magali:Grands,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Grands",
+    "274.337|primary_candidate=4 status=UNKNOWN wall=30.028 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Trotteur,Magali:Grands,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Grands,X:Trotteur",
+    "304.364|primary_candidate=5 status=UNKNOWN wall=30.025 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Trotteur,Magali:Grands,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Nurserie",
+    "304.532|primary_candidate=6 status=INFEASIBLE wall=0.168 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Grands,Magali:Grands,Léa:Trotteur,Emilie:Nurserie,Anaïs:Trotteur,Priscila:Nurserie,Valérie:Grands,X:Nurserie",
+    "664.849|feasibility_attempt=1 strategy=automatic status=UNKNOWN wall=360.299 conflicts=700387 branches=2059553",
+    "813.533|feasibility_attempt=2 strategy=portfolio status=UNKNOWN wall=148.67 conflicts=207 branches=39629",
+    "813.533|feasibility_finished status=UNKNOWN attempts=8"
+  ],
+  "cp_sat_statistics": {
+    "feasibility": {
+      "attempt": 2,
+      "strategy": "portfolio",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 148.67,
+      "conflicts": 207,
+      "branches": 39629,
+      "solutions": 0,
+      "variables": 35711,
+      "constraints": 82398
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "primary_candidate_1",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.211,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 2,
+        "strategy": "primary_candidate_2",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.193,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 3,
+        "strategy": "primary_candidate_3",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.037,
+        "conflicts": 44,
+        "branches": 22659,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 4,
+        "strategy": "primary_candidate_4",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.028,
+        "conflicts": 10,
+        "branches": 22736,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 5,
+        "strategy": "primary_candidate_5",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.025,
+        "conflicts": 520,
+        "branches": 135293,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 6,
+        "strategy": "primary_candidate_6",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.168,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 360.299,
+        "conflicts": 700387,
+        "branches": 2059553,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 2,
+        "strategy": "portfolio",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 148.67,
+        "conflicts": 207,
+        "branches": 39629,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      }
+    ],
+    "optimization": null
+  }
+}

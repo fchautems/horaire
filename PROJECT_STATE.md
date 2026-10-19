@@ -575,3 +575,13 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Sources modifiées : `pattern_mip.py`, `quality.py`, `reports.py` et le seul diagnostic de capacité dans `solver.py`. Objectif compact et `scoring.py` inchangés. Données, configuration, fixtures et sorties actives identiques par empreintes.
 - Dossier de preuve : `docs/audits/2026-10-19-second-review/corrections/README.md`, tests avant/après, témoin du résidu de quota, validation et exports synthétiques. Le journal intermédiaire conserve le seul écart de message de refus, résolu ; les traces d'audit initiales restent historiques.
 - Aucun calcul global, aucun nouveau planning complet déclaré conforme. Limites conservées : domaine des patrons libres, options explicitement non supportées, absence de test Windows/graphique et de mesure de performance globale. Prochaine action utile : reprise ciblée des cinq créneaux de couverture si elle est demandée.
+
+
+## Relance depuis zéro après corrections — 19 octobre 2026
+
+- Relance CP-SAT compacte demandée et exécutée sur la version corrigée pendant **600,435 secondes**, de 12:11:19 à 12:21:20 UTC. Aucun ancien planning fourni comme hint, aucun planning fixé, aucune modification des contraintes en cours d'exécution.
+- Processus terminé normalement avec code de sortie **0**. Statut final **UNKNOWN**, zéro solution et aucun checkpoint. Ce résultat ne démontre ni l'infaisabilité globale, ni un nouveau bug.
+- Modèle : 35 711 variables et 82 398 contraintes. Six hypothèses internes de groupes : trois `INFEASIBLE`, trois `UNKNOWN`. Recherche automatique : 360,299 s, 700 387 conflits et 2 059 553 branches. Portfolio : 148,670 s, 207 conflits et 39 629 branches.
+- Aucun planning à revalider ou sélectionner. Aucun planning actif remplacé. Les sources de production, données, configuration et sorties actives ont des empreintes identiques avant/après.
+- Preuves : `docs/experiments/2026-10-19-from-zero-600s-after-review/README.md`, `conditions.json`, `run.log`, `cp_sat.log`, `result.json`, `summary.json`, `integrity.json`, `process_status.json` et `evidence.json`.
+- Dernière validation fonctionnelle inchangée : **133 tests réussis en 31,546 s** avant cette relance. Prochaine action utile : diagnostic court ou recherche guidée autour des cinq créneaux de couverture déjà isolés ; une relance strictement identique a peu de valeur informative.

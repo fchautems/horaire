@@ -1,0 +1,40 @@
+{
+  "started_at": "2026-10-19T12:11:19.825586+00:00",
+  "time_limit_seconds": 600,
+  "hint_payload": null,
+  "fixed_schedule": null,
+  "options": {
+    "min_daily_hours": 2.0,
+    "enforce_min_daily_hours": false,
+    "max_split_gap_minutes": null,
+    "weekly_hours_tolerance_percent": 5.0,
+    "weekly_hours_tolerance_step_minutes": 15,
+    "enforce_absolute_max_weekly_hours": true,
+    "absolute_max_weekly_hours": 40.0,
+    "the_enabled": true,
+    "the_percent": 10.0,
+    "the_colloques_count": true,
+    "half_day_split_time": "12:30",
+    "max_weekly_group_exception_days": 1,
+    "hard_max_work_days": true
+  },
+  "git_head": "fc1e48388be287e011fdd07b3e6c057de0a5267d",
+  "python": "3.12.14",
+  "ortools": "9.15.6755",
+  "protected_hashes_before": {
+    "src/creche_planning/__init__.py": "59520e5c97705fdc9cd9f8a0f3121d5b833f987a13100ce0b7a119e2118d1356",
+    "src/creche_planning/domain.py": "0e6c4e80334fec596aedb9904022a3732258709ed99ad88805dffa13df6d0212",
+    "src/creche_planning/editor.py": "e5d42bb6598a898aceceb3d6c69bd544eb0e8e732a1c942cfc89995163854f58",
+    "src/creche_planning/pattern_mip.py": "94c19d3dba4292e230f4905563708a9108e4914faf78365a29609b34cd7d153b",
+    "src/creche_planning/pattern_search.py": "4e6590bc95e522b299752121826d1e62fb2fae51fc78ea26e9d9d34e5ac833f9",
+    "src/creche_planning/quality.py": "2a7d00ab610c3d826d528fe429887e31e058be8f07aa19c8d65755e42222fbf5",
+    "src/creche_planning/reports.py": "34562d51266adff626223b4b34296069b33c5409d4782f678f64c8197c8ff670",
+    "src/creche_planning/runtime.py": "acaabca3ad9fb42eb9ee8f76d600eb8f960d7dda7cc787c602e913c426312379",
+    "src/creche_planning/scoring.py": "ff1ec4cdc19f37b0e319127d17cf255e0a099d85156e210d4af0ffb21d2c9fc6",
+    "src/creche_planning/solver.py": "3a2d4490dc71c1e9bc63cf0f9e3beb507f24a77d3cd47957a62d4f509d877f29",
+    "src/creche_planning/validation.py": "8f3e0216cc245fcbf650364f261f7a866517e71e20fad55b38b86becb7594f4d",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce",
+    "outputs/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
