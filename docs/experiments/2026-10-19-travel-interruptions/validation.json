@@ -1,0 +1,33 @@
+{
+  "tests": {
+    "count": 117,
+    "elapsed_seconds": 14.057,
+    "status": "OK",
+    "new_cases": 14
+  },
+  "naive_week_remaining_errors": [
+    "Lundi Grands 13:00: 1 < 2",
+    "Mardi Nurserie 14:00: 1 < 2",
+    "Mardi Trotteur 13:00: 1 < 2",
+    "Mardi Trotteur 14:15: 1 < 2",
+    "Jeudi Grands 13:00: 1 < 2"
+  ],
+  "rule": {
+    "minimum_travel_minutes": 10,
+    "grid_minutes": 15,
+    "exempt_travel_gap_minutes": 15,
+    "max_ordinary_periods": 2
+  },
+  "production_changes": [
+    "domain.py",
+    "solver.py",
+    "pattern_mip.py"
+  ],
+  "sources": {
+    "src/creche_planning/domain.py": "0e6c4e80334fec596aedb9904022a3732258709ed99ad88805dffa13df6d0212",
+    "src/creche_planning/solver.py": "bffbba447f128779dff148ced0eb97e3b1340b2a902be0d56336d3c17681a22a",
+    "src/creche_planning/pattern_mip.py": "bce90ab89ee6d6e17b95bc25f6b928c07081e7c4679c841ab8a5d7fa68f4d81b",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce"
+  }
+}

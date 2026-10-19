@@ -1,0 +1,12 @@
+PROGRESS|3|Lecture des donnees
+PROGRESS|5|Preparation de la recherche par patrons
+STAGE|1|5|161|Reparation rapide en journees continues
+PROGRESS|5|Essai 1/4 - Reparation rapide en journees continues (budget 161 s)
+STAGE|5|5|179|Amelioration du candidat hard-valide
+PROGRESS|72|Amelioration du candidat valide (budget 179 s)
+PROGRESS|96|Verification et ecriture des fichiers
+PROGRESS|100|Termine
+----------------------------------------------------------------------
+Ran 117 tests in 14.057s
+
+OK

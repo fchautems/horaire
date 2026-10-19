@@ -518,3 +518,15 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Limites : mini-cas avec contrat adapté, sans THE, qualification ni besoins de couverture ; semaine réelle revalidée avec toutes ses règles. Aucun nouveau calcul global ni suite complète de tests exécutés. Sources de production, données et configuration inchangées, empreintes identiques à l'essai guidé précédent.
 - Traces : docs/experiments/2026-10-19-travel-diagnostic/README.md, summary.json et evidence.json. Aucun planning actif remplacé.
 - Prochaine hypothèse précise : réorganiser les remplacements et journées autour des cinq créneaux identifiés en conservant dix minutes de trajet et deux périodes ; ne plus tenter de garder les mêmes trois activités avec un aller-retour pour la même personne. La cause complète des résultats globaux UNKNOWN reste non établie.
+
+
+## Décision et correction des interruptions de trajet — 19 octobre 2026
+
+- Frédéric demande d'autoriser ce type d'interruption après le diagnostic. Interprétation appliquée : un trajet minimal nécessaire entre sites ne consomme pas une coupure classique ni une période supplémentaire ; une longue pause ou une interruption sur le même site conserve les règles existantes.
+- Minimum de dix minutes conservé, arrondi à quinze minutes sur la grille actuelle. Validateur, comptage des périodes et automate CP-SAT harmonisés. Les patrons réservent les créneaux de déplacement dans leurs périodes ordinaires et savent conserver les journées fixées avec aller-retour.
+- Les trajets ne couvrent ni enfants ni colloques, et aucun nouveau temps contractuel n'est ajouté. Calcul des heures et politique de score conservés. Le cas sans pause classique autorisée est aussi vérifié ; les vraies pauses restent limitées. Aucun passage général à trois périodes ordinaires.
+- **117 tests réussis en 14,057 secondes**, dont quatorze nouveaux tests ciblés ; compilation et git diff --check réussis, Python 3.12 / OR-Tools 9.15.6755.
+- Le cas isolé de l'aller-retour passe maintenant. Sur la semaine historique avec les sept délais insérés, les trois erreurs de périodes disparaissent ; restent cinq créneaux en sous-effectif : Grands lundi 13:00, Nurserie mardi 14:00, Trotteur mardi 13:00 et 14:15, Grands jeudi 13:00. Aucun planning complet nouvellement valide ni remplacement du planning actif.
+- Sources modifiées : domain.py, solver.py, pattern_mip.py ; tests de régression et documentation métier/utilisateur ajoutés. Données et configuration inchangées. Résultats : docs/experiments/2026-10-19-travel-interruptions/.
+- Limites : anciens refus explicites des patrons conservés ; pas de garantie d'équivalence exhaustive ni de mesure de performance sur la semaine réelle. Le diagnostic précédent reste une trace de l'ancienne règle.
+- Prochaine action : rechercher une réorganisation autour des cinq créneaux en sous-effectif avec les interruptions de trajet désormais autorisées. Aucun nouveau calcul global lancé pendant cette correction.

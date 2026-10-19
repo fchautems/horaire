@@ -59,6 +59,12 @@ Un planning marque `OK` doit respecter toutes ces regles.
 
    Pendant un colloque, les personnes du groupe concerne ne couvrent plus les enfants. Les remplacements sont determines par la couverture enfants effectivement perdue ; il n'y a pas de quota automatique d'une personne de chaque autre groupe. Ces remplacements ne comptent pas comme changements de groupe, mais comptent bien pour la couverture et les pourcentages du site.
 
+13. Interruptions necessaires aux deplacements
+
+   Decision du 19 octobre 2026 : un trajet necessaire entre deux sites ne consomme pas une coupure classique et ne cree pas une periode supplementaire pour `max_blocks_per_day`. Un aller-retour autour d'un remplacement ou d'un colloque peut donc comporter plusieurs plages visibles tout en appartenant a une seule periode pour cette limite.
+
+   L'exception couvre seulement le delai minimum de dix minutes, arrondi a la grille : quinze minutes avec la grille actuelle. Une interruption plus longue, ou entre groupes du meme site, reste une coupure classique. Les dix minutes minimum entre sites restent obligatoires. Les trajets ne couvrent jamais les enfants ni les colloques et n'ajoutent pas de nouvelles heures au calcul contractuel actuel. Les preferences qui evitent les interruptions et les changements de site restent actives.
+
 ## Regles soft
 
 Ces regles guident le solveur, mais peuvent etre enfreintes si c'est necessaire pour respecter les regles hard.

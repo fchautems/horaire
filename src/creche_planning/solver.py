@@ -26,6 +26,7 @@ from .domain import (
     build_demands_by_day,
     format_time,
     load_json,
+    is_short_site_transfer,
     make_horizon,
     max_work_days_for_educator,
     normalize_day,
@@ -2887,6 +2888,7 @@ def verify_solution(
             # group change can split one period into several adjacent records.
             presence_end: int | None = None
             presence_periods = 0
+            previous_block = None
             for block in sorted(blocks, key=lambda item: parse_time(item["start"])):
                 start = parse_time(block["start"])
                 end = parse_time(block["end"])
@@ -2908,9 +2910,11 @@ def verify_solution(
                         f"{name} {day_key}: chevauchement de periodes "
                         f"a {block['start']}"
                     )
-                if presence_end is None or start > presence_end:
+                if ((presence_end is None or start > presence_end)
+                    and not is_short_site_transfer(previous_block, block, bundle.horizon.step)):
                     presence_periods += 1
                 presence_end = max(presence_end or end, end)
+                previous_block = block
             if presence_periods > max_blocks_per_day:
                 hard_errors.append(
                     f"{name} {day_key}: {presence_periods} periodes de presence > maximum {max_blocks_per_day}"
@@ -2943,6 +2947,8 @@ def verify_solution(
             if max_split_gap_minutes is not None and len(blocks) > 1:
                 sorted_blocks = sorted(blocks, key=lambda item: parse_time(item["start"]))
                 for previous, current in zip(sorted_blocks, sorted_blocks[1:]):
+                    if is_short_site_transfer(previous, current, bundle.horizon.step):
+                        continue
                     gap = parse_time(current["start"]) - parse_time(previous["end"])
                     if gap > max_split_gap_minutes:
                         hard_errors.append(
@@ -4408,9 +4414,13 @@ def make_ortools_slot_payload(
     # The fifteen-minute grid needs one empty slot for a ten-minute journey.
     # Work at meetings is located at the primary group's site as well.
     travel_distance = math.ceil(10 / horizon.step)
+    period_presence = {}
+    daily_transfers = {}
     for e_i, educator in enumerate(educators):
         for d_i in range(len(DAYS)):
             located = {}
+            transfers_by_slot = {t: [] for t in range(horizon.slots)}
+            daily_transfers[e_i, d_i] = []
             for s_i, site in enumerate(sites):
                 for t_i in range(horizon.slots):
                     terms = [x[(e_i, d_i, g_i, t_i)]
@@ -4429,6 +4439,23 @@ def make_ortools_slot_payload(
                         for delta in range(1, travel_distance + 1):
                             if t_i + delta < horizon.slots:
                                 model.Add(located[(s_i, t_i)] + located[(other_s, t_i + delta)] <= 1)
+                        arrival = t_i + travel_distance + 1
+                        if arrival < horizon.slots:
+                            transfer = model.NewBoolVar(f"transfer_{e_i}_{d_i}_{s_i}_{other_s}_{t_i}")
+                            conditions = [located[s_i, t_i], located[other_s, arrival]] + [
+                                work[e_i, d_i, t].Not() for t in range(t_i + 1, arrival)
+                            ]
+                            model.AddBoolAnd(conditions).OnlyEnforceIf(transfer)
+                            model.AddBoolOr([transfer] + [term.Not() for term in conditions])
+                            daily_transfers[e_i, d_i].append(transfer)
+                            for t in range(t_i + 1, arrival):
+                                transfers_by_slot[t].append(transfer)
+            for t in range(horizon.slots):
+                in_transfer = model.NewBoolVar(f"in_transfer_{e_i}_{d_i}_{t}")
+                model.AddMaxEquality(in_transfer, transfers_by_slot[t] or [0])
+                presence = model.NewBoolVar(f"period_presence_{e_i}_{d_i}_{t}")
+                model.Add(presence == work[e_i, d_i, t] + in_transfer)
+                period_presence[e_i, d_i, t] = presence
 
     if progress_callback:
         progress_callback(20, "Contraintes de couverture")
@@ -4475,6 +4502,10 @@ def make_ortools_slot_payload(
         ]
     )
     final_states = [0, 1, overflow_state, second_state, final_done_state] + [1 + gap for gap in range(1, max_gap + 1)]
+    if max_gap == 0:
+        transitions = [(0, 0, 0), (0, 1, 1), (1, 1, 1),
+                       (1, 0, final_done_state), (final_done_state, 0, final_done_state)]
+        final_states = [0, 1, final_done_state]
 
     def regular_assignment(e_i: int, d_i: int, g_i: int, t_i: int) -> Any:
         key = (e_i, d_i, g_i, t_i)
@@ -4546,7 +4577,9 @@ def make_ortools_slot_payload(
             short_slots = model.NewIntVar(0, max(0,min_daily_slots), f'short_{e_i}_{d_i}')
             model.AddMaxEquality(short_slots, [0, min_daily_slots * work_day[(e_i,d_i)]-sum(day_work_terms)])
             objective_terms.extend([gap_slots * quality_weights['gap_slots'], short_slots * quality_weights['short_day_slots']])
-            model.Add(sum(start_var[(e_i,d_i,t)] for t in range(horizon.slots)) <= max_blocks_per_day)
+            period_count = (sum(start_var[e_i, d_i, t] for t in range(horizon.slots))
+                            - sum(daily_transfers[e_i, d_i]))
+            model.Add(period_count <= max_blocks_per_day)
             if enforce_daily_hours:
                 model.Add(sum(day_work_terms) <= max_daily_slots)
             minimum_worked_slots = min_daily_slots if enforce_min_daily_hours else 1
@@ -4559,14 +4592,10 @@ def make_ortools_slot_payload(
             )
             if enforce_daily_block_structure:
                 model.Add(
-                    sum(
-                        start_var[(e_i, d_i, t_i)]
-                        for t_i in range(horizon.slots)
-                    )
-                    <= 2
+                    period_count <= 2
                 )
                 model.AddAutomaton(
-                    [work[(e_i, d_i, t_i)] for t_i in range(horizon.slots)],
+                    [period_presence[e_i, d_i, t_i] for t_i in range(horizon.slots)],
                     0,
                     final_states,
                     transitions,

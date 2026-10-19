@@ -20,6 +20,15 @@ DAYS = [
 
 DEFAULT_TYPE_ALIASES: dict[str, str] = {}
 
+
+def is_short_site_transfer(previous: dict[str, Any] | None, current: dict[str, Any], step: int) -> bool:
+    """Only the minimum grid-sized intersite journey joins work periods."""
+    if previous is None or previous.get("site") == current.get("site"):
+        return False
+    gap = parse_time(current["start"]) - parse_time(previous["end"])
+    return 10 <= gap <= math.ceil(10 / step) * step
+
+
 DEFAULT_QUALITY_PROFILES = {
     "equilibre": {
         "label": "Equilibre",

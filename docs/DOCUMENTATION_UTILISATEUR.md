@@ -906,6 +906,8 @@ Valeur actuelle :
 
 Le moteur actuel genere au maximum deux blocs par jour. En pratique, il cherche d'abord des journees en un seul bloc et n'utilise une coupure que si cela aide a respecter les autres contraintes.
 
+Depuis la decision du 19 octobre 2026, le court delai necessaire entre deux sites ne consomme pas une coupure classique : plusieurs plages visibles separees uniquement par ces trajets peuvent appartenir a une seule periode pour cette limite. L'exception correspond a dix minutes arrondies a la grille (quinze minutes actuellement). Une pause plus longue ou sur le meme site reste une coupure. Les trajets ne couvrent pas les enfants et les colloques ; les heures contractuelles sont calculees comme auparavant.
+
 ### `type_aliases`
 
 Permet de dire que deux noms de type doivent etre compris comme equivalents.

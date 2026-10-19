@@ -17,6 +17,7 @@ from .domain import (
     absolute_weekly_max_slots,
     build_demands_by_day,
     format_time,
+    is_short_site_transfer,
     make_horizon,
     max_work_days_for_educator,
     normalize_day,
@@ -274,6 +275,9 @@ def solve_pattern_mip(
         else int(round(generated_gap_minutes / horizon.step))
     )
     generation_max_gap_slots = max_gap_slots if max_gap_slots is not None else horizon.slots
+    travel_distance = math.ceil(10 / horizon.step)
+    if len(sites) > 1:
+        generation_max_gap_slots = max(generation_max_gap_slots, travel_distance)
     min_segment_slots = 4 if restricted_patterns else 1
     scale = 100.0
     colloques = parse_colloques(data, horizon, groups, warnings)
@@ -590,7 +594,8 @@ def solve_pattern_mip(
                 cost += prefix[end] - prefix[start]
         if len(segments) > 1:
             gap = segments[1][0] - segments[0][1]
-            if max_gap_slots is not None and gap > max_gap_slots:
+            if (max_gap_slots is not None and gap > max_gap_slots
+                and not (len(sites) > 1 and gap == travel_distance)):
                 work_cost_cache[cache_key] = None
                 return None
             cost += split_shift_weight * scale + gap * split_gap_weight * scale
@@ -625,17 +630,20 @@ def solve_pattern_mip(
         group_cost_cache[cache_key] = cost
         return cost
 
-    def pattern_hours_possible(e_i: int, child_slots: int, visible_slots: int) -> bool:
+    max_reserved_travel_slots = 3 * math.ceil(10 / horizon.step) if len(sites) > 1 else 0
+
+    def pattern_hours_possible(e_i: int, child_slots: int, visible_slots: int,
+                               *, reserve_travel: bool = False) -> bool:
         lower_child, upper_child, upper_visible, _minimum_worked = weekly_pattern_limits[e_i]
-        return pattern_hours_can_reach_week(
-            child_slots=child_slots,
-            visible_slots=visible_slots,
+        return any(pattern_hours_can_reach_week(
+            child_slots=max(0, child_slots - travel),
+            visible_slots=max(0, visible_slots - travel),
             lower_child_slots=lower_child,
             upper_child_slots=upper_child,
             upper_visible_slots=upper_visible,
             max_work_days=max_work_days_by_educator[e_i],
             max_daily_slots=max_daily_slots,
-        )
+        ) for travel in range(1 + (max_reserved_travel_slots if reserve_travel else 0)))
 
     current_signature_domain: tuple[int, int, int] | None = None
     current_pattern_signatures: dict[tuple[Any, ...], int] = {}
@@ -673,6 +681,7 @@ def solve_pattern_mip(
         cost: float,
         replacement: tuple[int, int] | None = None,
         expand_replacements: bool = True,
+        travel_slots: frozenset[int] | None = None,
     ) -> None:
         nonlocal generation_operations
         generation_operations += 1
@@ -691,6 +700,7 @@ def solve_pattern_mip(
                     cost,
                     replacement=option,
                     expand_replacements=False,
+                    travel_slots=travel_slots,
                 )
             return
         worked = {slot for start, end in segments for slot in range(start, end)}
@@ -724,16 +734,61 @@ def solve_pattern_mip(
                         activities[slot] = "remplacement_colloque"
         if invalid_pattern:
             return
+        # A pattern still has at most two ordinary periods; reserve the short
+        # intersite journeys inside them without covering children or a meeting.
+        removed = set(travel_slots or ())
+        if travel_slots is None:
+            while True:
+                located = [
+                    (slot, groups[display_overrides.get(slot, half_groups[0 if slot < split_slot else 1])]["site"])
+                    for slot in sorted(worked - removed)
+                ]
+                conflict = next(((a, z) for a, z in zip(located, located[1:])
+                                 if a[1] != z[1] and (z[0] - a[0] - 1) * horizon.step < 10), None)
+                if conflict is None:
+                    break
+                (before, _), (after, _) = conflict
+                distance = math.ceil(10 / horizon.step)
+                if activities.get(before) in {"colloque", "remplacement_colloque"}:
+                    reserve = set(range(before + 1, before + 1 + distance))
+                else:
+                    reserve = set(range(after - distance, after))
+                reserve &= worked
+                if any(activities.get(slot) in {"colloque", "remplacement_colloque"} for slot in reserve):
+                    return
+                if not reserve - removed:
+                    return
+                removed.update(reserve)
+        worked -= removed
+        duration = len(worked)
+        if (duration > max_daily_slots
+            or (enforce_min_daily_hours and 0 < duration < min_daily_slots)):
+            return
+        worked_mask = sum(1 << slot for slot in worked)
+        rule_key = (e_i, d_i)
+        if worked_mask & forbidden_masks.get(rule_key, 0):
+            return
+        if any(not (worked_mask & required) for required in required_masks.get(rule_key, ())):
+            return
+        for slot in removed:
+            coverage_overrides[slot] = -1
+            display_overrides[slot] = -1
         slot_sites = [
             (slot, str(groups[display_overrides.get(slot, half_groups[0 if slot < split_slot else 1])]["site"]))
             for slot in sorted(worked)
         ]
         if not site_sequence_has_travel_time(slot_sites, horizon.step):
             return
+        if max_split_gap_minutes is not None:
+            for (slot, site_name), (next_slot, next_site) in zip(slot_sites, slot_sites[1:]):
+                gap = (next_slot - slot - 1) * horizon.step
+                if (gap > max_split_gap_minutes
+                    and not (site_name != next_site and 10 <= gap <= travel_distance * horizon.step)):
+                    return
         used_groups = {
             half_groups[0 if slot < split_slot else 1]
-            for start, end in segments
-            for slot in range(start, end)
+            for slot in worked
+            if activities.get(slot) != "remplacement_colloque"
         }
         mixed = 1 if len({item for item in used_groups if item >= 0}) > 1 else 0
         used_sites = {
@@ -948,7 +1003,12 @@ def solve_pattern_mip(
             replacement = (int(colloque["id"]), half_groups[source_half])
 
         segments: list[tuple[int, int]] = []
-        for slot in sorted(worked):
+        logical_worked = set(worked)
+        ordered = sorted(blocks, key=lambda block: parse_time(block["start"]))
+        for previous, current in zip(ordered, ordered[1:]):
+            if is_short_site_transfer(previous, current, horizon.step):
+                logical_worked.update(slot_range_clipped(horizon, previous["end"], current["start"])[0])
+        for slot in sorted(logical_worked):
             if not segments or slot > segments[-1][1]:
                 segments.append((slot, slot + 1))
             else:
@@ -966,6 +1026,7 @@ def solve_pattern_mip(
             0.0,
             replacement=replacement,
             expand_replacements=False,
+            travel_slots=frozenset(logical_worked - worked),
         )
         return True
 
@@ -1081,7 +1142,7 @@ def solve_pattern_mip(
 
                     for duration in range(
                         max(generated_min_daily_slots, colloque_duration),
-                        max_daily_slots + 1,
+                        min(horizon.slots, max_daily_slots + max_reserved_travel_slots) + 1,
                     ):
                         if remaining_seconds() <= 1.0:
                             return generation_time_limit_result()
@@ -1089,6 +1150,7 @@ def solve_pattern_mip(
                             e_i,
                             duration - colloque_duration,
                             duration,
+                            reserve_travel=True,
                         ):
                             pattern_stats["weekly_pruned"] += 1
                             continue
@@ -1174,10 +1236,11 @@ def solve_pattern_mip(
                     if restricted_primary_only and site != primary_site:
                         continue
                     local_groups = group_by_site[site]
-                    for duration in range(max(1, generated_min_daily_slots), max_daily_slots + 1):
+                    for duration in range(max(1, generated_min_daily_slots),
+                                          min(horizon.slots, max_daily_slots + max_reserved_travel_slots) + 1):
                         if remaining_seconds() <= 1.0:
                             return generation_time_limit_result()
-                        if not pattern_hours_possible(e_i, duration, duration):
+                        if not pattern_hours_possible(e_i, duration, duration, reserve_travel=True):
                             pattern_stats["weekly_pruned"] += 1
                             continue
                         for start in sorted_start_candidates:
