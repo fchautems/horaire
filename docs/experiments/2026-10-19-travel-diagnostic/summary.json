@@ -1,0 +1,37 @@
+{
+  "elapsed_seconds": 0.42,
+  "case_count": 6,
+  "isolated_two_journey_errors": [
+    "Fanny lundi: 3 periodes de presence > maximum 2"
+  ],
+  "original_travel_errors": 7,
+  "naive_period_errors": [
+    "A repourvoir mardi: 3 periodes de presence > maximum 2",
+    "Fanny lundi: 3 periodes de presence > maximum 2",
+    "Priscila mardi: 3 periodes de presence > maximum 2"
+  ],
+  "naive_other_errors": [
+    "Lundi Grands 13:00: 1 < 2",
+    "Mardi Nurserie 14:00: 1 < 2",
+    "Mardi Trotteur 13:00: 1 < 2",
+    "Mardi Trotteur 14:15: 1 < 2",
+    "Jeudi Grands 13:00: 1 < 2"
+  ],
+  "exhaustive": {
+    "grid_minutes": 15,
+    "horizon_slots": 48,
+    "interval_pairs_and_singles_checked": 126755,
+    "max_periods": 2,
+    "feasible_candidates": 0,
+    "required_work_slots": 24,
+    "forbidden_travel_slots": 2,
+    "scope": "Même personne, mêmes trois activités requises ; aucun blocage global démontré."
+  },
+  "cp_sat_available": true,
+  "hashes": {
+    "src/creche_planning/solver.py": "23b7c5dda830927bcf5e608eb6564fb6b2ed70c1c31f57dceda6300104e54edd",
+    "src/creche_planning/pattern_mip.py": "bf87e8324f74a6e71bf71453933ece19817249174a5a3394031156710e42e796",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "config/solveur_config.json": "921b442876d8358b75f7b2bf625ca4c2266160dcd7325ca3e06e45d051e534ce"
+  }
+}

@@ -497,3 +497,24 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Empreintes des sources de production, données et configuration identiques avant/après. Aucun changement de production ni nouveau test de production ; dernier contrôle publié : 103 tests réussis.
 - Résultats conservés dans docs/experiments/2026-10-18-guided-600s/README.md, summary.json et evidence.json (scripts, conditions, logs, résultat, contrôle de sortie et revalidation historique).
 - Blocage : aucun premier candidat conforme trouvé, malgré les deux essais complets depuis zéro puis guidé. Prochaine piste : diagnostic ciblé des contraintes autour des remplacements/déplacements. Aucun nouveau calcul lancé après cet essai et aucune nouvelle règle décidée.
+
+
+## Diagnostic ciblé autorisé — 19 octobre 2026
+
+- Frédéric demande le diagnostic proposé pour éviter des relances longues sans hypothèse testable. Premier cas : remplacement de Fanny le lundi, aller-retour haut/bas.
+- Hypothèse : deux interruptions de déplacement imposent au moins trois périodes de présence ; le modèle actuel autorise au plus deux périodes. Vérifier par cas isolés, contrôle sans trajet, contrôle avec un seul trajet et revalidation de la semaine historique.
+- Code et données de production inchangés. Aucun calcul global ni assouplissement métier autorisé/décidé pour ce diagnostic. Résultats dans docs/experiments/2026-10-19-travel-diagnostic/.
+- Aucun AGENTS.md ou MODEL_GUIDE.md trouvé dans les copies accessibles ; aucun outil Brain disponible identifié. OR-Tools absent de l'environnement courant ; réinstallation isolée en cours, sans modifier les dépendances du projet.
+- Prochaine action : exécuter les comparaisons bornées et consigner les conclusions avec leurs limites.
+
+
+## Diagnostic confirmé sur les déplacements — 19 octobre 2026
+
+- Six cas comparatifs exécutés avec assertions, validateur de production et cinq résolutions CP-SAT courtes ; cas « trois périodes » refusé explicitement par le compact avant résolution. OR-Tools 9.15.6755 réinstallé dans un environnement isolé ; exécution finale du diagnostic en moins d'une seconde.
+- Fanny lundi : haut → bas pour remplacer Trotteur 13:15–14:00 → haut. Deux délais de trajet créent trois périodes de présence, au-delà du maximum de deux. Le validateur ne remonte alors que cette erreur dans le cas réduit et le CP-SAT le déclare INFEASIBLE. Les témoins sans changement de site ou avec un seul trajet sont valides et OPTIMAL.
+- Énumération indépendante de 126 755 intervalles/paires d'intervalles : aucune couverture des trois activités requises avec deux créneaux de trajet vides en au plus deux périodes. Preuve locale, pas une preuve d'infaisabilité globale.
+- Ajout naïf des délais aux sept trajets de la semaine réelle : zéro erreur de déplacement, mais trois journées à trois périodes (A repourvoir mardi, Fanny lundi, Priscila mardi) et cinq créneaux en sous-effectif d'une personne : Grands lundi 13:00, Nurserie mardi 14:00, Trotteur mardi 13:00 et 14:15, Grands jeudi 13:00. Valérie jeudi passe à deux périodes.
+- Le modèle compte actuellement le temps de trajet libre comme une interruption de présence. Ce choix explique le conflit local ; la façon métier de compter un déplacement dans une période de travail n'est pas redéfinie ici. Aucun nouveau bug démontré, aucune limite assouplie.
+- Limites : mini-cas avec contrat adapté, sans THE, qualification ni besoins de couverture ; semaine réelle revalidée avec toutes ses règles. Aucun nouveau calcul global ni suite complète de tests exécutés. Sources de production, données et configuration inchangées, empreintes identiques à l'essai guidé précédent.
+- Traces : docs/experiments/2026-10-19-travel-diagnostic/README.md, summary.json et evidence.json. Aucun planning actif remplacé.
+- Prochaine hypothèse précise : réorganiser les remplacements et journées autour des cinq créneaux identifiés en conservant dix minutes de trajet et deux périodes ; ne plus tenter de garder les mêmes trois activités avec un aller-retour pour la même personne. La cause complète des résultats globaux UNKNOWN reste non établie.
