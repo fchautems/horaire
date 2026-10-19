@@ -5881,21 +5881,14 @@ def diagnose_the_capacity(
 
     group_demand, site_demand = build_demands_by_day(data, groups, horizon)
     warnings: list[str] = []
-    colloques = parse_colloques(data, horizon, groups, warnings)
-    colloque_minimums: dict[tuple[int, int, int], int] = {}
-    for colloque in colloques:
-        minimum = max(0, len(groups) - 1)
-        for slot in colloque["slots"]:
-            key = (int(colloque["day_i"]), int(colloque["group_i"]), int(slot))
-            colloque_minimums[key] = max(colloque_minimums.get(key, 0), minimum)
-
+    # Meetings remove their participants from coverage, but do not create
+    # extra child demand or a quota of replacements by source group.
     demand_slots = 0
     for d_i in range(len(DAYS)):
         for t_i in range(horizon.slots):
             slot_demands: dict[int, int] = {}
             for g_i, group in enumerate(groups):
                 demand = group_demand[(d_i, g_i, t_i)]
-                demand = max(demand, colloque_minimums.get((d_i, g_i, t_i), 0))
                 slot_demands[g_i] = demand
                 demand_slots += demand
             for (demand_d_i, site, site_slot), site_minimum in site_demand.items():

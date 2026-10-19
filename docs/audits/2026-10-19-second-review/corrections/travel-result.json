@@ -1,0 +1,407 @@
+{
+  "data": {
+    "sites": [
+      {
+        "name": "bas",
+        "open": "11:45",
+        "close": "14:45"
+      },
+      {
+        "name": "haut",
+        "open": "11:45",
+        "close": "14:45"
+      }
+    ],
+    "groups": [
+      {
+        "name": "A",
+        "site": "bas"
+      },
+      {
+        "name": "B",
+        "site": "haut"
+      }
+    ],
+    "educators": [
+      {
+        "name": "Lea",
+        "type": "EDE",
+        "percentage": 6.25,
+        "attends_colloque": false,
+        "max_work_days": 5
+      }
+    ],
+    "educator_types": [
+      {
+        "name": "EDE"
+      }
+    ],
+    "rules_global": {
+      "max_weekly_hours": 40,
+      "max_daily_hours": 8.5
+    },
+    "rules_time": [
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "mardi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "mercredi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "jeudi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "vendredi",
+        "11:45",
+        "14:45"
+      ]
+    ],
+    "rules_group": [
+      [
+        "positif",
+        "hard",
+        "Lea",
+        "A"
+      ]
+    ],
+    "rules_percentage": [],
+    "rules_site_schedule": [],
+    "rules_colloques": [
+      {
+        "group": "B",
+        "day": "lundi",
+        "start": "13:15",
+        "end": "14:00"
+      }
+    ]
+  },
+  "payload": {
+    "status": "ok",
+    "schedule": {
+      "Lea": {
+        "lundi": [
+          {
+            "start": "11:45",
+            "end": "13:00",
+            "group": "A",
+            "site": "bas",
+            "hours": 1.25
+          },
+          {
+            "start": "13:15",
+            "end": "14:00",
+            "group": "B",
+            "site": "haut",
+            "hours": 0.75,
+            "activity": "remplacement_colloque"
+          },
+          {
+            "start": "14:15",
+            "end": "14:45",
+            "group": "A",
+            "site": "bas",
+            "hours": 0.5
+          }
+        ],
+        "mardi": [],
+        "mercredi": [],
+        "jeudi": [],
+        "vendredi": []
+      }
+    },
+    "checks": {
+      "hours_by_educator": {
+        "Lea": 2.5
+      },
+      "weekly_targets": {
+        "Lea": 2.5
+      },
+      "child_hours_by_educator": {
+        "Lea": 2.5
+      },
+      "weekly_the_targets": {
+        "Lea": 0.0
+      },
+      "colloque_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "invisible_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "total_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "worked_days_by_educator": {
+        "Lea": 1
+      },
+      "primary_groups_by_educator": {
+        "Lea": "A"
+      },
+      "primary_group_errors": [],
+      "target_work_days": {
+        "Lea": 1
+      },
+      "max_work_days": {
+        "Lea": 5
+      },
+      "work_day_errors": [],
+      "work_day_warnings": [],
+      "weekly_tolerances": {
+        "Lea": 0.0
+      },
+      "weekly_max_errors": [],
+      "hours_by_site": {
+        "bas": 1.75,
+        "haut": 0.75
+      },
+      "hours_by_site_type": {
+        "bas": {
+          "EDE": 1.75
+        },
+        "haut": {
+          "EDE": 0.75
+        }
+      },
+      "percentage_rules": [],
+      "coverage_errors": [],
+      "hard_rule_errors": [],
+      "group_structure_errors": [],
+      "quality_rule_errors": [],
+      "quality_profile": {
+        "name": "equilibre",
+        "label": "Equilibre"
+      },
+      "quality_summary": {
+        "profile": {
+          "name": "equilibre",
+          "label": "Equilibre"
+        },
+        "scorecard": [
+          {
+            "label": "Regles hard",
+            "value": "OK",
+            "ok": true
+          },
+          {
+            "label": "Coupures",
+            "value": "0 jour(s), plus grande 0 min",
+            "ok": true
+          },
+          {
+            "label": "Changements de groupe",
+            "value": "0 jour(s), 0 transition(s)",
+            "ok": true
+          },
+          {
+            "label": "Hors groupe principal",
+            "value": "0 jour(s), 0.0h, 0 personne(s) a revoir",
+            "ok": true
+          },
+          {
+            "label": "Preferences horaires soft",
+            "value": "aucune",
+            "ok": true
+          },
+          {
+            "label": "Preferences groupes soft",
+            "value": "aucune",
+            "ok": true
+          },
+          {
+            "label": "Remplacements colloque",
+            "value": "1 bloc(s), 0.75h",
+            "ok": true
+          },
+          {
+            "label": "Marge de couverture",
+            "value": "2.5h-personne",
+            "ok": true
+          }
+        ],
+        "metrics": {
+          "hard_error_count": 0,
+          "soft_warning_count": 0,
+          "split_days_count": 0,
+          "split_gaps_count": 0,
+          "total_split_gap_hours": 0.0,
+          "max_split_gap_minutes_found": 0,
+          "max_split_gap_minutes_allowed": 0,
+          "split_gap_violations": 0,
+          "travel_gaps_count": 2,
+          "total_travel_gap_hours": 0.5,
+          "group_change_days_count": 0,
+          "group_change_transitions_count": 0,
+          "educators_with_group_changes_count": 0,
+          "weekly_group_limit_violations_count": 0,
+          "primary_group_outside_days_count": 0,
+          "primary_group_outside_hours": 0.0,
+          "replacement_colloque_blocks": 1,
+          "replacement_colloque_hours": 0.75,
+          "overstaffed_slots_count": 10,
+          "overstaffing_extra_hours": 2.5,
+          "primary_group_review_count": 0,
+          "soft_time_rules": {
+            "total": 0,
+            "respected": 0,
+            "violated": 0,
+            "matched_hours": 0.0,
+            "requested_hours": 0.0,
+            "violated_details": []
+          },
+          "soft_group_rules": {
+            "total": 0,
+            "respected": 0,
+            "violated": 0,
+            "violated_details": []
+          }
+        },
+        "split_day_details": [],
+        "group_change_day_details": {},
+        "primary_group_report": {
+          "enabled": true,
+          "warning_outside_hours": 4.0,
+          "warning_outside_days": 1,
+          "items": [
+            {
+              "educator": "Lea",
+              "primary_group": "",
+              "majority_group": "A",
+              "primary_hours": 0.0,
+              "majority_hours": 1.75,
+              "outside_hours": 0.0,
+              "outside_days": 0,
+              "total_child_hours": 1.75,
+              "suggested_group": "",
+              "needs_review": false
+            }
+          ],
+          "review_items": []
+        },
+        "weekly_group_limit_violations": {},
+        "notes": [
+          "Les remplacements de colloque sont exclus des changements de groupe.",
+          "Les trajets intersites minimaux sont exclus des coupures classiques; leurs penalites soft restent actives.",
+          "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard."
+        ]
+      },
+      "soft_warnings": [],
+      "alerts": [],
+      "hard_errors": [],
+      "errors": []
+    },
+    "rule_summary": {
+      "hard": [
+        {
+          "code": "coverage_minimum",
+          "rule": "Couvrir les besoins minimums par groupe, site et tranche horaire.",
+          "source": "gwendo.json / rules_site_schedule"
+        },
+        {
+          "code": "qualification_percentages",
+          "rule": "Respecter les pourcentages EDE, ASE et APE par site.",
+          "source": "gwendo.json / rules_percentage"
+        },
+        {
+          "code": "time_rules_hard",
+          "rule": "Respecter les obligations et interdictions horaires marquees hard.",
+          "source": "gwendo.json / rules_time"
+        },
+        {
+          "code": "group_rules_hard",
+          "rule": "Respecter les obligations et interdictions de groupe principal marquees hard.",
+          "source": "gwendo.json / rules_group"
+        },
+        {
+          "code": "max_daily_hours",
+          "rule": "Ne pas depasser 8.5h de travail par jour.",
+          "source": "gwendo.json / rules_global.max_daily_hours"
+        },
+        {
+          "code": "absolute_weekly_cap",
+          "rule": "Ne jamais depasser 40h de travail par semaine.",
+          "source": "solveur_config.json / absolute_max_weekly_hours"
+        },
+        {
+          "code": "weekly_contract_tolerance",
+          "rule": "Rester autour des heures contractuelles avec une tolerance maximale de 3% par paliers de 15 minutes.",
+          "source": "solveur_config.json / weekly_hours_tolerance_percent"
+        },
+        {
+          "code": "the",
+          "rule": "Compter 0% du temps contractuel en THE. Les colloques en font partie; le THE hors colloque est invisible et ne compte pas dans la couverture enfants.",
+          "source": "solveur_config.json / the_percent et gwendo.json / rules_colloques"
+        },
+        {
+          "code": "half_day_group_stability",
+          "rule": "Ne pas changer de groupe dans une meme demi-journee, hors remplacement de colloque.",
+          "source": "solveur_config.json / half_day_split_time"
+        },
+        {
+          "code": "max_work_days",
+          "rule": "Respecter le nombre maximal de jours travaille calcule d'apres le taux, sauf exception max_work_days explicite sur la personne.",
+          "source": "solveur_config.json / hard_max_work_days et gwendo.json / educators"
+        },
+        {
+          "code": "weekly_group_exception_limit",
+          "rule": "Avoir au maximum 1 jour(s) avec changement de groupe par semaine.",
+          "source": "solveur_config.json / max_weekly_group_exception_days"
+        },
+        {
+          "code": "split_gap_limit",
+          "rule": "Si une journee est coupee, la coupure ne doit pas depasser 0 minutes.",
+          "source": "solveur_config.json / max_pause_between_blocks_minutes"
+        },
+        {
+          "code": "colloques",
+          "rule": "Chaque educateur participe au colloque complet de son groupe principal, sauf si sa fiche indique qu'il ne participe pas aux colloques. Pendant ce colloque, il ne compte plus en couverture. Les remplacements dependent de la couverture enfants perdue, sans quota par groupe d'origine. Ils sont autorises quinze minutes avant et trente minutes apres le colloque et comptent dans les pourcentages du site. Les deplacements ne couvrent pas les enfants.",
+          "source": "gwendo.json / rules_colloques"
+        }
+      ],
+      "soft": [
+        {
+          "code": "compact_work_days",
+          "rule": "Regrouper les temps partiels sur le moins de jours possible.",
+          "source": "solveur_config.json / compact_work_days"
+        },
+        {
+          "code": "avoid_split_days",
+          "rule": "Eviter les horaires coupes quand une journee continue est possible.",
+          "source": "solveur_config.json / smooth_split_shift_weight"
+        },
+        {
+          "code": "avoid_short_days",
+          "rule": "Eviter les journees de moins de 2h, sans les interdire lorsqu'elles sont necessaires.",
+          "source": "solveur_config.json / min_daily_hours et short_day_penalty_weight"
+        },
+        {
+          "code": "same_group_week",
+          "rule": "Garder autant que possible une personne dans le meme groupe sur la semaine.",
+          "source": "solveur_config.json / smooth_same_group_week_weight"
+        },
+        {
+          "code": "soft_preferences",
+          "rule": "Respecter autant que possible les preferences horaires et de groupe marquees soft.",
+          "source": "gwendo.json / rules_time et rules_group"
+        }
+      ]
+    }
+  }
+}

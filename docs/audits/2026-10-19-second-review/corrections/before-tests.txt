@@ -1,0 +1,135 @@
+test_contract_and_coverage_still_exclude_journeys (test_second_review_regressions.SecondReviewRegressions.test_contract_and_coverage_still_exclude_journeys) ... ok
+test_empty_journeys_do_not_incur_time_preference_costs (test_second_review_regressions.SecondReviewRegressions.test_empty_journeys_do_not_incur_time_preference_costs) ... 
+  test_empty_journeys_do_not_incur_time_preference_costs (test_second_review_regressions.SecondReviewRegressions.test_empty_journeys_do_not_incur_time_preference_costs) (preference='negatif') ... FAIL
+  test_empty_journeys_do_not_incur_time_preference_costs (test_second_review_regressions.SecondReviewRegressions.test_empty_journeys_do_not_incur_time_preference_costs) (preference='positif') ... FAIL
+test_fixed_replacement_covers_authorized_margins (test_second_review_regressions.SecondReviewRegressions.test_fixed_replacement_covers_authorized_margins) ... FAIL
+test_fixed_replacement_keeps_its_entire_window (test_second_review_regressions.SecondReviewRegressions.test_fixed_replacement_keeps_its_entire_window) ... FAIL
+test_forbidden_actual_work_remains_forbidden (test_second_review_regressions.SecondReviewRegressions.test_forbidden_actual_work_remains_forbidden) ... ok
+test_free_replacement_covers_authorized_margins (test_second_review_regressions.SecondReviewRegressions.test_free_replacement_covers_authorized_margins) ... FAIL
+test_free_round_trip_respects_both_forbidden_journey_slots (test_second_review_regressions.SecondReviewRegressions.test_free_round_trip_respects_both_forbidden_journey_slots) ... FAIL
+test_hard_presence_on_empty_travel_is_not_satisfied (test_second_review_regressions.SecondReviewRegressions.test_hard_presence_on_empty_travel_is_not_satisfied) ... ok
+test_journeys_are_not_reported_as_classic_gap_violations (test_second_review_regressions.SecondReviewRegressions.test_journeys_are_not_reported_as_classic_gap_violations) ... FAIL
+test_partial_replacement_without_full_meeting_is_generated (test_second_review_regressions.SecondReviewRegressions.test_partial_replacement_without_full_meeting_is_generated) ... 
+  test_partial_replacement_without_full_meeting_is_generated (test_second_review_regressions.SecondReviewRegressions.test_partial_replacement_without_full_meeting_is_generated) (fixed=False) ... FAIL
+  test_partial_replacement_without_full_meeting_is_generated (test_second_review_regressions.SecondReviewRegressions.test_partial_replacement_without_full_meeting_is_generated) (fixed=True) ... FAIL
+test_real_break_is_still_reported_beside_journeys (test_second_review_regressions.SecondReviewRegressions.test_real_break_is_still_reported_beside_journeys) ... FAIL
+test_rule_summary_describes_actual_replacement_rule (test_second_review_regressions.SecondReviewRegressions.test_rule_summary_describes_actual_replacement_rule) ... FAIL
+
+======================================================================
+FAIL: test_empty_journeys_do_not_incur_time_preference_costs (test_second_review_regressions.SecondReviewRegressions.test_empty_journeys_do_not_incur_time_preference_costs) (preference='negatif')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 46, in test_empty_journeys_do_not_incur_time_preference_costs
+    self.assertEqual(result['objective'],base['objective'])
+AssertionError: 72090.0 != 72000.0
+
+======================================================================
+FAIL: test_empty_journeys_do_not_incur_time_preference_costs (test_second_review_regressions.SecondReviewRegressions.test_empty_journeys_do_not_incur_time_preference_costs) (preference='positif')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 46, in test_empty_journeys_do_not_incur_time_preference_costs
+    self.assertEqual(result['objective'],base['objective'])
+AssertionError: 71930.0 != 72000.0
+
+======================================================================
+FAIL: test_fixed_replacement_covers_authorized_margins (test_second_review_regressions.SecondReviewRegressions.test_fixed_replacement_covers_authorized_margins)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 68, in test_fixed_replacement_covers_authorized_margins
+    self.assertValid(result)
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 23, in assertValid
+    self.assertEqual(result['status'], 'ok', result)
+AssertionError: 'infeasible_or_not_solved' != 'ok'
+- infeasible_or_not_solved
++ ok
+ : {'status': 'infeasible_or_not_solved', 'solver_message': 'The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)', 'pattern_statistics': {'total': 5, 'off': 4, 'continuous': 1, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 1, 'colloque': 0, 'deduplicated': 0, 'weekly_pruned': 0, 'by_educator_day': {'Lea': {'lundi': {'total': 1, 'off': 0, 'continuous': 1, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 1, 'colloque': 0}, 'mardi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'mercredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'jeudi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'vendredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}}}}, 'elapsed_seconds': 0.0019}
+
+======================================================================
+FAIL: test_fixed_replacement_keeps_its_entire_window (test_second_review_regressions.SecondReviewRegressions.test_fixed_replacement_keeps_its_entire_window)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 57, in test_fixed_replacement_keeps_its_entire_window
+    self.assertEqual(assignments(result['schedule']),assignments(s))
+AssertionError: {('Le[65 chars]): ('A', 'bas', 'children'), ('Lea', 'lundi', [310 chars]en')} != {('Le[65 chars]): ('B', 'bas', 'remplacement_colloque'), ('Le[349 chars]en')}
+Diff is 980 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_free_replacement_covers_authorized_margins (test_second_review_regressions.SecondReviewRegressions.test_free_replacement_covers_authorized_margins)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 62, in test_free_replacement_covers_authorized_margins
+    self.assertValid(result)
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 23, in assertValid
+    self.assertEqual(result['status'], 'ok', result)
+AssertionError: 'infeasible_or_not_solved' != 'ok'
+- infeasible_or_not_solved
++ ok
+ : {'status': 'infeasible_or_not_solved', 'solver_message': 'The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)', 'pattern_statistics': {'total': 1966, 'off': 5, 'continuous': 143, 'split': 1818, 'mixed_group': 651, 'cross_site_split': 0, 'replacement': 257, 'colloque': 0, 'deduplicated': 0, 'weekly_pruned': 20, 'by_educator_day': {'Lea': {'lundi': {'total': 1962, 'off': 1, 'continuous': 143, 'split': 1818, 'mixed_group': 651, 'cross_site_split': 0, 'replacement': 257, 'colloque': 0}, 'mardi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'mercredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'jeudi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'vendredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}}}}, 'elapsed_seconds': 0.6256}
+
+======================================================================
+FAIL: test_free_round_trip_respects_both_forbidden_journey_slots (test_second_review_regressions.SecondReviewRegressions.test_free_round_trip_respects_both_forbidden_journey_slots)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 31, in test_free_round_trip_respects_both_forbidden_journey_slots
+    self.assertValid(result)
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 23, in assertValid
+    self.assertEqual(result['status'], 'ok', result)
+AssertionError: 'infeasible_or_not_solved' != 'ok'
+- infeasible_or_not_solved
++ ok
+ : {'status': 'infeasible_or_not_solved', 'solver_message': 'The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)', 'pattern_statistics': {'total': 542, 'off': 5, 'continuous': 43, 'split': 494, 'mixed_group': 152, 'cross_site_split': 152, 'replacement': 37, 'colloque': 0, 'deduplicated': 0, 'weekly_pruned': 0, 'by_educator_day': {'Lea': {'lundi': {'total': 538, 'off': 1, 'continuous': 43, 'split': 494, 'mixed_group': 152, 'cross_site_split': 152, 'replacement': 37, 'colloque': 0}, 'mardi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'mercredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'jeudi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}, 'vendredi': {'total': 1, 'off': 1, 'continuous': 0, 'split': 0, 'mixed_group': 0, 'cross_site_split': 0, 'replacement': 0, 'colloque': 0}}}}, 'elapsed_seconds': 0.0762}
+
+======================================================================
+FAIL: test_journeys_are_not_reported_as_classic_gap_violations (test_second_review_regressions.SecondReviewRegressions.test_journeys_are_not_reported_as_classic_gap_violations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 87, in test_journeys_are_not_reported_as_classic_gap_violations
+    self.assertEqual(metrics['split_gap_violations'],0)
+AssertionError: 2 != 0
+
+======================================================================
+FAIL: test_partial_replacement_without_full_meeting_is_generated (test_second_review_regressions.SecondReviewRegressions.test_partial_replacement_without_full_meeting_is_generated) (fixed=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 79, in test_partial_replacement_without_full_meeting_is_generated
+    self.assertValid(result)
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 23, in assertValid
+    self.assertEqual(result['status'], 'ok', result)
+AssertionError: 'infeasible_or_not_solved' != 'ok'
+- infeasible_or_not_solved
++ ok
+ : {'status': 'infeasible_or_not_solved', 'solver_message': 'Capacite enfants insuffisante avec le THE.', 'elapsed_seconds': 0.0001}
+
+======================================================================
+FAIL: test_partial_replacement_without_full_meeting_is_generated (test_second_review_regressions.SecondReviewRegressions.test_partial_replacement_without_full_meeting_is_generated) (fixed=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 79, in test_partial_replacement_without_full_meeting_is_generated
+    self.assertValid(result)
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 23, in assertValid
+    self.assertEqual(result['status'], 'ok', result)
+AssertionError: 'infeasible_or_not_solved' != 'ok'
+- infeasible_or_not_solved
++ ok
+ : {'status': 'infeasible_or_not_solved', 'solver_message': 'Capacite enfants insuffisante avec le THE.', 'elapsed_seconds': 0.0001}
+
+======================================================================
+FAIL: test_real_break_is_still_reported_beside_journeys (test_second_review_regressions.SecondReviewRegressions.test_real_break_is_still_reported_beside_journeys)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 102, in test_real_break_is_still_reported_beside_journeys
+    self.assertEqual(metrics['split_gap_violations'],1)
+AssertionError: 3 != 1
+
+======================================================================
+FAIL: test_rule_summary_describes_actual_replacement_rule (test_second_review_regressions.SecondReviewRegressions.test_rule_summary_describes_actual_replacement_rule)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/8546a608cc32/horaire/tests/test_second_review_regressions.py", line 110, in test_rule_summary_describes_actual_replacement_rule
+    self.assertNotIn('une personne de chaque',rule)
+AssertionError: 'une personne de chaque' unexpectedly found in "Chaque educateur participe au colloque complet de son groupe principal, sauf si sa fiche indique qu'il ne participe pas aux colloques. Pendant ce colloque, il ne compte plus en couverture; une personne de chaque autre groupe remplace; les remplacements comptent dans les pourcentages du site."
+
+----------------------------------------------------------------------
+Ran 12 tests in 5.435s
+
+FAILED (failures=11)

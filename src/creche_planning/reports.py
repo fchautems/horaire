@@ -89,8 +89,10 @@ def build_rule_summary(data: dict[str, Any], config: dict[str, Any]) -> dict[str
             "rule": (
                 "Chaque educateur participe au colloque complet de son groupe principal, "
                 "sauf si sa fiche indique qu'il ne participe pas aux colloques. "
-                "Pendant ce colloque, il ne compte plus en couverture; une personne de chaque "
-                "autre groupe remplace; les remplacements comptent dans les pourcentages du site."
+                "Pendant ce colloque, il ne compte plus en couverture. Les remplacements "
+                "dependent de la couverture enfants perdue, sans quota par groupe d'origine. "
+                "Ils sont autorises quinze minutes avant et trente minutes apres le colloque "
+                "et comptent dans les pourcentages du site. Les deplacements ne couvrent pas les enfants."
             ),
             "source": "gwendo.json / rules_colloques",
         },

@@ -1,0 +1,600 @@
+{
+  "data": {
+    "sites": [
+      {
+        "name": "bas",
+        "open": "11:45",
+        "close": "14:45"
+      }
+    ],
+    "groups": [
+      {
+        "name": "A",
+        "site": "bas"
+      },
+      {
+        "name": "B",
+        "site": "bas"
+      }
+    ],
+    "educators": [
+      {
+        "name": "Lea",
+        "type": "EDE",
+        "percentage": 2.5,
+        "attends_colloque": false,
+        "max_work_days": 5
+      }
+    ],
+    "educator_types": [
+      {
+        "name": "EDE"
+      }
+    ],
+    "rules_global": {
+      "max_weekly_hours": 40,
+      "max_daily_hours": 8.5
+    },
+    "rules_time": [
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "mardi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "mercredi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "jeudi",
+        "11:45",
+        "14:45"
+      ],
+      [
+        "negatif",
+        "hard",
+        "Lea",
+        "vendredi",
+        "11:45",
+        "14:45"
+      ]
+    ],
+    "rules_group": [
+      [
+        "positif",
+        "hard",
+        "Lea",
+        "A"
+      ]
+    ],
+    "rules_percentage": [],
+    "rules_site_schedule": [
+      {
+        "site": "bas",
+        "days": [
+          "lundi"
+        ],
+        "time_intervals": [
+          {
+            "group": "A",
+            "start": "12:45",
+            "end": "13:00",
+            "min_staff": 1
+          }
+        ]
+      },
+      {
+        "site": "bas",
+        "days": [
+          "lundi"
+        ],
+        "time_intervals": [
+          {
+            "group": "B",
+            "start": "13:00",
+            "end": "13:30",
+            "min_staff": 1
+          }
+        ]
+      },
+      {
+        "site": "bas",
+        "days": [
+          "lundi"
+        ],
+        "time_intervals": [
+          {
+            "group": "A",
+            "start": "13:30",
+            "end": "13:45",
+            "min_staff": 1
+          }
+        ]
+      }
+    ],
+    "rules_colloques": [
+      {
+        "group": "B",
+        "day": "lundi",
+        "start": "13:15",
+        "end": "14:00"
+      }
+    ]
+  },
+  "schedule": {
+    "Lea": {
+      "lundi": [
+        {
+          "start": "12:45",
+          "end": "13:00",
+          "group": "A",
+          "site": "bas",
+          "hours": 0.25
+        },
+        {
+          "start": "13:00",
+          "end": "13:30",
+          "group": "B",
+          "site": "bas",
+          "hours": 0.5,
+          "activity": "remplacement_colloque"
+        },
+        {
+          "start": "13:30",
+          "end": "13:45",
+          "group": "A",
+          "site": "bas",
+          "hours": 0.25
+        }
+      ],
+      "mardi": [],
+      "mercredi": [],
+      "jeudi": [],
+      "vendredi": []
+    }
+  },
+  "validator": {
+    "hours_by_educator": {
+      "Lea": 1.0
+    },
+    "weekly_targets": {
+      "Lea": 1.0
+    },
+    "child_hours_by_educator": {
+      "Lea": 1.0
+    },
+    "weekly_the_targets": {
+      "Lea": 0.0
+    },
+    "colloque_the_hours_by_educator": {
+      "Lea": 0.0
+    },
+    "invisible_the_hours_by_educator": {
+      "Lea": 0.0
+    },
+    "total_the_hours_by_educator": {
+      "Lea": 0.0
+    },
+    "worked_days_by_educator": {
+      "Lea": 1
+    },
+    "primary_groups_by_educator": {
+      "Lea": "A"
+    },
+    "primary_group_errors": [],
+    "target_work_days": {
+      "Lea": 1
+    },
+    "max_work_days": {
+      "Lea": 5
+    },
+    "work_day_errors": [],
+    "work_day_warnings": [],
+    "weekly_tolerances": {
+      "Lea": 0.0
+    },
+    "weekly_max_errors": [],
+    "hours_by_site": {
+      "bas": 1.0
+    },
+    "hours_by_site_type": {
+      "bas": {
+        "EDE": 1.0
+      }
+    },
+    "percentage_rules": [],
+    "coverage_errors": [],
+    "hard_rule_errors": [],
+    "group_structure_errors": [],
+    "quality_rule_errors": [],
+    "quality_profile": {
+      "name": "equilibre",
+      "label": "Equilibre"
+    },
+    "quality_summary": {
+      "profile": {
+        "name": "equilibre",
+        "label": "Equilibre"
+      },
+      "scorecard": [
+        {
+          "label": "Regles hard",
+          "value": "OK",
+          "ok": true
+        },
+        {
+          "label": "Coupures",
+          "value": "0 jour(s), plus grande 0 min",
+          "ok": true
+        },
+        {
+          "label": "Changements de groupe",
+          "value": "0 jour(s), 0 transition(s)",
+          "ok": true
+        },
+        {
+          "label": "Hors groupe principal",
+          "value": "0 jour(s), 0.0h, 0 personne(s) a revoir",
+          "ok": true
+        },
+        {
+          "label": "Preferences horaires soft",
+          "value": "aucune",
+          "ok": true
+        },
+        {
+          "label": "Preferences groupes soft",
+          "value": "aucune",
+          "ok": true
+        },
+        {
+          "label": "Remplacements colloque",
+          "value": "1 bloc(s), 0.5h",
+          "ok": true
+        },
+        {
+          "label": "Marge de couverture",
+          "value": "0.0h-personne",
+          "ok": true
+        }
+      ],
+      "metrics": {
+        "hard_error_count": 0,
+        "soft_warning_count": 0,
+        "split_days_count": 0,
+        "split_gaps_count": 0,
+        "total_split_gap_hours": 0.0,
+        "max_split_gap_minutes_found": 0,
+        "max_split_gap_minutes_allowed": null,
+        "split_gap_violations": 0,
+        "travel_gaps_count": 0,
+        "total_travel_gap_hours": 0.0,
+        "group_change_days_count": 0,
+        "group_change_transitions_count": 0,
+        "educators_with_group_changes_count": 0,
+        "weekly_group_limit_violations_count": 0,
+        "primary_group_outside_days_count": 0,
+        "primary_group_outside_hours": 0.0,
+        "replacement_colloque_blocks": 1,
+        "replacement_colloque_hours": 0.5,
+        "overstaffed_slots_count": 0,
+        "overstaffing_extra_hours": 0.0,
+        "primary_group_review_count": 0,
+        "soft_time_rules": {
+          "total": 0,
+          "respected": 0,
+          "violated": 0,
+          "matched_hours": 0.0,
+          "requested_hours": 0.0,
+          "violated_details": []
+        },
+        "soft_group_rules": {
+          "total": 0,
+          "respected": 0,
+          "violated": 0,
+          "violated_details": []
+        }
+      },
+      "split_day_details": [],
+      "group_change_day_details": {},
+      "primary_group_report": {
+        "enabled": true,
+        "warning_outside_hours": 4.0,
+        "warning_outside_days": 1,
+        "items": [
+          {
+            "educator": "Lea",
+            "primary_group": "",
+            "majority_group": "A",
+            "primary_hours": 0.0,
+            "majority_hours": 0.5,
+            "outside_hours": 0.0,
+            "outside_days": 0,
+            "total_child_hours": 0.5,
+            "suggested_group": "",
+            "needs_review": false
+          }
+        ],
+        "review_items": []
+      },
+      "weekly_group_limit_violations": {},
+      "notes": [
+        "Les remplacements de colloque sont exclus des changements de groupe.",
+        "Les trajets intersites minimaux sont exclus des coupures classiques; leurs penalites soft restent actives.",
+        "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard."
+      ]
+    },
+    "soft_warnings": [],
+    "alerts": [],
+    "hard_errors": [],
+    "errors": []
+  },
+  "cp": {
+    "status": "ok",
+    "solver_message": "OR-Tools CP-SAT OPTIMAL",
+    "objective": 12004.0,
+    "schedule": {
+      "Lea": {
+        "lundi": [
+          {
+            "site": "bas",
+            "group": "A",
+            "start": "12:45",
+            "end": "13:00",
+            "hours": 0.25,
+            "activity": "children"
+          },
+          {
+            "site": "bas",
+            "group": "B",
+            "start": "13:00",
+            "end": "13:30",
+            "hours": 0.5,
+            "activity": "remplacement_colloque"
+          },
+          {
+            "site": "bas",
+            "group": "A",
+            "start": "13:30",
+            "end": "13:45",
+            "hours": 0.25,
+            "activity": "children"
+          }
+        ],
+        "mardi": [],
+        "mercredi": [],
+        "jeudi": [],
+        "vendredi": []
+      }
+    },
+    "checks": {
+      "hours_by_educator": {
+        "Lea": 1.0
+      },
+      "weekly_targets": {
+        "Lea": 1.0
+      },
+      "child_hours_by_educator": {
+        "Lea": 1.0
+      },
+      "weekly_the_targets": {
+        "Lea": 0.0
+      },
+      "colloque_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "invisible_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "total_the_hours_by_educator": {
+        "Lea": 0.0
+      },
+      "worked_days_by_educator": {
+        "Lea": 1
+      },
+      "primary_groups_by_educator": {
+        "Lea": "A"
+      },
+      "primary_group_errors": [],
+      "target_work_days": {
+        "Lea": 1
+      },
+      "max_work_days": {
+        "Lea": 5
+      },
+      "work_day_errors": [],
+      "work_day_warnings": [],
+      "weekly_tolerances": {
+        "Lea": 0.0
+      },
+      "weekly_max_errors": [],
+      "hours_by_site": {
+        "bas": 1.0
+      },
+      "hours_by_site_type": {
+        "bas": {
+          "EDE": 1.0
+        }
+      },
+      "percentage_rules": [],
+      "coverage_errors": [],
+      "hard_rule_errors": [],
+      "group_structure_errors": [],
+      "quality_rule_errors": [],
+      "quality_profile": {
+        "name": "equilibre",
+        "label": "Equilibre"
+      },
+      "quality_summary": {
+        "profile": {
+          "name": "equilibre",
+          "label": "Equilibre"
+        },
+        "scorecard": [
+          {
+            "label": "Regles hard",
+            "value": "OK",
+            "ok": true
+          },
+          {
+            "label": "Coupures",
+            "value": "0 jour(s), plus grande 0 min",
+            "ok": true
+          },
+          {
+            "label": "Changements de groupe",
+            "value": "0 jour(s), 0 transition(s)",
+            "ok": true
+          },
+          {
+            "label": "Hors groupe principal",
+            "value": "0 jour(s), 0.0h, 0 personne(s) a revoir",
+            "ok": true
+          },
+          {
+            "label": "Preferences horaires soft",
+            "value": "aucune",
+            "ok": true
+          },
+          {
+            "label": "Preferences groupes soft",
+            "value": "aucune",
+            "ok": true
+          },
+          {
+            "label": "Remplacements colloque",
+            "value": "1 bloc(s), 0.5h",
+            "ok": true
+          },
+          {
+            "label": "Marge de couverture",
+            "value": "0.0h-personne",
+            "ok": true
+          }
+        ],
+        "metrics": {
+          "hard_error_count": 0,
+          "soft_warning_count": 0,
+          "split_days_count": 0,
+          "split_gaps_count": 0,
+          "total_split_gap_hours": 0.0,
+          "max_split_gap_minutes_found": 0,
+          "max_split_gap_minutes_allowed": null,
+          "split_gap_violations": 0,
+          "travel_gaps_count": 0,
+          "total_travel_gap_hours": 0.0,
+          "group_change_days_count": 0,
+          "group_change_transitions_count": 0,
+          "educators_with_group_changes_count": 0,
+          "weekly_group_limit_violations_count": 0,
+          "primary_group_outside_days_count": 0,
+          "primary_group_outside_hours": 0.0,
+          "replacement_colloque_blocks": 1,
+          "replacement_colloque_hours": 0.5,
+          "overstaffed_slots_count": 0,
+          "overstaffing_extra_hours": 0.0,
+          "primary_group_review_count": 0,
+          "soft_time_rules": {
+            "total": 0,
+            "respected": 0,
+            "violated": 0,
+            "matched_hours": 0.0,
+            "requested_hours": 0.0,
+            "violated_details": []
+          },
+          "soft_group_rules": {
+            "total": 0,
+            "respected": 0,
+            "violated": 0,
+            "violated_details": []
+          }
+        },
+        "split_day_details": [],
+        "group_change_day_details": {},
+        "primary_group_report": {
+          "enabled": true,
+          "warning_outside_hours": 4.0,
+          "warning_outside_days": 1,
+          "items": [
+            {
+              "educator": "Lea",
+              "primary_group": "",
+              "majority_group": "A",
+              "primary_hours": 0.0,
+              "majority_hours": 0.5,
+              "outside_hours": 0.0,
+              "outside_days": 0,
+              "total_child_hours": 0.5,
+              "suggested_group": "",
+              "needs_review": false
+            }
+          ],
+          "review_items": []
+        },
+        "weekly_group_limit_violations": {},
+        "notes": [
+          "Les remplacements de colloque sont exclus des changements de groupe.",
+          "Les trajets intersites minimaux sont exclus des coupures classiques; leurs penalites soft restent actives.",
+          "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard."
+        ]
+      },
+      "soft_warnings": [],
+      "alerts": [],
+      "hard_errors": [],
+      "errors": []
+    },
+    "quality_scoring": {
+      "version": "compact-v2",
+      "min_daily_slots": 0,
+      "day_coefficients": {
+        "Lea": 0
+      },
+      "horizon": {
+        "start": 705,
+        "end": 885,
+        "step": 15
+      },
+      "child_targets": {
+        "Lea": 4
+      },
+      "primary_preferences": {},
+      "group_rules": [],
+      "time_rules": [],
+      "group_sites": {
+        "A": "bas",
+        "B": "bas"
+      },
+      "weights": {
+        "child_slots": 1,
+        "presence_starts": 12000,
+        "worked_days": 1,
+        "gap_slots": 400,
+        "short_day_slots": 3000,
+        "mixed_days": 800,
+        "outside_group_days": 40,
+        "outside_days": 3200,
+        "outside_slots": 0,
+        "outside_site_days": 0,
+        "hour_deviation_slots": 2500,
+        "preferred_primary": -500,
+        "negative_time_slots": 45,
+        "positive_time_slots": -35,
+        "group_rule_slots": 18
+      }
+    },
+    "elapsed_seconds": 0.209
+  },
+  "capacity_diagnostics": [
+    "Capacite enfants insuffisante avec le THE: besoin minimum 1.50h, capacite maximale 1.00h, manque 0.50h. Il faut augmenter les heures disponibles, reduire certains besoins minimums, ou assouplir une contrainte contractuelle."
+  ]
+}

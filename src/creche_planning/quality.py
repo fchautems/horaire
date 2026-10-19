@@ -8,6 +8,7 @@ from .domain import (
     DEFAULT_QUALITY_PROFILES,
     build_demands_by_day,
     format_time,
+    is_short_site_transfer,
     normalize_day,
     normalize_flag,
     parse_time,
@@ -282,6 +283,7 @@ def build_quality_summary(
     primary_groups_by_educator = primary_groups_by_educator or {}
     split_days: list[str] = []
     split_gaps: list[int] = []
+    travel_gaps: list[int] = []
     group_change_days: dict[str, list[str]] = {}
     group_change_transitions = 0
     replacement_count = 0
@@ -296,7 +298,10 @@ def build_quality_summary(
             for previous, current in zip(sorted_blocks, sorted_blocks[1:]):
                 gap = parse_time(current["start"]) - parse_time(previous["end"])
                 if gap > 0:
-                    day_gaps.append(gap)
+                    if is_short_site_transfer(previous, current, bundle.horizon.step):
+                        travel_gaps.append(gap)
+                    else:
+                        day_gaps.append(gap)
             if day_gaps:
                 split_days.append(f"{educator_name} {day_key}")
                 split_gaps.extend(day_gaps)
@@ -378,6 +383,8 @@ def build_quality_summary(
         "max_split_gap_minutes_found": max_gap_found,
         "max_split_gap_minutes_allowed": max_split_gap_minutes,
         "split_gap_violations": split_gap_violations,
+        "travel_gaps_count": len(travel_gaps),
+        "total_travel_gap_hours": round(sum(travel_gaps) / 60.0, 2),
         "group_change_days_count": sum(len(days) for days in group_change_days.values()),
         "group_change_transitions_count": group_change_transitions,
         "educators_with_group_changes_count": len(group_change_days),
@@ -461,6 +468,7 @@ def build_quality_summary(
         "weekly_group_limit_violations": weekly_group_limit_violations,
         "notes": [
             "Les remplacements de colloque sont exclus des changements de groupe.",
+            "Les trajets intersites minimaux sont exclus des coupures classiques; leurs penalites soft restent actives.",
             "La marge de couverture compare les personnes presentes au besoin minimum; ce n'est pas une erreur hard.",
         ],
     }

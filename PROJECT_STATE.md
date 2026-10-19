@@ -551,3 +551,27 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Contrat/THE non nul contrôlé : 2,5 h enfants + 0,75 h THE invisible = 3,25 h ; aucune heure de trajet ajoutée. Aucune couverture pendant les trajets. Score compact identique au recalcul ; pénalités soft des interruptions conservées intentionnellement.
 - Aucun lien démontré entre ces défauts et les anciens UNKNOWN ; aucun nouveau planning complet conforme obtenu ou recherché. Limites explicites des patrons, Windows et interface restent distinctes des bugs. Pas de nouvelle décision métier prise.
 - Prochaine action utile : corriger R1/R2 par les cas minimaux conservés, puis R3/R4 ; rejouer diagnostics et tests avant une nouvelle optimisation globale. Cette revue seule n'autorise ni n'applique ces corrections de production.
+
+
+## Corrections de la seconde revue — 19 octobre 2026, en cours
+
+- Autorisation : Frédéric demande de corriger les quatre constats, puis de continuer les corrections en cours. Base publiée : `3e17641d366321641be22ad968272a8e9e1ae198` ; branche locale isolée `fix/second-review-2026-10-19`.
+- Douze tests de régression ajoutés avant modification : exécution en 5,435 s, onze assertions/sous-cas en échec reproduisant R1–R4 ; les témoins de protection restent distincts des bugs.
+- Corrections en cours dans les patrons (contrôles horaires après réservation des trajets, créneaux explicites de remplacement et préservation des jours fixés), les métriques de coupures et le texte des règles exporté. Données métier, configuration et plannings inchangés.
+- Aucun nouveau calcul global. Prochaine action : exécuter les régressions, traiter tout écart puis contrôler la suite complète avant publication. Les modifications ne sont pas encore déclarées validées.
+
+### Contrôle intermédiaire des corrections
+
+- Les cas principaux R1–R4 passent. Un témoin de remplacement partiel a révélé que `diagnose_the_capacity` conservait aussi l'ancien quota de remplaçants : il annonçait 1,50 h de besoin pour 1 h disponible alors que le validateur et CP-SAT acceptaient le témoin. Preuve conservée dans `corrections/capacity-before.json` ; le diagnostic utilise désormais les seuls besoins de couverture définis.
+- Les journées fixées conservent leurs créneaux et activités, y compris plusieurs remplacements ; les dépassements de fenêtre sont refusés. Seize tests ciblés couvrent aussi les protections hard et les heures/THE.
+- Un essai libre de contrôle comptable a atteint sa limite HiGHS avec 14 599 patrons : ce n'est pas une preuve de bug métier. Le test comptable est isolé à planning fixé ; la génération libre reste testée séparément. Déduplication renforcée des patrons produisant exactement les mêmes affectations après retrait des trajets, pour limiter la croissance du domaine.
+- Prochaine action : contrôle final ciblé puis suite complète. Aucun calcul global lancé.
+
+### Corrections de la seconde revue validées — 19 octobre 2026
+
+- **133 tests réussis en 31,546 s**, dont seize nouveaux tests dans `tests/test_second_review_regressions.py`. Compilation réussie et contrôle Git du code/documentation sans erreur d'espaces.
+- R1 corrigé : règles horaires et préférences évaluées sur la présence après retrait des trajets ; préfiltrage conservateur. R2 corrigé : marges et remplacements partiels représentés, journées fixées préservées créneau par créneau, dépassement de fenêtre refusé. Les patrons de même affectation finale sont dédupliqués.
+- R3 corrigé : trajets minimaux séparés des coupures classiques dans les métriques/exports. R4 corrigé : texte des règles sans ancien quota ; son résidu dans `diagnose_the_capacity`, découvert par le test partiel, est également supprimé et couvert par un témoin valide et un vrai déficit de capacité.
+- Sources modifiées : `pattern_mip.py`, `quality.py`, `reports.py` et le seul diagnostic de capacité dans `solver.py`. Objectif compact et `scoring.py` inchangés. Données, configuration, fixtures et sorties actives identiques par empreintes.
+- Dossier de preuve : `docs/audits/2026-10-19-second-review/corrections/README.md`, tests avant/après, témoin du résidu de quota, validation et exports synthétiques. Le journal intermédiaire conserve le seul écart de message de refus, résolu ; les traces d'audit initiales restent historiques.
+- Aucun calcul global, aucun nouveau planning complet déclaré conforme. Limites conservées : domaine des patrons libres, options explicitement non supportées, absence de test Windows/graphique et de mesure de performance globale. Prochaine action utile : reprise ciblée des cinq créneaux de couverture si elle est demandée.

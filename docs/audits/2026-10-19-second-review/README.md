@@ -1,5 +1,7 @@
 # Seconde revue indépendante — 19 octobre 2026
 
+**Suivi :** les corrections sont décrites dans [corrections/README.md](corrections/README.md). Le rapport ci-dessous décrit la version auditée avant correction.
+
 ## Conclusion
 
 Revue de **`748acbb3a4c96250f8659bc7683a0222a78072f2`**, tête de `main` vérifiée sur GitHub au début et avant publication. Cette version comprend l'autorisation des interruptions minimales de trajet. **Quatre constats confirmés**, dont deux défauts fonctionnels du moteur par patrons et deux défauts de restitution. Aucune correction de production effectuée.

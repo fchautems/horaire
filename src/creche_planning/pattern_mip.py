@@ -296,7 +296,6 @@ def solve_pattern_mip(
     for colloque in colloques:
         colloques_by_day.setdefault(int(colloque["day_i"]), []).append(colloque)
         group_i = int(colloque["group_i"])
-        colloque["_slot_mask"] = sum(1 << int(slot) for slot in colloque["slots"])
         if group_i in colloque_by_group:
             warnings.append(f"Plusieurs colloques definis pour le groupe {groups[group_i]['name']}.")
         else:
@@ -348,13 +347,6 @@ def solve_pattern_mip(
         slot_cost = 45.0 * soft_time_rule_weight if is_negative else -35.0 * soft_time_rule_weight
         for slot in slots:
             costs_for_day[int(slot)] += slot_cost
-    soft_cost_prefixes: dict[tuple[int, int], list[float]] = {}
-    for key, slot_costs in soft_slot_costs.items():
-        prefix = [0.0]
-        for slot_cost in slot_costs:
-            prefix.append(prefix[-1] + slot_cost)
-        soft_cost_prefixes[key] = prefix
-
     hard_primary_groups: dict[int, int] = {}
     primary_group_costs: dict[tuple[int, int], float] = {
         (e_i, g_i): 0.0
@@ -531,7 +523,6 @@ def solve_pattern_mip(
         site: (array("i"), array("H"), array("h"))
         for site in sites
     }
-    replacement_terms: dict[tuple[int, int], array] = {}
     pattern_breakdown: dict[str, dict[str, dict[str, int]]] = {}
     pattern_stats = {
         "off": 0,
@@ -581,17 +572,17 @@ def solve_pattern_mip(
             return work_cost_cache[cache_key]
         worked_mask = segments_mask(segments)
         rule_key = (e_i, d_i)
-        if worked_mask & forbidden_masks.get(rule_key, 0):
+        # This is only a conservative prefilter. A raw segment may still
+        # contain the intersite journey slots removed by add_pattern.
+        forbidden_overlap = worked_mask & forbidden_masks.get(rule_key, 0)
+        if forbidden_overlap.bit_count() > max_reserved_travel_slots:
             work_cost_cache[cache_key] = None
             return None
         if any(not (worked_mask & required) for required in required_masks.get(rule_key, ())):
             work_cost_cache[cache_key] = None
             return None
         cost = 0.0
-        prefix = soft_cost_prefixes.get(rule_key)
-        if prefix is not None:
-            for start, end in segments:
-                cost += prefix[end] - prefix[start]
+        # Time preferences are evaluated on the final occupied slots below.
         if len(segments) > 1:
             gap = segments[1][0] - segments[0][1]
             if (max_gap_slots is not None and gap > max_gap_slots
@@ -661,13 +652,15 @@ def solve_pattern_mip(
         display_overrides: dict[int, int],
         activities: dict[int, str],
     ) -> tuple[Any, ...]:
-        return (
-            segments,
-            half_groups.get(0, -1),
-            half_groups.get(1, -1),
-            tuple(sorted(coverage_overrides.items())),
-            tuple(sorted(display_overrides.items())),
-            tuple(sorted(activities.items())),
+        # A reserved journey and an explicit hole can yield the same actual
+        # assignments. Keep only the cheapest equivalent pattern, independent
+        # of its raw segments and of groups assigned to unoccupied halves.
+        return tuple(
+            (slot, coverage_overrides.get(slot, half_groups[0 if slot < split_slot else 1]),
+             display_overrides.get(slot, half_groups[0 if slot < split_slot else 1]),
+             activities.get(slot, ''))
+            for start, end in segments for slot in range(start, end)
+            if display_overrides.get(slot, half_groups[0 if slot < split_slot else 1]) >= 0
         )
 
     def add_pattern(
@@ -679,16 +672,17 @@ def solve_pattern_mip(
         half_groups: dict[int, int],
         duration: int,
         cost: float,
-        replacement: tuple[int, int] | None = None,
+        replacement: tuple[int, frozenset[int]] | None = None,
         expand_replacements: bool = True,
         travel_slots: frozenset[int] | None = None,
+        fixed_assignments: dict[int, tuple[int, str]] | None = None,
     ) -> None:
         nonlocal generation_operations
         generation_operations += 1
         if generation_operations % 2048 == 0 and remaining_seconds() <= 1.0:
             raise_time_limit("la generation des patrons")
         if expand_replacements and duration > 0:
-            for option in replacement_options(d_i, segments, half_groups):
+            for option in replacement_options(d_i, primary_g, segments):
                 add_pattern(
                     e_i,
                     d_i,
@@ -709,7 +703,7 @@ def solve_pattern_mip(
         activities: dict[int, str] = {}
         invalid_pattern = False
         attends_colloque = attends_colloque_by_educator[e_i]
-        for colloque in colloques_by_day.get(d_i, []):
+        for colloque in (() if fixed_assignments is not None else colloques_by_day.get(d_i, [])):
             target_g = int(colloque["group_i"])
             overlap = worked & colloque["slots"]
             if attends_colloque and primary_g == target_g and overlap and not colloque["slots"].issubset(worked):
@@ -721,19 +715,51 @@ def solve_pattern_mip(
                     coverage_overrides[slot] = -1
                     display_overrides[slot] = target_g
                     activities[slot] = "colloque"
-                elif base_g == target_g and not (primary_g == target_g and not attends_colloque):
+                elif (base_g == target_g
+                      and not (primary_g == target_g and not attends_colloque)
+                      and not (replacement and replacement[0] == int(colloque['id'])
+                               and slot in replacement[1])):
                     invalid_pattern = True
                     break
             if invalid_pattern:
                 break
             if replacement and replacement[0] == int(colloque["id"]):
-                for slot in colloque["slots"]:
+                for slot in replacement[1]:
                     if slot in worked:
+                        if activities.get(slot) == 'colloque':
+                            invalid_pattern = True
+                            break
                         coverage_overrides[slot] = target_g
                         display_overrides[slot] = target_g
                         activities[slot] = "remplacement_colloque"
         if invalid_pattern:
             return
+        if fixed_assignments is not None:
+            # Preserve every supplied activity, including partial replacements
+            # and their authorized margins. Never rebuild it from meeting times.
+            for slot, (group_i, activity) in fixed_assignments.items():
+                coverage_overrides[slot] = -1 if activity == 'colloque' else group_i
+                display_overrides[slot] = group_i
+                if activity:
+                    activities[slot] = activity
+        for meeting in colloques_by_day.get(d_i, []):
+            if attends_colloque and primary_g == int(meeting['group_i']):
+                if any(activities.get(slot) != 'colloque'
+                       or display_overrides.get(slot) != primary_g
+                       for slot in meeting['slots']):
+                    return
+        for slot, activity in activities.items():
+            group_i = display_overrides[slot]
+            matches = [m for m in colloques_by_day.get(d_i, []) if int(m['group_i']) == group_i]
+            if activity == 'colloque':
+                if (not attends_colloque or group_i != primary_g
+                    or not any(slot in m['slots'] for m in matches)):
+                    return
+            elif activity == 'remplacement_colloque':
+                if (group_i == primary_g or not any(
+                    max(0, int(m['start_slot']) - 1) <= slot < min(horizon.slots, int(m['end_slot']) + 2)
+                    for m in matches)):
+                    return
         # A pattern still has at most two ordinary periods; reserve the short
         # intersite journeys inside them without covering children or a meeting.
         removed = set(travel_slots or ())
@@ -770,6 +796,9 @@ def solve_pattern_mip(
             return
         if any(not (worked_mask & required) for required in required_masks.get(rule_key, ())):
             return
+        slot_costs = soft_slot_costs.get(rule_key)
+        if slot_costs is not None:
+            cost += sum(slot_costs[slot] for slot in worked)
         for slot in removed:
             coverage_overrides[slot] = -1
             display_overrides[slot] = -1
@@ -864,7 +893,8 @@ def solve_pattern_mip(
             pattern_stats["mixed_group"] += 1
         if cross_site_split:
             pattern_stats["cross_site_split"] += 1
-        if replacement:
+        has_replacement = 'remplacement_colloque' in activities.values()
+        if has_replacement:
             pattern_stats["replacement"] += 1
         if colloque_the_duration:
             pattern_stats["colloque"] += 1
@@ -892,15 +922,13 @@ def solve_pattern_mip(
             day_stats["mixed_group"] += 1
         if cross_site_split:
             day_stats["cross_site_split"] += 1
-        if replacement:
+        if has_replacement:
             day_stats["replacement"] += 1
         if colloque_the_duration:
             day_stats["colloque"] += 1
         append_pattern_index(by_educator_day, (e_i, d_i), pattern_id)
         append_pattern_index(by_educator_day_primary, (e_i, d_i, primary_g), pattern_id)
         append_pattern_index(by_educator, e_i, pattern_id)
-        if replacement:
-            append_pattern_index(replacement_terms, replacement, pattern_id)
         site_durations: dict[str, int] = {}
         for start, end in segments:
             for slot in range(start, end):
@@ -921,22 +949,45 @@ def solve_pattern_mip(
 
     def replacement_options(
         d_i: int,
+        primary_g: int,
         segments: tuple[tuple[int, int], ...],
-        half_groups: dict[int, int],
-    ) -> list[tuple[int, int] | None]:
+    ) -> Iterable[tuple[int, frozenset[int]] | None]:
+        """Contiguous replacements may cover any part of the authorized window."""
         worked_mask = segments_mask(segments)
-        options: list[tuple[int, int] | None] = [None]
+        yield None
         for colloque in colloques_by_day.get(d_i, []):
-            colloque_mask = int(colloque["_slot_mask"])
-            if worked_mask & colloque_mask != colloque_mask:
+            if int(colloque['group_i']) == primary_g:
                 continue
-            base_groups = {half_groups[0 if slot < split_slot else 1] for slot in colloque["slots"]}
-            if len(base_groups) != 1:
-                continue
-            source_g = next(iter(base_groups))
-            if source_g >= 0 and source_g != int(colloque["group_i"]):
-                options.append((int(colloque["id"]), source_g))
-        return options
+            first = max(0, int(colloque['start_slot']) - 1)
+            last = min(horizon.slots, int(colloque['end_slot']) + 2)
+            for start in range(first, last):
+                for end in range(start + 1, last + 1):
+                    mask = ((1 << (end - start)) - 1) << start
+                    if worked_mask & mask != mask:
+                        break
+                    yield int(colloque['id']), frozenset(range(start, end))
+
+    def fixed_day_assignments(blocks: list[dict[str, Any]]) -> dict[int, tuple[int, str]] | None:
+        assignments: dict[int, tuple[int, str]] = {}
+        try:
+            for block in blocks:
+                group_i = group_by_name[block['group']]
+                start, end = parse_time(block['start']), parse_time(block['end'])
+                if (block['site'] != groups[group_i]['site'] or end <= start
+                    or not math.isfinite(float(block['hours']))
+                    or abs(float(block['hours']) - round((end-start)/60, 2)) > 1e-6):
+                    return None
+                slots, clipped = slot_range_clipped(horizon, block['start'], block['end'])
+                activity = block.get('activity', 'children')
+                if clipped or activity not in {'children', 'colloque', 'remplacement_colloque'}:
+                    return None
+                for slot in slots:
+                    if slot in assignments:
+                        return None
+                    assignments[slot] = (group_i, '' if activity == 'children' else activity)
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return None
+        return assignments
 
     def add_fixed_day_pattern(
         e_i: int,
@@ -944,44 +995,13 @@ def solve_pattern_mip(
         primary_g: int,
         blocks: list[dict[str, Any]],
     ) -> bool:
-        if not blocks:
-            add_pattern(
-                e_i,
-                d_i,
-                primary_g,
-                None,
-                (),
-                {0: -1, 1: -1},
-                0,
-                0.0,
-                expand_replacements=False,
-            )
-            return True
-
-        worked: set[int] = set()
+        assignments = fixed_day_assignments(blocks)
+        if assignments is None:
+            return False
+        worked = set(assignments)
         ordinary_groups_by_half: dict[int, set[int]] = {0: set(), 1: set()}
-        replacement: tuple[int, int] | None = None
-        replacement_target: int | None = None
-        for block in blocks:
-            group_name = str(block.get("group", ""))
-            if group_name not in group_by_name:
-                return False
-            block_slots = set(
-                slot_range_clipped(
-                    horizon,
-                    str(block.get("start", "")),
-                    str(block.get("end", "")),
-                )[0]
-            )
-            worked.update(block_slots)
-            activity = str(block.get("activity", ""))
-            if activity == "remplacement_colloque":
-                replacement_target = group_by_name[group_name]
-                continue
-            if activity == "colloque":
-                continue
-            group_i = group_by_name[group_name]
-            for slot in block_slots:
+        for slot, (group_i, activity) in assignments.items():
+            if not activity:
                 ordinary_groups_by_half[0 if slot < split_slot else 1].add(group_i)
 
         half_groups: dict[int, int] = {}
@@ -994,13 +1014,6 @@ def solve_pattern_mip(
                 if half_groups_found
                 else primary_g
             )
-
-        if replacement_target is not None:
-            colloque = colloque_by_group.get(replacement_target)
-            if colloque is None or int(colloque["day_i"]) != d_i:
-                return False
-            source_half = 0 if int(colloque["start_slot"]) < split_slot else 1
-            replacement = (int(colloque["id"]), half_groups[source_half])
 
         segments: list[tuple[int, int]] = []
         logical_worked = set(worked)
@@ -1024,10 +1037,12 @@ def solve_pattern_mip(
             half_groups,
             len(worked),
             0.0,
-            replacement=replacement,
             expand_replacements=False,
             travel_slots=frozenset(logical_worked - worked),
+            fixed_assignments=assignments,
         )
+        # Conversion succeeded. If a hard constraint rejected the pattern,
+        # the model reports "Aucun patron possible" as for generated days.
         return True
 
     for colloque in colloques:
@@ -1708,6 +1723,14 @@ def solve_pattern_mip(
         primary_group_warning_outside_hours=primary_group_warning_outside_hours,
         primary_group_warning_outside_days=primary_group_warning_outside_days,
     )
+    # Fixed means identical assignments, not just equal working hours. Merging
+    # adjacent records is allowed, changing a slot's group/activity is not.
+    for name, days in fixed_daily_schedules.items():
+        for day_key, _ in DAYS:
+            expected = fixed_day_assignments(days.get(day_key, []))
+            actual = fixed_day_assignments(schedule.get(name, {}).get(day_key, []))
+            if expected is None or expected != actual:
+                checks['errors'].append(f'Planning fixe modifie: {name} {day_key}.')
     weekly_errors = []
     for name, actual in checks["hours_by_educator"].items():
         target = checks["weekly_targets"][name]
