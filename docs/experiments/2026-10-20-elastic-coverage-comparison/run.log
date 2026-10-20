@@ -1,0 +1,13 @@
+START strict seed=1 budget=60.0
+FINISH strict seed=1 valid=False deficit=None
+START elastic seed=1 budget=60.0
+FINISH elastic seed=1 valid=False deficit=None
+START elastic seed=17 budget=60.0
+FINISH elastic seed=17 valid=False deficit=None
+START strict seed=17 budget=60.0
+FINISH strict seed=17 valid=False deficit=None
+START strict seed=43 budget=60.0
+FINISH strict seed=43 valid=False deficit=None
+START elastic seed=43 budget=60.0
+FINISH elastic seed=43 valid=False deficit=None
+COMPLETED {"strict": {"trials": 3, "hard_valid": 0, "first_valid_seconds": [], "scores": []}, "elastic": {"trials": 3, "hard_valid": 0, "first_valid_seconds": [], "scores": []}}

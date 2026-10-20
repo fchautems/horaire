@@ -1,0 +1,52 @@
+[
+  {
+    "elapsed_seconds": 0.1675,
+    "percent": 12,
+    "message": "Construction du modele CP-SAT"
+  },
+  {
+    "elapsed_seconds": 0.3908,
+    "percent": 20,
+    "message": "Contraintes de couverture"
+  },
+  {
+    "elapsed_seconds": 0.4091,
+    "percent": 28,
+    "message": "Contraintes educateurs"
+  },
+  {
+    "elapsed_seconds": 0.6415,
+    "percent": 36,
+    "message": "Contraintes hard et preferences"
+  },
+  {
+    "elapsed_seconds": 0.6958,
+    "percent": 48,
+    "message": "Recherche d'une solution valide"
+  },
+  {
+    "elapsed_seconds": 0.7345,
+    "percent": 48,
+    "message": "CP-SAT: 35711 variables, 82398 contraintes"
+  },
+  {
+    "elapsed_seconds": 0.7347,
+    "percent": 50,
+    "message": "CP-SAT groupes candidats 1/1 (budget 18 s)"
+  },
+  {
+    "elapsed_seconds": 0.9472,
+    "percent": 52,
+    "message": "CP-SAT groupes 1/1: INFEASIBLE en 0.2s"
+  },
+  {
+    "elapsed_seconds": 0.9473,
+    "percent": 50,
+    "message": "CP-SAT faisabilite 1/1 (automatic, budget 59 s)"
+  },
+  {
+    "elapsed_seconds": 60.2301,
+    "percent": 55,
+    "message": "CP-SAT UNKNOWN: 59.3s, 0 conflits, 40758 branches"
+  }
+]

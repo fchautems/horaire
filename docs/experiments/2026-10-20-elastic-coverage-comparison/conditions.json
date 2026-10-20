@@ -1,0 +1,77 @@
+{
+  "started_at": "2026-10-20T08:17:19.025890+00:00",
+  "git_head": "94a0d81f1c1c17ae46550afd6653b6eac1dc9830",
+  "python": "3.12.14",
+  "ortools": "9.15.6755",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "cpu_count": 9,
+  "search_workers": 8,
+  "time_limit_seconds": 60.0,
+  "seeds": [
+    1,
+    17,
+    43
+  ],
+  "trial_order": [
+    [
+      "strict",
+      1
+    ],
+    [
+      "elastic",
+      1
+    ],
+    [
+      "elastic",
+      17
+    ],
+    [
+      "strict",
+      17
+    ],
+    [
+      "strict",
+      43
+    ],
+    [
+      "elastic",
+      43
+    ]
+  ],
+  "options": {
+    "min_daily_hours": 2.0,
+    "enforce_min_daily_hours": false,
+    "max_split_gap_minutes": 90,
+    "weekly_hours_tolerance_percent": 5.0,
+    "weekly_hours_tolerance_step_minutes": 15,
+    "enforce_absolute_max_weekly_hours": true,
+    "absolute_max_weekly_hours": 40.0,
+    "the_enabled": true,
+    "the_percent": 10.0,
+    "the_colloques_count": true,
+    "half_day_split_time": "12:30",
+    "max_weekly_group_exception_days": 1,
+    "hard_max_work_days": true
+  },
+  "hint_payload": null,
+  "fixed_schedule": null,
+  "protected_hashes_before": {
+    "src/creche_planning/__init__.py": "59520e5c97705fdc9cd9f8a0f3121d5b833f987a13100ce0b7a119e2118d1356",
+    "src/creche_planning/domain.py": "92f9ca2685a376bf92eaeb48d1c3e05e2c1297897572281a42fed9ca8270047d",
+    "src/creche_planning/editor.py": "e5d42bb6598a898aceceb3d6c69bd544eb0e8e732a1c942cfc89995163854f58",
+    "src/creche_planning/elastic.py": "b7d98172eeb7861aa9fd26434b39630aa0c9a519b48b8caac15f1c8a3a7bddbe",
+    "src/creche_planning/pattern_mip.py": "94c19d3dba4292e230f4905563708a9108e4914faf78365a29609b34cd7d153b",
+    "src/creche_planning/pattern_search.py": "4e6590bc95e522b299752121826d1e62fb2fae51fc78ea26e9d9d34e5ac833f9",
+    "src/creche_planning/quality.py": "2a7d00ab610c3d826d528fe429887e31e058be8f07aa19c8d65755e42222fbf5",
+    "src/creche_planning/reports.py": "bd8bb029b1b837fe3a51431a77955415d3fad0250d73213e4589c7b28f78aa1b",
+    "src/creche_planning/runtime.py": "acaabca3ad9fb42eb9ee8f76d600eb8f960d7dda7cc787c602e913c426312379",
+    "src/creche_planning/scoring.py": "ff1ec4cdc19f37b0e319127d17cf255e0a099d85156e210d4af0ffb21d2c9fc6",
+    "src/creche_planning/solver.py": "171c076d2e4fdc876addec4a55309c88b170d4b15831a72b5517ab772937e593",
+    "src/creche_planning/validation.py": "8f3e0216cc245fcbf650364f261f7a866517e71e20fad55b38b86becb7594f4d",
+    "data/gwendo.json": "bcc8f215eecd273acbfe475f364f53a33238f8a6a19e599d01229292b354b629",
+    "config/solveur_config.json": "6202a2237d4e5147c44fa3d7c76b8d95acce43cb28e93c8af9f11c4501b10d0d",
+    "tests/fixtures/planning_gwendo_reference_valid.json": "58d3333951539e757e260e5af997e850c9418c058f83fc46d64feeaf778576ed",
+    "outputs/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "scope": "Direct compact API; matched screening, not a 600-second comparison or a full CLI/GUI run."
+}

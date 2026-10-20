@@ -1,0 +1,10 @@
+educator;day;site;group;start;end;hours;activity
+;;;AUCUN_PLANNING_VALIDE;;;0;UNKNOWN
+;;;DIAGNOSTIC;;;0;2106.359|start educators=13 groups=3 slots=48 time_limit=60.0
+;;;DIAGNOSTIC;;;0;2106.425|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234
+;;;DIAGNOSTIC;;;0;2106.426|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Nurserie,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Grands
+;;;DIAGNOSTIC;;;0;2106.426|primary_group_candidates=8
+;;;DIAGNOSTIC;;;0;2106.937|model variables=35711 constraints=82398 x=9360 hint=True fixed=False
+;;;DIAGNOSTIC;;;0;2107.135|primary_candidate=1 status=INFEASIBLE wall=0.198 groups=A repourvoir:Nurserie,Fanny:Nurserie,Natacha:Trotteur,Tara:Grands,Gwendoline:Trotteur,Céline:Grands,Magali:Trotteur,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Grands,X:Grands
+;;;DIAGNOSTIC;;;0;2166.345|feasibility_attempt=1 strategy=automatic status=UNKNOWN wall=59.207 conflicts=103 branches=145166
+;;;DIAGNOSTIC;;;0;2166.345|feasibility_finished status=UNKNOWN attempts=2

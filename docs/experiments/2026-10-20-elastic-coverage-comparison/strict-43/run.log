@@ -1,0 +1,11 @@
+{"elapsed_seconds": 0.1809, "percent": 12, "message": "Construction du modele CP-SAT"}
+{"elapsed_seconds": 0.423, "percent": 20, "message": "Contraintes de couverture"}
+{"elapsed_seconds": 0.4422, "percent": 28, "message": "Contraintes educateurs"}
+{"elapsed_seconds": 0.6791, "percent": 36, "message": "Contraintes hard et preferences"}
+{"elapsed_seconds": 0.7217, "percent": 48, "message": "Recherche d'une solution valide"}
+{"elapsed_seconds": 0.7581, "percent": 48, "message": "CP-SAT: 35711 variables, 82398 contraintes"}
+{"elapsed_seconds": 0.7584, "percent": 50, "message": "CP-SAT groupes candidats 1/1 (budget 18 s)"}
+{"elapsed_seconds": 0.9569, "percent": 52, "message": "CP-SAT groupes 1/1: INFEASIBLE en 0.2s"}
+{"elapsed_seconds": 0.957, "percent": 50, "message": "CP-SAT faisabilite 1/1 (automatic, budget 59 s)"}
+{"elapsed_seconds": 60.1663, "percent": 55, "message": "CP-SAT UNKNOWN: 59.2s, 103 conflits, 145166 branches"}
+SUMMARY {"mode": "strict", "seed": 43, "status": "infeasible_or_not_solved", "message": "UNKNOWN", "solve_seconds": 60.1746, "total_seconds": 60.1801, "cpu_seconds": 427.7562, "peak_rss_kib": 1802904, "model_ready_seconds": 0.7581, "hard_valid": false, "first_valid_seconds": null, "independent_errors": null, "score": null, "elastic_coverage": null, "checkpoints": [], "cp_sat_statistics": {"feasibility": {"attempt": 1, "strategy": "automatic", "status": "UNKNOWN", "wall_time_seconds": 59.207, "conflicts": 103, "branches": 145166, "solutions": 0, "variables": 35711, "constraints": 82398}, "feasibility_attempts": [{"attempt": 1, "strategy": "primary_candidate_1", "status": "INFEASIBLE", "wall_time_seconds": 0.198, "conflicts": 0, "branches": 0, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 1, "strategy": "automatic", "status": "UNKNOWN", "wall_time_seconds": 59.207, "conflicts": 103, "branches": 145166, "solutions": 0, "variables": 35711, "constraints": 82398}], "optimization": null}, "protected_files_unchanged": true, "active_planning_replaced": false}

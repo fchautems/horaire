@@ -1,0 +1,54 @@
+{
+  "mode": "elastic",
+  "seed": 1,
+  "status": "infeasible_or_not_solved",
+  "message": "UNKNOWN",
+  "solve_seconds": 60.1939,
+  "total_seconds": 60.2009,
+  "cpu_seconds": 429.3628,
+  "peak_rss_kib": 1735220,
+  "model_ready_seconds": 0.8691,
+  "hard_valid": false,
+  "first_valid_seconds": null,
+  "independent_errors": null,
+  "score": null,
+  "elastic_coverage": {
+    "enabled": true,
+    "phase1_status": "UNKNOWN",
+    "phase1_wall_seconds": 59.305,
+    "incumbents": [],
+    "zero_reached": false,
+    "quality_phase_started": false,
+    "best_bound": null
+  },
+  "checkpoints": [],
+  "cp_sat_statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "elastic_coverage",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 59.305,
+      "conflicts": 299459,
+      "branches": 687614,
+      "solutions": 0,
+      "variables": 36421,
+      "constraints": 83108
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "elastic_coverage",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 59.305,
+        "conflicts": 299459,
+        "branches": 687614,
+        "solutions": 0,
+        "variables": 36421,
+        "constraints": 83108
+      }
+    ],
+    "optimization": null
+  },
+  "protected_files_unchanged": true,
+  "active_planning_replaced": false
+}

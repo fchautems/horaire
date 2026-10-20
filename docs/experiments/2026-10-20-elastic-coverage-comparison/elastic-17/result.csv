@@ -1,0 +1,7 @@
+educator;day;site;group;start;end;hours;activity
+;;;AUCUN_PLANNING_VALIDE;;;0;UNKNOWN
+;;;DIAGNOSTIC;;;0;1984.851|start educators=13 groups=3 slots=48 time_limit=60.0
+;;;DIAGNOSTIC;;;0;1984.912|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234
+;;;DIAGNOSTIC;;;0;1984.912|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Nurserie,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Grands,Priscila:Nurserie,Valérie:Trotteur,X:Grands
+;;;DIAGNOSTIC;;;0;1984.912|primary_group_candidates=8
+;;;DIAGNOSTIC;;;0;1985.409|model variables=36421 constraints=83108 x=9360 hint=True fixed=False

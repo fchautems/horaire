@@ -1,0 +1,57 @@
+{
+  "mode": "strict",
+  "seed": 17,
+  "status": "infeasible_or_not_solved",
+  "message": "UNKNOWN",
+  "solve_seconds": 60.1745,
+  "total_seconds": 60.1799,
+  "cpu_seconds": 428.838,
+  "peak_rss_kib": 1827104,
+  "model_ready_seconds": 0.7672,
+  "hard_valid": false,
+  "first_valid_seconds": null,
+  "independent_errors": null,
+  "score": null,
+  "elastic_coverage": null,
+  "checkpoints": [],
+  "cp_sat_statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 59.194,
+      "conflicts": 119,
+      "branches": 141221,
+      "solutions": 0,
+      "variables": 35711,
+      "constraints": 82398
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "primary_candidate_1",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.202,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 59.194,
+        "conflicts": 119,
+        "branches": 141221,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      }
+    ],
+    "optimization": null
+  },
+  "protected_files_unchanged": true,
+  "active_planning_replaced": false
+}
