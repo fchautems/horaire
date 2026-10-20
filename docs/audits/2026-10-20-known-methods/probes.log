@@ -1,0 +1,28 @@
+{
+  "strict_full_schedule": {
+    "seconds": 0.1921,
+    "status": "ok",
+    "message": "OR-Tools CP-SAT OPTIMAL",
+    "errors": []
+  },
+  "compact_fixed_schedule_is_total_not_partial": {
+    "seconds": 0.0082,
+    "status": "infeasible_or_not_solved",
+    "message": "INFEASIBLE",
+    "errors": null
+  },
+  "disabled_weekly_constraint_does_not_repair": {
+    "seconds": 0.01,
+    "status": "invalid",
+    "message": "OR-Tools CP-SAT OPTIMAL",
+    "errors": [
+      "A: 1.00h hors tolerance autour de 2.00h (+/- 0.00h)"
+    ]
+  },
+  "strict_solver_can_use_invalid_hint_on_easy_case": {
+    "seconds": 0.0151,
+    "status": "ok",
+    "message": "OR-Tools CP-SAT OPTIMAL",
+    "errors": []
+  }
+}

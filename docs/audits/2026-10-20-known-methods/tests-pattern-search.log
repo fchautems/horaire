@@ -1,0 +1,13 @@
+test_attempts_expand_without_permanently_excluding_patterns (test_pattern_search.PatternSearchTests.test_attempts_expand_without_permanently_excluding_patterns) ... ok
+test_budget_reserves_time_for_improvement (test_pattern_search.PatternSearchTests.test_budget_reserves_time_for_improvement) ... ok
+test_hard_valid_requires_final_checks (test_pattern_search.PatternSearchTests.test_hard_valid_requires_final_checks) ... ok
+test_only_over_limit_primary_groups_are_released (test_pattern_search.PatternSearchTests.test_only_over_limit_primary_groups_are_released) ... ok
+test_retryable_status_distinguishes_timeout_and_infeasible (test_pattern_search.PatternSearchTests.test_retryable_status_distinguishes_timeout_and_infeasible) ... ok
+test_short_budget_runs_first_useful_attempt_instead_of_full_diagnostic (test_pattern_search.PatternSearchTests.test_short_budget_runs_first_useful_attempt_instead_of_full_diagnostic) ... ok
+test_unverified_ok_payload_is_downgraded (test_pattern_search.PatternSearchTests.test_unverified_ok_payload_is_downgraded) ... ok
+test_valid_candidate_is_never_replaced_by_invalid_improvement (test_pattern_search.PatternSearchTests.test_valid_candidate_is_never_replaced_by_invalid_improvement) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK

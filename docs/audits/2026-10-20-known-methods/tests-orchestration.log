@@ -1,0 +1,17 @@
+test_cached_candidate_is_rejected_when_current_rules_fail (test_solver_orchestration.SolverOrchestrationTests.test_cached_candidate_is_rejected_when_current_rules_fail) ... ok
+test_cached_candidate_is_revalidated_before_reuse (test_solver_orchestration.SolverOrchestrationTests.test_cached_candidate_is_revalidated_before_reuse) ... ok
+test_explicit_latest_candidate_is_preferred_over_newer_debug_output (test_solver_orchestration.SolverOrchestrationTests.test_explicit_latest_candidate_is_preferred_over_newer_debug_output) ... ok
+test_valid_candidate_is_kept_when_quality_improvement_times_out (test_solver_orchestration.SolverOrchestrationTests.test_valid_candidate_is_kept_when_quality_improvement_times_out) ... PROGRESS|3|Lecture des donnees
+PROGRESS|5|Preparation de la recherche par patrons
+STAGE|1|5|161|Reparation rapide en journees continues
+PROGRESS|5|Essai 1/4 - Reparation rapide en journees continues (budget 161 s)
+STAGE|5|5|179|Amelioration du candidat hard-valide
+PROGRESS|72|Amelioration du candidat valide (budget 179 s)
+PROGRESS|96|Verification et ecriture des fichiers
+PROGRESS|100|Termine
+ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK
