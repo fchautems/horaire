@@ -1,0 +1,116 @@
+{
+  "started_at": "2026-10-20T05:10:15.386014+00:00",
+  "finished_at": "2026-10-20T05:20:15.629768+00:00",
+  "elapsed_seconds": 600.216,
+  "status": "infeasible_or_not_solved",
+  "solver_message": "UNKNOWN",
+  "statistics": {
+    "feasibility": {
+      "attempt": 2,
+      "strategy": "portfolio",
+      "status": "UNKNOWN",
+      "wall_time_seconds": 148.444,
+      "conflicts": 1857,
+      "branches": 328254,
+      "solutions": 0,
+      "variables": 35711,
+      "constraints": 82398
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "primary_candidate_1",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.248,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 2,
+        "strategy": "primary_candidate_2",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.2,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 3,
+        "strategy": "primary_candidate_3",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.017,
+        "conflicts": 188,
+        "branches": 196953,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 4,
+        "strategy": "primary_candidate_4",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.017,
+        "conflicts": 0,
+        "branches": 41600,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 5,
+        "strategy": "primary_candidate_5",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 30.016,
+        "conflicts": 0,
+        "branches": 41555,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 6,
+        "strategy": "primary_candidate_6",
+        "status": "INFEASIBLE",
+        "wall_time_seconds": 0.175,
+        "conflicts": 0,
+        "branches": 0,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 360.185,
+        "conflicts": 768,
+        "branches": 189273,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      },
+      {
+        "attempt": 2,
+        "strategy": "portfolio",
+        "status": "UNKNOWN",
+        "wall_time_seconds": 148.444,
+        "conflicts": 1857,
+        "branches": 328254,
+        "solutions": 0,
+        "variables": 35711,
+        "constraints": 82398
+      }
+    ],
+    "optimization": null
+  },
+  "schedule_present": false,
+  "independent_errors": null,
+  "score": null,
+  "selected": null,
+  "protected_files_unchanged": true
+}

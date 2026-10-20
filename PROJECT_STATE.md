@@ -628,3 +628,15 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Dernier résultat guidé régénéré dans `docs/experiments/2026-10-20-guided-fewer-breaks-120s/result.html` ; empreinte HTML actualisée. Aucun nouveau calcul, aucune modification des données JSON/CSV, du candidat, des règles ou du solveur.
 - Contrôle structurel de l'export : 13 personnes, 65 journées, 79 plages, correspondance exacte au JSON ; tri, échappement HTML, jours libres, calcul des heures visibles et absence de mutation du payload vérifiés. Suite complète : **134 tests réussis en 29,365 s** ; `git diff --check` réussi. Aucun contrôle visuel dans un navigateur ni test réel sous Windows effectué.
 - Prochaine action : publier et vérifier le commit distant, puis ouvrir la section Horaires individuels pour la revue utilisateur. Aucun blocage identifié à ce stade.
+
+
+## Essai depuis zéro sous maximum de 90 minutes — 20 octobre 2026
+
+- Frédéric demande de mettre le programme à l’épreuve depuis zéro. Essai CP-SAT compact borné à 600 secondes sur `deab5fa`, sans planning fourni, sans hint et sans affectations fixées. Les hypothèses internes de groupes et stratégies automatiques du moteur restent actives.
+- Même protocole que la relance précédente depuis zéro, avec la règle hard actuelle de coupure maximale de 90 minutes. Les options et empreintes sont enregistrées dans `docs/experiments/2026-10-20-from-zero-600s-hard-90/conditions.json`. Aucune règle assouplie, aucun ancien résultat utilisé comme secours dans cet essai.
+- Dernière suite existante : 134 tests réussis en 29,365 s avant cet essai. Données, configuration et code de production inchangés. Tout candidat trouvé sera revalidé et exporté avec les horaires individuels ; les sorties actives restent protégées.
+- Résultat vérifié : **600,216 secondes**, de 07 h 10 min 15 s à 07 h 20 min 15 s, heure suisse. Fin normale, code de sortie **0** ; statut **UNKNOWN**, zéro solution et aucun checkpoint. Aucun planning à revalider, aucune optimisation commencée.
+- Six hypothèses internes : trois INFEASIBLE localement et trois UNKNOWN. Recherche générale automatique : 360,185 s, 768 conflits, 189 273 branches ; portfolio : 148,444 s, 1 857 conflits, 328 254 branches. Aucune preuve d’infaisabilité globale ni nouveau bug démontré.
+- Intégrité avant/après vérifiée : données, configuration, code de production et sorties actives inchangés. Les exports de cet essai signalent l’absence de planning ; aucun candidat antérieur présenté comme résultat. Le rapport individuel publié dans `deab5fa` reste disponible sur le résultat guidé précédent.
+- Preuves complètes et empreintes dans le dossier de l’essai ; aucune nouvelle suite de tests nécessaire au seul calcul, dernières 134 réussites inchangées. Limite explicite : essai CP-SAT compact, pas de l’orchestrateur `pattern_mip` ni de l’interface Windows.
+- Prochaine piste utile, si demandée : diagnostic de la recherche initiale ou comparaison bornée des moteurs avec un protocole explicite. Pas de relance automatique identique après cet essai.

@@ -1,0 +1,23 @@
+PROGRESS 0.195|12|Construction du modele CP-SAT
+PROGRESS 0.460|20|Contraintes de couverture
+PROGRESS 0.481|28|Contraintes educateurs
+PROGRESS 0.734|36|Contraintes hard et preferences
+PROGRESS 0.786|48|Recherche d'une solution valide
+PROGRESS 0.868|48|CP-SAT: 35711 variables, 82398 contraintes
+PROGRESS 0.868|50|CP-SAT groupes candidats 1/6 (budget 30 s)
+PROGRESS 1.117|52|CP-SAT groupes 1/6: INFEASIBLE en 0.2s
+PROGRESS 1.117|51|CP-SAT groupes candidats 2/6 (budget 30 s)
+PROGRESS 1.318|52|CP-SAT groupes 2/6: INFEASIBLE en 0.2s
+PROGRESS 1.318|52|CP-SAT groupes candidats 3/6 (budget 30 s)
+PROGRESS 31.335|52|CP-SAT groupes 3/6: UNKNOWN en 30.0s
+PROGRESS 31.336|53|CP-SAT groupes candidats 4/6 (budget 30 s)
+PROGRESS 61.354|52|CP-SAT groupes 4/6: UNKNOWN en 30.0s
+PROGRESS 61.354|54|CP-SAT groupes candidats 5/6 (budget 30 s)
+PROGRESS 91.371|52|CP-SAT groupes 5/6: UNKNOWN en 30.0s
+PROGRESS 91.371|55|CP-SAT groupes candidats 6/6 (budget 30 s)
+PROGRESS 91.547|52|CP-SAT groupes 6/6: INFEASIBLE en 0.2s
+PROGRESS 91.547|50|CP-SAT faisabilite 1/3 (automatic, budget 360 s)
+PROGRESS 451.743|55|CP-SAT UNKNOWN: 360.2s, 768 conflits, 189273 branches
+PROGRESS 451.743|53|CP-SAT faisabilite 2/3 (portfolio, budget 148 s)
+PROGRESS 600.198|55|CP-SAT UNKNOWN: 148.4s, 1857 conflits, 328254 branches
+SUMMARY {"started_at": "2026-10-20T05:10:15.386014+00:00", "finished_at": "2026-10-20T05:20:15.629768+00:00", "elapsed_seconds": 600.216, "status": "infeasible_or_not_solved", "solver_message": "UNKNOWN", "statistics": {"feasibility": {"attempt": 2, "strategy": "portfolio", "status": "UNKNOWN", "wall_time_seconds": 148.444, "conflicts": 1857, "branches": 328254, "solutions": 0, "variables": 35711, "constraints": 82398}, "feasibility_attempts": [{"attempt": 1, "strategy": "primary_candidate_1", "status": "INFEASIBLE", "wall_time_seconds": 0.248, "conflicts": 0, "branches": 0, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 2, "strategy": "primary_candidate_2", "status": "INFEASIBLE", "wall_time_seconds": 0.2, "conflicts": 0, "branches": 0, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 3, "strategy": "primary_candidate_3", "status": "UNKNOWN", "wall_time_seconds": 30.017, "conflicts": 188, "branches": 196953, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 4, "strategy": "primary_candidate_4", "status": "UNKNOWN", "wall_time_seconds": 30.017, "conflicts": 0, "branches": 41600, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 5, "strategy": "primary_candidate_5", "status": "UNKNOWN", "wall_time_seconds": 30.016, "conflicts": 0, "branches": 41555, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 6, "strategy": "primary_candidate_6", "status": "INFEASIBLE", "wall_time_seconds": 0.175, "conflicts": 0, "branches": 0, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 1, "strategy": "automatic", "status": "UNKNOWN", "wall_time_seconds": 360.185, "conflicts": 768, "branches": 189273, "solutions": 0, "variables": 35711, "constraints": 82398}, {"attempt": 2, "strategy": "portfolio", "status": "UNKNOWN", "wall_time_seconds": 148.444, "conflicts": 1857, "branches": 328254, "solutions": 0, "variables": 35711, "constraints": 82398}], "optimization": null}, "schedule_present": false, "independent_errors": null, "score": null, "selected": null, "protected_files_unchanged": true}
