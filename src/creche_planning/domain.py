@@ -122,6 +122,8 @@ DEFAULT_RUN_CONFIG = {
     "timestamp_format": "%Y-%m-%d_%H-%M-%S",
     "time_limit_seconds": 300.0,
     "compact_candidate_time_seconds": None,
+    "experimental_elastic_coverage": False,
+    "cp_sat_search_seed": None,
     "pattern_fallback_time_seconds": 60.0,
     "quality_gap": 0.05,
     "weekly_mode": "exact",

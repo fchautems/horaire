@@ -14,6 +14,8 @@
     "timestamp_format": "%Y-%m-%d_%H-%M-%S",
     "time_limit_seconds": 100,
     "compact_candidate_time_seconds": null,
+    "experimental_elastic_coverage": false,
+    "cp_sat_search_seed": null,
     "pattern_fallback_time_seconds": 60,
     "quality_gap": 0.05,
     "weekly_mode": "exact",

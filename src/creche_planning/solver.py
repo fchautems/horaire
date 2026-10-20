@@ -42,6 +42,7 @@ from .domain import (
     weekly_tolerance_slots,
 )
 from .scoring import compact_quality_context, compact_quality_breakdown
+from .elastic import CoverageRelaxation
 from .validation import data_errors, schedule_errors, require_valid_data
 from .domain import build_staffing_limits
 
@@ -3965,9 +3966,19 @@ def make_ortools_slot_payload(
     main_group_slot_weight: float = 0.0,
     main_site_day_weight: float = 0.0,
     accept_invalid_for_hint: bool = False,
+    experimental_elastic_coverage: bool = False,
+    search_seed: int | None = None,
 ) -> tuple[dict[str, Any], Any]:
     if max_blocks_per_day not in {1, 2}:
         raise ValueError('Le modele compact supporte une ou deux periodes de presence par jour.')
+    if search_seed is not None and not 0 <= search_seed <= 2_147_483_000:
+        raise ValueError('search_seed doit etre un entier entre 0 et 2147483000.')
+    if experimental_elastic_coverage and (
+        accept_invalid_for_hint or not all((enforce_daily_block_structure,
+        enforce_half_day_group_structure, enforce_percentage_rules,
+        enforce_daily_hours, enforce_weekly_hours))
+    ):
+        raise ValueError('La phase elastique autorise uniquement les deficits de couverture.')
     require_valid_data(data)
     solve_started_at = time.monotonic()
     try:
@@ -4460,12 +4471,21 @@ def make_ortools_slot_payload(
     if progress_callback:
         progress_callback(20, "Contraintes de couverture")
 
+    coverage_relaxation = (
+        CoverageRelaxation(model, horizon.step) if experimental_elastic_coverage else None
+    )
+
     for d_i in range(len(DAYS)):
         for g_i in range(len(groups)):
             for t_i in range(horizon.slots):
                 terms = [x[(e_i, d_i, g_i, t_i)] for e_i in range(len(educators))]
                 demand = group_demand[(d_i, g_i, t_i)]
-                model.Add(sum(terms) >= demand)
+                if coverage_relaxation is not None:
+                    coverage_relaxation.add_minimum(sum(terms), demand, scope='group',
+                        day=DAYS[d_i][0], site=groups[g_i]['site'], group=groups[g_i]['name'],
+                        start=format_time(horizon.start + t_i * horizon.step))
+                else:
+                    model.Add(sum(terms) >= demand)
                 model.Add(sum(terms) <= group_limits[(d_i, g_i, t_i)])
         for (demand_d_i, site, t_i), demand in site_demand.items():
             if demand_d_i != d_i:
@@ -4476,7 +4496,12 @@ def make_ortools_slot_payload(
                 for g_i, group in enumerate(groups)
                 if group["site"] == site
             ]
-            model.Add(sum(terms) >= demand)
+            if coverage_relaxation is not None:
+                coverage_relaxation.add_minimum(sum(terms), demand, scope='site',
+                    day=DAYS[d_i][0], site=site,
+                    start=format_time(horizon.start + t_i * horizon.step))
+            else:
+                model.Add(sum(terms) >= demand)
 
     for (d_i, site, t_i), maximum in site_limits.items():
         model.Add(sum(x[(e_i, d_i, g_i, t_i)] for e_i in range(len(educators))
@@ -5052,7 +5077,7 @@ def make_ortools_slot_payload(
             )
         )
         debug(f"validation hard_errors={len(checks['errors'])}")
-        return {
+        candidate = {
             "status": "ok" if not checks["errors"] else "invalid",
             "objective": round(objective, 4),
             "solver_reported_objective": reported_objective,
@@ -5063,7 +5088,15 @@ def make_ortools_slot_payload(
             "checks": checks,
             "diagnostics": list(debug_lines),
         }
+        if coverage_phase_info is not None:
+            candidate['elastic_coverage'] = coverage_phase_info
+            candidate['solver_reported_objective_kind'] = (
+                'quality' if coverage_phase_info['quality_phase_started'] else 'coverage_deficit_slots'
+            )
+        return candidate
 
+    coverage_phase_info: dict[str, Any] | None = None
+    coverage_incumbents: list[dict[str, Any]] = []
     class IncumbentProgressCallback(cp_model.CpSolverSolutionCallback):
         def __init__(self, phase: str, progress_percent: int) -> None:
             super().__init__()
@@ -5074,6 +5107,20 @@ def make_ortools_slot_payload(
 
         def on_solution_callback(self) -> None:
             self.solution_count += 1
+            if self.phase == 'couverture':
+                missing = int(round(self.ObjectiveValue()))
+                coverage_incumbents.append({
+                    'elapsed_seconds': round(time.monotonic() - solve_started_at, 4),
+                    'total_deficit_slots': missing,
+                    'best_bound': float(self.BestObjectiveBound()),
+                })
+                debug(f'coverage_incumbent deficit={missing}')
+                if progress_callback:
+                    progress_callback(55, f'Phase couverture: deficit {missing} personne-creneau(x)')
+                if missing == 0:
+                    self.StopSearch()
+                # Positive deficits must never reach the valid-checkpoint callback.
+                return
             if self.phase == "faisabilite":
                 objective = float(self.ObjectiveValue())
                 message = (
@@ -5115,8 +5162,67 @@ def make_ortools_slot_payload(
     solver: Any = None
     status: Any = None
     remaining_feasibility = feasibility_limit
+    if coverage_relaxation is not None:
+        # Same model and rules, only minimum coverage has artificial deficits.
+        # Unlike the default feasibility search, minimize violations to zero.
+        model.Minimize(coverage_relaxation.objective)
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = max(
+            0.000001, total_limit - (time.monotonic() - solve_started_at)
+        )
+        solver.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
+        solver.parameters.random_seed = 1 if search_seed is None else search_seed
+        solver.parameters.relative_gap_limit = 0.0
+        if os.environ.get('CRECHE_CP_LOG'):
+            solver.parameters.log_search_progress = True
+        callback = IncumbentProgressCallback('couverture', 55)
+        if progress_callback:
+            progress_callback(50, 'Phase I: reduction des deficits de couverture')
+        status = solver.Solve(model, callback)
+        phase_statistics = {
+            'attempt': 1, 'strategy': 'elastic_coverage', 'status': solver.StatusName(status),
+            'wall_time_seconds': round(float(solver.WallTime()), 3),
+            'conflicts': int(solver.NumConflicts()), 'branches': int(solver.NumBranches()),
+            'solutions': callback.solution_count,
+            'variables': model_variable_count, 'constraints': model_constraint_count,
+        }
+        feasibility_attempts.append(phase_statistics)
+        has_candidate = status in {cp_model.OPTIMAL, cp_model.FEASIBLE}
+        coverage_phase_info = {
+            'enabled': True, 'phase1_status': solver.StatusName(status),
+            'phase1_wall_seconds': phase_statistics['wall_time_seconds'],
+            'incumbents': coverage_incumbents,
+            'zero_reached': False, 'quality_phase_started': False,
+            'best_bound': float(solver.BestObjectiveBound()) if has_candidate else None,
+        }
+        if has_candidate:
+            coverage_phase_info.update(coverage_relaxation.describe(solver))
+        if not has_candidate or coverage_phase_info['total_deficit_slots'] > 0:
+            if has_candidate:
+                diagnostic = build_candidate(solver, status, 'Phase couverture: deficits non nuls')
+                diagnostic['status'] = 'invalid'
+                diagnostic['diagnostic_only'] = True
+            else:
+                diagnostic = {
+                    'status': 'infeasible_or_not_solved',
+                    'solver_message': solver.StatusName(status), 'warnings': sorted(set(warnings)),
+                    'diagnostics': list(debug_lines), 'elastic_coverage': coverage_phase_info,
+                }
+            diagnostic['cp_sat_statistics'] = {
+                'feasibility': phase_statistics, 'feasibility_attempts': feasibility_attempts,
+                'optimization': None,
+            }
+            return diagnostic, bundle
+        coverage_phase_info['zero_reached'] = True
+        coverage_phase_info['first_zero_seconds'] = next(
+            item['elapsed_seconds'] for item in coverage_incumbents if item['total_deficit_slots'] == 0
+        )
+        # Zero is a global lower bound: no optimality proof or weight tuning needed.
+        model.Add(coverage_relaxation.objective == 0)
+        model.Minimize(sum(objective_terms) if objective_terms else 0)
     if (
-        fixed_schedule is None
+        coverage_relaxation is None
+        and fixed_schedule is None
         and not has_schedule_hint
         and primary_group_candidates
         and feasibility_limit >= 60.0
@@ -5151,7 +5257,7 @@ def make_ortools_slot_payload(
                 min(8, os.cpu_count() or 1),
             )
             solver.parameters.stop_after_first_solution = True
-            solver.parameters.random_seed = 101 + candidate_index
+            solver.parameters.random_seed = (101 if search_seed is None else search_seed + 100) + candidate_index
             solver.parameters.use_optimization_hints = True
             if os.environ.get("CRECHE_CP_LOG"):
                 solver.parameters.log_search_progress = True
@@ -5215,7 +5321,7 @@ def make_ortools_slot_payload(
         solver.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
         solver.parameters.stop_after_first_solution = True
         solver.parameters.search_branching = strategy
-        solver.parameters.random_seed = random_seed
+        solver.parameters.random_seed = random_seed if search_seed is None else search_seed + random_seed - 1
         if os.environ.get("CRECHE_CP_LOG"):
             solver.parameters.log_search_progress = True
         if has_hint:
@@ -5314,7 +5420,9 @@ def make_ortools_slot_payload(
         0.0,
         total_limit - (time.monotonic() - solve_started_at),
     )
-    if fixed_schedule is None and remaining_for_optimization >= 1.0:
+    if (fixed_schedule is None or coverage_relaxation is not None) and remaining_for_optimization >= 1.0:
+        if coverage_phase_info is not None:
+            coverage_phase_info['quality_phase_started'] = True
         model.ClearHints()
         hinted_variables = (
             list(primary_group.values())
@@ -5337,6 +5445,8 @@ def make_ortools_slot_payload(
         optimizer.parameters.num_search_workers = max(1, min(8, os.cpu_count() or 1))
         optimizer.parameters.relative_gap_limit = max(0.0, float(mip_gap))
         optimizer.parameters.use_optimization_hints = True
+        if search_seed is not None:
+            optimizer.parameters.random_seed = search_seed
         if os.environ.get("CRECHE_CP_LOG"):
             optimizer.parameters.log_search_progress = True
         if progress_callback:
@@ -5959,6 +6069,9 @@ def main() -> int:
         help="Desactive l'horodatage des fichiers de sortie.",
     )
     parser.add_argument("--time-limit", type=float, help="Limite en secondes.")
+    parser.add_argument('--experimental-elastic-coverage', action='store_true', default=None,
+                        help='Prototype CP-SAT : reduit les deficits de couverture avant optimisation stricte.')
+    parser.add_argument('--search-seed', type=int, help='Graine des recherches CP-SAT.')
     parser.add_argument("--mip-gap", type=float, help="Gap MIP relatif.")
     parser.add_argument("--weekly-mode", choices=["exact", "maximum"])
     parser.add_argument(
@@ -6139,6 +6252,10 @@ def main() -> int:
     mip_gap = float(pick(args.mip_gap, config, "quality_gap", 0.01))
     weekly_mode = pick(args.weekly_mode, config, "weekly_mode", "exact")
     fast_feasible = bool(pick(args.fast_feasible, config, "fast_feasible", False))
+    experimental_elastic_coverage = bool(pick(
+        args.experimental_elastic_coverage, config, 'experimental_elastic_coverage', False
+    ))
+    search_seed = pick(args.search_seed, config, 'cp_sat_search_seed', None)
     structured = bool(pick(args.structured, config, "structured", False))
     smooth = bool(pick(args.smooth, config, "smooth", False))
     smooth_time_limit = float(pick(args.smooth_time_limit, config, "smooth_time_limit_seconds", 30.0))
@@ -6472,6 +6589,8 @@ def main() -> int:
             hint_payload=latest_payload,
             debug_log_path=cp_sat_debug_log_path,
             candidate_callback=save_valid_checkpoint,
+            experimental_elastic_coverage=experimental_elastic_coverage,
+            search_seed=search_seed,
         )
 
     solver_engine = str(config.get("solver_engine", "scipy")).strip().lower()
