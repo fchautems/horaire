@@ -619,3 +619,12 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Preuves : `docs/experiments/2026-10-20-guided-fewer-breaks-120s/README.md`, synthèse, journaux, résultat JSON/CSV/HTML, contrôle croisé et scripts reproductibles. Aucun planning actif remplacé.
 - Limite : aucun optimum prouvé. Ne pas interpréter l'absence de résultat sous huit journées coupées pendant 120 secondes comme une impossibilité. Le candidat améliore la durée totale mais modifie de nombreuses journées.
 - Prochaine action utile : examiner visuellement ce candidat avant toute adoption ; si la priorité absolue est de descendre sous huit journées coupées, lancer ensuite une recherche dédiée avec cette borne comme hypothèse testable.
+
+## Horaires individuels dans le rapport — 20 octobre 2026
+
+- Demande de Frédéric : ajouter les horaires hebdomadaires par personne au résultat, en complément du planning par groupe, puis publier le commit.
+- Base inspectée : `0aca2b1` sur `main`. État du projet et règles métier lus ; aucun AGENTS.md ni MODEL_GUIDE.md trouvé dans le dépôt ou les emplacements /workspace inspectés ; aucun outil Brain disponible identifié.
+- Générateur `reports.write_html` complété : navigation entre les vues, fiche de cinq jours par personne, plages triées avec site/groupe/activité, jours libres, heures visibles et totaux hebdomadaires existants. Le THE hors colloque reste explicitement non planifié.
+- Dernier résultat guidé régénéré dans `docs/experiments/2026-10-20-guided-fewer-breaks-120s/result.html` ; empreinte HTML actualisée. Aucun nouveau calcul, aucune modification des données JSON/CSV, du candidat, des règles ou du solveur.
+- Contrôle structurel de l'export : 13 personnes, 65 journées, 79 plages, correspondance exacte au JSON ; tri, échappement HTML, jours libres, calcul des heures visibles et absence de mutation du payload vérifiés. Suite complète : **134 tests réussis en 29,365 s** ; `git diff --check` réussi. Aucun contrôle visuel dans un navigateur ni test réel sous Windows effectué.
+- Prochaine action : publier et vérifier le commit distant, puis ouvrir la section Horaires individuels pour la revue utilisateur. Aucun blocage identifié à ce stade.

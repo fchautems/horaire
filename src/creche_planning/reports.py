@@ -433,6 +433,53 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
             f"<ul>{items}</ul></section>"
         )
 
+    individual_sections: list[str] = []
+    for person_index, name in enumerate(educator_names):
+        by_day = schedule.get(name, {})
+        individual_rows: list[str] = []
+        for day_key, day_label in DAYS:
+            blocks = sorted(by_day.get(day_key, []), key=lambda block: parse_time(block["start"]))
+            entries: list[str] = []
+            visible_minutes = 0
+            for block in blocks:
+                activity = block.get("activity", "children")
+                activity_label = {
+                    "children": "Enfants",
+                    "colloque": "Colloque",
+                    "remplacement_colloque": "Remplacement de colloque",
+                }.get(activity, activity)
+                entries.append(
+                    f'<li><strong>{esc(block["start"])}–{esc(block["end"])}</strong> '
+                    f'{esc(block["site"])} / {esc(block["group"])} — {esc(activity_label)}</li>'
+                )
+                visible_minutes += parse_time(block["end"]) - parse_time(block["start"])
+            daily_hours = f"{visible_minutes // 60} h {visible_minutes % 60:02d}"
+            slots_html = f'<ul>{"".join(entries)}</ul>' if entries else 'Libre'
+            individual_rows.append(
+                f'<tr><th scope="row">{esc(day_label)}</th><td>{slots_html}</td>'
+                f'<td class="visible-hours">{daily_hours}</td></tr>'
+            )
+        totals: list[str] = []
+        for key, label in (
+            ("hours_by_educator", "Total hebdomadaire, THE inclus"),
+            ("weekly_targets", "Cible contractuelle"),
+            ("invisible_the_hours_by_educator", "THE hors colloque, non planifié"),
+        ):
+            if name in checks.get(key, {}):
+                totals.append(f'{label} : {float(checks[key][name]):.2f} h')
+        totals_html = f'<p class="individual-totals">{esc(" · ".join(totals))}</p>' if totals else ''
+        individual_sections.append(
+            f'<section class="individual-person" id="person-{person_index}">'
+            f'<h3>{esc(name)}</h3>{totals_html}'
+            '<table><thead><tr><th scope="col">Jour</th><th scope="col">Plages et affectations</th>'
+            '<th scope="col">Heures visibles</th></tr></thead>'
+            f'<tbody>{"".join(individual_rows)}</tbody></table></section>'
+        )
+    individual_links = " · ".join(
+        f'<a href="#person-{index}">{esc(name)}</a>'
+        for index, name in enumerate(educator_names)
+    )
+
     content = f"""<!doctype html>
 <html lang="fr">
 <head>
@@ -481,12 +528,23 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
   .status h2 {{ margin: 0; }}
   .status.valid {{ background: #ecfdf5; border-color: #bbf7d0; color: #166534; }}
   .status.invalid {{ background: #fff1f2; border-color: #fecdd3; color: #be123c; }}
+  .view-links, .individual-links {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }}
+  .individual-note, .individual-totals {{ color: #526070; font-size: 12px; }}
+  .individual-person {{ background: white; border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; break-inside: avoid; }}
+  .individual-person h3 {{ margin: 0 0 8px; }}
+  .individual-person table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
+  .individual-person th, .individual-person td {{ border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; vertical-align: top; }}
+  .individual-person thead {{ background: #eef2f7; }}
+  .individual-person ul {{ margin: 0; padding-left: 16px; }}
+  .individual-person li {{ margin-bottom: 4px; }}
+  .visible-hours {{ white-space: nowrap; }}
   @media print {{
     body {{ margin: 6mm; background: white; }}
     .day {{ break-inside: avoid; }}
     :root {{ --slot-min: 12px; }}
     .badge {{ font-size: 6px; }}
     .count {{ font-size: 6px; }}
+    .view-links, .individual-links {{ display: none; }}
   }}
 </style>
 </head>
@@ -495,7 +553,15 @@ def write_html(path: Path, payload: dict[str, Any], bundle: SolveBundle) -> None
 <div class="meta">Chaque case affiche <strong>personnes presentes / besoin minimum</strong>. Rouge = sous-couvert, orange = au-dessus du maximum usuel.</div>
 <div class="legend">{legend}</div>
 {error_html}
+<nav class="view-links" aria-label="Vues du planning"><a href="#group-planning">Planning par groupe</a> · <a href="#individual-planning">Horaires individuels</a></nav>
+<h2 id="group-planning">Planning par groupe</h2>
 {''.join(day_sections)}
+<section id="individual-planning">
+<h2>Horaires individuels</h2>
+<p class="individual-note">Heures visibles : présence auprès des enfants et colloques. Les coupures et trajets ne sont pas comptés. Le THE hors colloque reste non planifié.</p>
+<nav class="individual-links" aria-label="Choisir une personne">{individual_links}</nav>
+{''.join(individual_sections)}
+</section>
 </body>
 </html>
 """

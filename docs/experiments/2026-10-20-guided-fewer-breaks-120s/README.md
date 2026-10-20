@@ -46,3 +46,9 @@ Le statut `FEASIBLE` ne prouve pas l'optimalité. L'absence de candidat avec moi
 - `run.py` et `verify.py` : reproduction ;
 - `evidence.json` : empreintes SHA-256.
 
+## Horaires individuels — ajout du 20 octobre 2026
+
+`result.html` contient aussi une section **Horaires individuels**, accessible par un lien en haut du rapport, puis une fiche hebdomadaire par personne. Chaque fiche détaille les cinq jours, les plages dans l'ordre chronologique, les sites et groupes, les colloques, les remplacements et les jours libres. Les heures visibles sont séparées du THE hors colloque non planifié ; les totaux hebdomadaires proviennent du contrôle existant.
+
+Cet ajout est également intégré au générateur HTML pour les prochains exports. Le rapport est régénéré depuis le même `result.json`, sans nouveau calcul ni modification des horaires. L'empreinte de `result.html` dans `evidence.json` est actualisée ; les traces du calcul initial restent historiques.
+
