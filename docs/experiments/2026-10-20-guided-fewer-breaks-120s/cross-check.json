@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+  "elapsed_seconds": 0.0128,
+  "errors": [],
+  "same_slot_assignments": true,
+  "score": 702701.0
+}

@@ -608,3 +608,14 @@ Dans le candidat optimisé, Priscila travaille mardi 08:30–12:00 puis 13:00–
 - Preuves : `docs/experiments/2026-10-19-hard-90-minute-repair/README.md`, candidat JSON/CSV/HTML, sorties des deux moteurs, synthèse, empreintes et script reproductible. Aucun planning actif remplacé.
 - Limite : la faisabilité du candidat fixé est démontrée, pas sa redécouverte ni son optimalité en recherche libre. Les recherches courtes arrivées à leur limite restent `UNKNOWN`/sans solution primale et ne prouvent pas l'infaisabilité.
 - Prochaine action utile : décider explicitement si ce candidat doit rester une preuve ou devenir la nouvelle référence/hint ; aucune activation n'est faite ici.
+
+
+## Recherche guidée de coupures plus courtes — 20 octobre 2026
+
+- Recherche CP-SAT guidée demandée par Frédéric, budget 120 secondes, depuis le candidat valide sous maximum hard de 90 minutes. Horaires et affectations libres ; aucun planning fixé et aucun assouplissement.
+- Résultat `FEASIBLE` : toujours huit journées coupées, mais durée totale réduite de **11 h à 8 h 45**, soit 2 h 15 de moins. Coupure maximale inchangée à 90 minutes. Score commun 760979 → 702701.
+- Réductions : Tara jeudi 90→75 min, Léa jeudi 90→15 min, Emilie vendredi 90→60 min, Priscila mardi 75→60 min. Les quatre autres coupures gardent leur durée.
+- Validateur : zéro erreur hard et de déplacement. Patrons fixés : `Optimal` en 0,013 s, mêmes affectations par créneau et même score. Empreintes des sources, données, configuration et sorties actives inchangées.
+- Preuves : `docs/experiments/2026-10-20-guided-fewer-breaks-120s/README.md`, synthèse, journaux, résultat JSON/CSV/HTML, contrôle croisé et scripts reproductibles. Aucun planning actif remplacé.
+- Limite : aucun optimum prouvé. Ne pas interpréter l'absence de résultat sous huit journées coupées pendant 120 secondes comme une impossibilité. Le candidat améliore la durée totale mais modifie de nombreuses journées.
+- Prochaine action utile : examiner visuellement ce candidat avant toute adoption ; si la priorité absolue est de descendre sous huit journées coupées, lancer ensuite une recherche dédiée avec cette borne comme hypothèse testable.

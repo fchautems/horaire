@@ -1,0 +1,91 @@
+403.377|start educators=13 groups=3 slots=48 time_limit=120.0
+403.439|primary_group_variables=39 hard_primary_groups=2 soft_primary_groups=3 replacement_variables=234
+403.439|primary_group_hints=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+403.439|primary_group_candidates=9
+403.971|model variables=35711 constraints=82398 x=9360 hint=True fixed=False
+411.340|incumbent phase=faisabilite count=1 message=CP-SAT: candidat realisable 1, note interne 5952979, validation en cours
+411.579|feasibility_attempt=1 strategy=automatic status=FEASIBLE wall=7.602 conflicts=0 branches=40744
+411.599|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+411.600|validation hard_errors=0
+411.600|first_candidate status=ok score=5952979
+418.692|incumbent phase=optimisation count=1 message=CP-SAT: solution 1, note interne 5952979 (plus bas = mieux)
+418.726|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+418.726|validation hard_errors=0
+419.179|incumbent phase=optimisation count=2 message=CP-SAT: solution 2, note interne 5950478 (plus bas = mieux)
+419.201|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+419.201|validation hard_errors=0
+420.376|incumbent phase=optimisation count=3 message=CP-SAT: solution 3, note interne 5947979 (plus bas = mieux)
+420.408|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+420.408|validation hard_errors=0
+420.709|incumbent phase=optimisation count=4 message=CP-SAT: solution 4, note interne 5942981 (plus bas = mieux)
+420.740|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+420.741|validation hard_errors=0
+421.173|incumbent phase=optimisation count=5 message=CP-SAT: solution 5, note interne 5842671 (plus bas = mieux)
+421.197|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+421.197|validation hard_errors=0
+421.255|incumbent phase=optimisation count=6 message=CP-SAT: solution 6, note interne 5841871 (plus bas = mieux)
+421.285|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+421.285|validation hard_errors=0
+421.618|incumbent phase=optimisation count=7 message=CP-SAT: solution 7, note interne 5839370 (plus bas = mieux)
+421.640|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+421.640|validation hard_errors=0
+422.476|incumbent phase=optimisation count=8 message=CP-SAT: solution 8, note interne 5836871 (plus bas = mieux)
+422.497|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+422.497|validation hard_errors=0
+423.052|incumbent phase=optimisation count=9 message=CP-SAT: solution 9, note interne 5834370 (plus bas = mieux)
+423.080|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+423.080|validation hard_errors=0
+423.534|incumbent phase=optimisation count=10 message=CP-SAT: solution 10, note interne 5831869 (plus bas = mieux)
+423.556|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+423.556|validation hard_errors=0
+424.912|incumbent phase=optimisation count=11 message=CP-SAT: solution 11, note interne 5831469 (plus bas = mieux)
+424.956|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+424.957|validation hard_errors=0
+425.555|incumbent phase=optimisation count=12 message=CP-SAT: solution 12, note interne 5831451 (plus bas = mieux)
+425.588|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+425.589|validation hard_errors=0
+425.668|incumbent phase=optimisation count=13 message=CP-SAT: solution 13, note interne 5830651 (plus bas = mieux)
+425.692|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+425.692|validation hard_errors=0
+426.910|incumbent phase=optimisation count=14 message=CP-SAT: solution 14, note interne 5830633 (plus bas = mieux)
+426.930|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+426.930|validation hard_errors=0
+431.401|incumbent phase=optimisation count=15 message=CP-SAT: solution 15, note interne 5830233 (plus bas = mieux)
+431.422|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+431.422|validation hard_errors=0
+437.277|incumbent phase=optimisation count=16 message=CP-SAT: solution 16, note interne 5750297 (plus bas = mieux)
+437.302|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+437.303|validation hard_errors=0
+437.982|incumbent phase=optimisation count=17 message=CP-SAT: solution 17, note interne 5732804 (plus bas = mieux)
+438.002|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+438.002|validation hard_errors=0
+438.874|incumbent phase=optimisation count=18 message=CP-SAT: solution 18, note interne 5729923 (plus bas = mieux)
+438.895|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+438.895|validation hard_errors=0
+447.658|incumbent phase=optimisation count=19 message=CP-SAT: solution 19, note interne 5729523 (plus bas = mieux)
+447.686|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+447.687|validation hard_errors=0
+447.927|incumbent phase=optimisation count=20 message=CP-SAT: solution 20, note interne 5729505 (plus bas = mieux)
+447.950|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+447.950|validation hard_errors=0
+453.653|incumbent phase=optimisation count=21 message=CP-SAT: solution 21, note interne 5729105 (plus bas = mieux)
+453.675|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+453.675|validation hard_errors=0
+454.091|incumbent phase=optimisation count=22 message=CP-SAT: solution 22, note interne 5728705 (plus bas = mieux)
+454.112|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+454.112|validation hard_errors=0
+458.904|incumbent phase=optimisation count=23 message=CP-SAT: solution 23, note interne 5726604 (plus bas = mieux)
+458.926|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+458.927|validation hard_errors=0
+460.928|incumbent phase=optimisation count=24 message=CP-SAT: solution 24, note interne 5724103 (plus bas = mieux)
+460.950|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+460.950|validation hard_errors=0
+475.488|incumbent phase=optimisation count=25 message=CP-SAT: solution 25, note interne 5719101 (plus bas = mieux)
+475.518|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+475.518|validation hard_errors=0
+481.219|incumbent phase=optimisation count=26 message=CP-SAT: solution 26, note interne 5718701 (plus bas = mieux)
+481.240|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+481.240|validation hard_errors=0
+523.426|optimization status=FEASIBLE wall=111.744 conflicts=0 branches=42846
+523.447|selected_primary_groups=A repourvoir:Trotteur,Fanny:Grands,Natacha:Trotteur,Tara:Grands,Gwendoline:Grands,Céline:Trotteur,Magali:Nurserie,Léa:Trotteur,Emilie:Nurserie,Anaïs:Nurserie,Priscila:Nurserie,Valérie:Grands,X:Grands
+523.447|validation hard_errors=0

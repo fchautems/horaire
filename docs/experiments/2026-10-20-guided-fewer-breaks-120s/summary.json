@@ -1,0 +1,359 @@
+{
+  "elapsed_seconds": 120.29,
+  "raw_status": "ok",
+  "raw_message": "OR-Tools CP-SAT FEASIBLE",
+  "source": {
+    "quality_key": [
+      8,
+      660,
+      90,
+      760979.0
+    ],
+    "split_days_count": 8,
+    "total_split_gap_hours": 11.0,
+    "max_split_gap_minutes": 90,
+    "score": 760979.0
+  },
+  "selected": {
+    "is_improvement": true,
+    "quality_key": [
+      8,
+      525,
+      90,
+      702701.0
+    ],
+    "split_days_count": 8,
+    "total_split_gap_hours": 8.75,
+    "max_split_gap_minutes": 90,
+    "score": 702701.0,
+    "errors": []
+  },
+  "incumbents_checked": [
+    {
+      "elapsed_seconds": 8.41,
+      "quality_key": [
+        8,
+        660,
+        90,
+        760979.0
+      ],
+      "score": 760979.0
+    },
+    {
+      "elapsed_seconds": 15.537,
+      "quality_key": [
+        8,
+        660,
+        90,
+        760979.0
+      ],
+      "score": 760979.0
+    },
+    {
+      "elapsed_seconds": 16.011,
+      "quality_key": [
+        8,
+        660,
+        90,
+        758478.0
+      ],
+      "score": 758478.0
+    },
+    {
+      "elapsed_seconds": 17.22,
+      "quality_key": [
+        8,
+        660,
+        90,
+        755979.0
+      ],
+      "score": 755979.0
+    },
+    {
+      "elapsed_seconds": 17.552,
+      "quality_key": [
+        8,
+        630,
+        90,
+        750181.0
+      ],
+      "score": 750181.0
+    },
+    {
+      "elapsed_seconds": 18.008,
+      "quality_key": [
+        8,
+        630,
+        90,
+        737871.0
+      ],
+      "score": 737871.0
+    },
+    {
+      "elapsed_seconds": 18.097,
+      "quality_key": [
+        8,
+        630,
+        90,
+        737871.0
+      ],
+      "score": 737871.0
+    },
+    {
+      "elapsed_seconds": 18.449,
+      "quality_key": [
+        8,
+        630,
+        90,
+        735370.0
+      ],
+      "score": 735370.0
+    },
+    {
+      "elapsed_seconds": 19.309,
+      "quality_key": [
+        8,
+        630,
+        90,
+        732871.0
+      ],
+      "score": 732871.0
+    },
+    {
+      "elapsed_seconds": 19.89,
+      "quality_key": [
+        8,
+        630,
+        90,
+        730370.0
+      ],
+      "score": 730370.0
+    },
+    {
+      "elapsed_seconds": 20.365,
+      "quality_key": [
+        8,
+        630,
+        90,
+        727869.0
+      ],
+      "score": 727869.0
+    },
+    {
+      "elapsed_seconds": 21.766,
+      "quality_key": [
+        8,
+        615,
+        90,
+        727469.0
+      ],
+      "score": 727469.0
+    },
+    {
+      "elapsed_seconds": 22.4,
+      "quality_key": [
+        8,
+        615,
+        90,
+        727451.0
+      ],
+      "score": 727451.0
+    },
+    {
+      "elapsed_seconds": 22.502,
+      "quality_key": [
+        8,
+        585,
+        90,
+        726651.0
+      ],
+      "score": 726651.0
+    },
+    {
+      "elapsed_seconds": 23.74,
+      "quality_key": [
+        8,
+        585,
+        90,
+        726633.0
+      ],
+      "score": 726633.0
+    },
+    {
+      "elapsed_seconds": 28.231,
+      "quality_key": [
+        8,
+        570,
+        90,
+        726233.0
+      ],
+      "score": 726233.0
+    },
+    {
+      "elapsed_seconds": 34.113,
+      "quality_key": [
+        8,
+        585,
+        90,
+        734297.0
+      ],
+      "score": 734297.0
+    },
+    {
+      "elapsed_seconds": 34.812,
+      "quality_key": [
+        8,
+        585,
+        90,
+        716804.0
+      ],
+      "score": 716804.0
+    },
+    {
+      "elapsed_seconds": 35.705,
+      "quality_key": [
+        8,
+        570,
+        90,
+        713923.0
+      ],
+      "score": 713923.0
+    },
+    {
+      "elapsed_seconds": 44.498,
+      "quality_key": [
+        8,
+        555,
+        90,
+        713523.0
+      ],
+      "score": 713523.0
+    },
+    {
+      "elapsed_seconds": 44.76,
+      "quality_key": [
+        8,
+        555,
+        90,
+        713505.0
+      ],
+      "score": 713505.0
+    },
+    {
+      "elapsed_seconds": 50.485,
+      "quality_key": [
+        8,
+        540,
+        90,
+        713105.0
+      ],
+      "score": 713105.0
+    },
+    {
+      "elapsed_seconds": 50.922,
+      "quality_key": [
+        8,
+        525,
+        90,
+        712705.0
+      ],
+      "score": 712705.0
+    },
+    {
+      "elapsed_seconds": 55.736,
+      "quality_key": [
+        8,
+        540,
+        90,
+        710604.0
+      ],
+      "score": 710604.0
+    },
+    {
+      "elapsed_seconds": 57.761,
+      "quality_key": [
+        8,
+        540,
+        90,
+        708103.0
+      ],
+      "score": 708103.0
+    },
+    {
+      "elapsed_seconds": 72.33,
+      "quality_key": [
+        8,
+        540,
+        90,
+        703101.0
+      ],
+      "score": 703101.0
+    },
+    {
+      "elapsed_seconds": 78.05,
+      "quality_key": [
+        8,
+        525,
+        90,
+        702701.0
+      ],
+      "score": 702701.0
+    },
+    {
+      "elapsed_seconds": 120.257,
+      "quality_key": [
+        8,
+        525,
+        90,
+        702701.0
+      ],
+      "score": 702701.0
+    },
+    {
+      "elapsed_seconds": 120.272,
+      "quality_key": [
+        8,
+        525,
+        90,
+        702701.0
+      ],
+      "score": 702701.0
+    }
+  ],
+  "cp_sat_statistics": {
+    "feasibility": {
+      "attempt": 1,
+      "strategy": "automatic",
+      "status": "FEASIBLE",
+      "wall_time_seconds": 7.602,
+      "conflicts": 0,
+      "branches": 40744,
+      "solutions": 1,
+      "variables": 35711,
+      "constraints": 82398
+    },
+    "feasibility_attempts": [
+      {
+        "attempt": 1,
+        "strategy": "automatic",
+        "status": "FEASIBLE",
+        "wall_time_seconds": 7.602,
+        "conflicts": 0,
+        "branches": 40744,
+        "solutions": 1,
+        "variables": 35711,
+        "constraints": 82398
+      }
+    ],
+    "optimization": {
+      "status": "FEASIBLE",
+      "wall_time_seconds": 111.744,
+      "conflicts": 0,
+      "branches": 42846,
+      "solutions": 26
+    }
+  },
+  "protected_files_unchanged": true,
+  "protected_files_changed": [],
+  "active_planning_replaced": false
+}
